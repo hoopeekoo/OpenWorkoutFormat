@@ -6,6 +6,7 @@ from owf.ast.params import (
     IntensityParam,
     PaceParam,
     PowerParam,
+    RIRParam,
     RPEParam,
     WeightParam,
 )
@@ -98,6 +99,34 @@ def test_rest_duration():
     assert len(params) == 0
     assert rest is not None
     assert rest.seconds == 90
+
+
+def test_rir_separate_tokens():
+    params, rest = parse_params(["@RIR", "2"])
+    assert len(params) == 1
+    assert isinstance(params[0], RIRParam)
+    assert params[0].value == 2
+
+
+def test_rir_attached():
+    params, rest = parse_params(["@RIR2"])
+    assert len(params) == 1
+    assert isinstance(params[0], RIRParam)
+    assert params[0].value == 2
+
+
+def test_rir_case_insensitive():
+    params, rest = parse_params(["@rir", "3"])
+    assert len(params) == 1
+    assert isinstance(params[0], RIRParam)
+    assert params[0].value == 3
+
+
+def test_rir_zero():
+    params, rest = parse_params(["@RIR", "0"])
+    assert len(params) == 1
+    assert isinstance(params[0], RIRParam)
+    assert params[0].value == 0
 
 
 def test_multiple_params():

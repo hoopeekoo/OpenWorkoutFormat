@@ -50,6 +50,14 @@ class RPEParam:
 
 
 @dataclass(frozen=True, slots=True)
+class RIRParam:
+    """RIR (Reps In Reserve) parameter, e.g. @RIR 2."""
+
+    value: int
+    span: SourceSpan | None = field(default=None, compare=False, repr=False)
+
+
+@dataclass(frozen=True, slots=True)
 class IntensityParam:
     """Named intensity, e.g. @easy, @moderate, @hard, @max."""
 
@@ -59,5 +67,11 @@ class IntensityParam:
 
 # Union type for all parameters
 Param = (
-    PaceParam | PowerParam | HeartRateParam | WeightParam | RPEParam | IntensityParam
+    PaceParam
+    | PowerParam
+    | HeartRateParam
+    | WeightParam
+    | RPEParam
+    | RIRParam
+    | IntensityParam
 )

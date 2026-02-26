@@ -17,6 +17,7 @@ from owf.ast.params import (
     PaceParam,
     Param,
     PowerParam,
+    RIRParam,
     RPEParam,
     WeightParam,
 )
@@ -48,6 +49,7 @@ __all__ = [
     "Param",
     "Percentage",
     "PowerParam",
+    "RIRParam",
     "RPEParam",
     "RepeatStep",
     "RestStep",

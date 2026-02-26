@@ -69,6 +69,13 @@ def test_serialize_include():
     assert "- rest 10min" in result
 
 
+def test_serialize_rir():
+    text = "# Strength [strength]\n\n- bench press 3x8rep @RIR 2 rest:90s\n"
+    doc = parse_document(text)
+    result = dumps(doc)
+    assert "@RIR 2" in result
+
+
 def test_serialize_superset():
     text = "# Strength\n\n- 3x superset:\n  - bench press 3x8rep @80kg rest:90s\n  - bent-over row 3x8rep @60kg rest:90s\n"
     doc = parse_document(text)

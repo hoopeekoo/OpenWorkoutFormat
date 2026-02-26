@@ -20,6 +20,7 @@ from owf.ast.params import (
     PaceParam,
     Param,
     PowerParam,
+    RIRParam,
     RPEParam,
     WeightParam,
 )
@@ -187,6 +188,9 @@ def _serialize_param(param: Param) -> str:
     if isinstance(param, RPEParam):
         v = int(param.value) if param.value == int(param.value) else param.value
         return f"@RPE {v}"
+
+    if isinstance(param, RIRParam):
+        return f"@RIR {param.value}"
 
     if isinstance(param, HeartRateParam):
         if isinstance(param.value, str):

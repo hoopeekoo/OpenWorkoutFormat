@@ -11,6 +11,7 @@ from owf.ast.params import (
     PaceParam,
     Param,
     PowerParam,
+    RIRParam,
     RPEParam,
     WeightParam,
 )
@@ -80,6 +81,21 @@ def parse_params(
             # Check next token for the number
             if i + 1 < len(tokens) and _is_number(tokens[i + 1]):
                 params.append(RPEParam(value=float(tokens[i + 1]), span=span))
+                i += 2
+                continue
+            i += 1
+            continue
+
+        # RIR: @RIR or @RIR2 — next token might be the number
+        if value.upper().startswith("RIR"):
+            rir_val = value[3:].strip()
+            if rir_val:
+                params.append(RIRParam(value=int(rir_val), span=span))
+                i += 1
+                continue
+            # Check next token for the number
+            if i + 1 < len(tokens) and _is_number(tokens[i + 1]):
+                params.append(RIRParam(value=int(float(tokens[i + 1])), span=span))
                 i += 2
                 continue
             i += 1

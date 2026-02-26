@@ -2,7 +2,7 @@
 
 from owf.ast.base import Document, Workout
 from owf.ast.blocks import AMRAP, EMOM, AlternatingEMOM, CustomInterval, ForTime, Superset
-from owf.ast.params import IntensityParam, PaceParam, PowerParam, WeightParam
+from owf.ast.params import IntensityParam, PaceParam, PowerParam, RIRParam, WeightParam
 from owf.ast.steps import (
     EnduranceStep,
     IncludeStep,
@@ -181,6 +181,16 @@ def test_endurance_with_power_param():
     assert isinstance(step, EnduranceStep)
     assert len(step.params) == 1
     assert isinstance(step.params[0], PowerParam)
+
+
+def test_strength_with_rir():
+    text = "# Strength [strength]\n\n- bench press 3x8rep @80kg @RIR 2 rest:90s"
+    doc = parse_document(text)
+    step = doc.workouts[0].steps[0]
+    assert isinstance(step, StrengthStep)
+    rir_params = [p for p in step.params if isinstance(p, RIRParam)]
+    assert len(rir_params) == 1
+    assert rir_params[0].value == 2
 
 
 def test_strength_with_percentage_weight():
