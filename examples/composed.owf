@@ -1,0 +1,29 @@
+---
+FTP: 250W
+1RM bench press: 100kg
+bodyweight: 80kg
+max HR: 185bpm
+---
+
+# Threshold Ride [bike]
+
+- warmup 15min @60% of FTP
+- 5x:
+  - bike 5min @95% of FTP
+  - recover 3min @50% of FTP
+- cooldown 10min @easy
+
+> Felt strong through set 3, faded on 4-5.
+
+# Upper Body [strength]
+
+- 3x superset:
+  - bench press 3x8rep @80% of 1RM bench press rest:90s
+  - bent-over row 3x8rep @60kg rest:90s
+- bicep curl 3x12rep @15kg rest:60s
+
+# Full Session
+
+- include: Threshold Ride
+- rest 10min
+- include: Upper Body

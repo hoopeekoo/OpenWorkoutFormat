@@ -1,0 +1,13 @@
+# Warm Up
+
+- warmup 10min @easy
+
+# Cool Down
+
+- cooldown 10min @easy
+
+# Session
+
+- include: Warm Up
+- rest 5min
+- include: Cool Down
