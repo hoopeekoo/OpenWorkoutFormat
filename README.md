@@ -1,5 +1,7 @@
 # OpenWorkoutFormat (OWF)
 
+[![CI](https://github.com/hoopeekoo/OpenWorkoutFormat/actions/workflows/ci.yml/badge.svg)](https://github.com/hoopeekoo/OpenWorkoutFormat/actions/workflows/ci.yml)
+
 A human-readable workout description language with a Python parser. Supports endurance (running, cycling), strength (weightlifting), and CrossFit WoDs (EMOM, AMRAP, for-time).
 
 ## Example
