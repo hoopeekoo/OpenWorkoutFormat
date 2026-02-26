@@ -1,0 +1,38 @@
+---
+max HR: 190bpm
+---
+
+# Run Warmup [run]
+
+- warmup 10min @easy
+- 4x:
+  - run 1min @hard
+  - recover 1min @easy
+- rest 2min
+
+# Chipper [wod]
+
+- for-time 25min:
+  - run 400m
+  - kettlebell swing 21rep @24kg
+  - pull-up 15rep
+  - run 400m
+  - kettlebell swing 15rep @24kg
+  - pull-up 12rep
+  - run 400m
+  - kettlebell swing 9rep @24kg
+  - pull-up 9rep
+
+# Cooldown [run]
+
+- cooldown 5min @easy
+- walk 5min @easy
+
+> Focus on deep breathing and bringing HR below 120bpm.
+
+# Saturday Session
+
+- include: Run Warmup
+- include: Chipper
+- rest 3min
+- include: Cooldown
