@@ -26,7 +26,7 @@ FTP: 250W
 
 - 3x superset:
   - bench press 3x8rep @80% of 1RM bench press rest:90s
-  - bent-over row 3x8rep @60kg rest:90s
+  - bent-over row 3x8rep @60kg @RIR 2 rest:90s
 
 # Metcon [wod]
 
@@ -82,6 +82,7 @@ text = owf.dumps(doc)
 - Heart rate: `@Z2`, `@140bpm`, `@70% of max HR`
 - Weight: `@80kg`, `@70% of 1RM bench press`
 - RPE: `@RPE 7`
+- RIR: `@RIR 2` (Reps In Reserve)
 - Intensity: `@easy`, `@moderate`, `@hard`, `@max`
 
 ### Expressions

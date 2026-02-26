@@ -11,6 +11,7 @@ from owf.ast.params import (
     IntensityParam,
     PaceParam,
     PowerParam,
+    RIRParam,
     RPEParam,
     WeightParam,
 )
@@ -132,14 +133,21 @@ def test_gym_session():
     assert s2.reps is None
     assert s2.sets is None
 
-    # RPE: back squat 5x5rep @RPE 7 rest:120s
+    # RIR: back squat 5x5rep @RIR 3 rest:120s
     s3 = w.steps[3]
     assert s3.exercise == "back squat"
     assert s3.sets == 5
     assert s3.reps == 5
     assert s3.rest.seconds == 120
-    assert isinstance(s3.params[0], RPEParam)
-    assert s3.params[0].value == 7.0
+    assert isinstance(s3.params[0], RIRParam)
+    assert s3.params[0].value == 3
+
+    # RIR: romanian deadlift 3x10rep @60kg @RIR 2 rest:90s
+    s4 = w.steps[4]
+    assert s4.exercise == "romanian deadlift"
+    rir_params = [p for p in s4.params if isinstance(p, RIRParam)]
+    assert len(rir_params) == 1
+    assert rir_params[0].value == 2
 
     # maxrep: face pull 3xmaxrep @15kg rest:60s
     s5 = w.steps[5]

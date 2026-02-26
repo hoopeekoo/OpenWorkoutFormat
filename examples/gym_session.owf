@@ -7,8 +7,8 @@ bodyweight: 80kg
 - pull-up 100rep
 - dip 3x8rep @bodyweight + 20kg rest:90s
 - plank 60s
-- back squat 5x5rep @RPE 7 rest:120s
-- romanian deadlift 3x10rep @60kg rest:90s
+- back squat 5x5rep @RIR 3 rest:120s
+- romanian deadlift 3x10rep @60kg @RIR 2 rest:90s
 - face pull 3xmaxrep @15kg rest:60s
 
-> Keep RPE honest — leave 3 reps in the tank on squats.
+> RIR = Reps In Reserve. Keep 2-3 in the tank on compounds.
