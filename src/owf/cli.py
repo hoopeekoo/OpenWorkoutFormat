@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import argparse
+import dataclasses
+import json
 import sys
 from typing import Any
 
@@ -45,6 +47,11 @@ def main(argv: list[str] | None = None) -> None:
         action="store_true",
         help="Resolve expressions against frontmatter variables",
     )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Output the AST as JSON",
+    )
     args = parser.parse_args(argv)
 
     for filepath in args.files:
@@ -56,6 +63,10 @@ def main(argv: list[str] | None = None) -> None:
             print(f"Error: {e}", file=sys.stderr)
             sys.exit(1)
 
+        if args.json:
+            print(json.dumps(_to_dict(doc), indent=2))
+            continue
+
         if doc.variables:
             print("Variables:")
             for key, value in doc.variables.items():
@@ -64,6 +75,27 @@ def main(argv: list[str] | None = None) -> None:
 
         for workout in doc.workouts:
             _print_workout(workout)
+
+
+def _to_dict(obj: Any) -> Any:
+    """Recursively convert an AST node to a JSON-serializable dict."""
+    if obj is None:
+        return None
+    if isinstance(obj, (str, int, float, bool)):
+        return obj
+    if isinstance(obj, dict):
+        return {k: _to_dict(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_to_dict(item) for item in obj]
+    if dataclasses.is_dataclass(obj) and not isinstance(obj, type):
+        result: dict[str, Any] = {"_type": type(obj).__name__}
+        for f in dataclasses.fields(obj):
+            if f.name == "span":
+                continue
+            value = getattr(obj, f.name)
+            result[f.name] = _to_dict(value)
+        return result
+    return str(obj)
 
 
 def _print_workout(workout: Any) -> None:
