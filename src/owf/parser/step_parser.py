@@ -207,6 +207,15 @@ def _build_session_workout(
             all_steps.extend(_parse_block(b) for b in blocks)
             trailing_notes.extend(notes)
 
+    if workout_type is None:
+        child_types = {
+            s.workout_type
+            for s in all_steps
+            if isinstance(s, Workout) and s.workout_type is not None
+        }
+        if len(child_types) >= 2:
+            workout_type = "combination"
+
     return Workout(
         name=name,
         workout_type=workout_type,

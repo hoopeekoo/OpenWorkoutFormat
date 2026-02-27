@@ -95,7 +95,7 @@ The following keys have conventional meaning:
 All parts except `#` and the name are optional:
 
 - **Name**: Free text identifying the workout.
-- **Type** (optional): A bracket-enclosed tag classifying the workout. Common types: `run`, `bike`, `swim`, `row`, `strength`, `wod`.
+- **Type** (optional): A bracket-enclosed tag classifying the workout. Common types: `run`, `bike`, `swim`, `row`, `strength`, `wod`, `combination`.
 - **Date** (optional): A parenthesized date or date-time range. See [Section 11: Dates](#11-dates).
 
 Examples:
@@ -543,6 +543,7 @@ Documents may use `##` session headings to group `#` child workouts.
 4. `#` headings before the first `##` remain **top-level workouts** (backward compatibility).
 5. Notes after the last `#` section attach to the session workout.
 6. If no `##` headings exist, each `#` heading is a top-level workout (flat mode).
+7. **Combination inference:** If a `##` session has no explicit `[type]` and contains child workouts with 2 or more distinct types, its type is automatically inferred as `combination`. The `[combination]` tag is never written to `.owf` files — it is re-inferred on each parse.
 
 ## Appendix A: EBNF Grammar
 

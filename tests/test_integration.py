@@ -192,7 +192,7 @@ def test_session_structure():
     assert len(doc.workouts) == 1
     session = doc.workouts[0]
     assert session.name == "Saturday Training"
-    assert session.workout_type is None
+    assert session.workout_type == "combination"
 
     # warmup (session-level), child Threshold Ride, child Upper Body
     assert len(session.steps) == 3

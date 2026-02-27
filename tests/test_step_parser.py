@@ -257,6 +257,67 @@ def test_strength_with_rir():
     assert rir_params[0].value == 2
 
 
+def test_session_combination_inferred():
+    """Session with 2+ distinct child workout types → combination."""
+    text = (
+        "## Training\n\n"
+        "# Ride [bike]\n\n- bike 30min\n\n"
+        "# Strength [strength]\n\n- bench press 3x8rep @80kg"
+    )
+    doc = parse_document(text)
+    assert doc.workouts[0].workout_type == "combination"
+
+
+def test_session_single_child_type_no_combination():
+    """Session where all children have the same type → None."""
+    text = (
+        "## Training\n\n"
+        "# Ride A [bike]\n\n- bike 30min\n\n"
+        "# Ride B [bike]\n\n- bike 20min"
+    )
+    doc = parse_document(text)
+    assert doc.workouts[0].workout_type is None
+
+
+def test_session_no_child_types_no_combination():
+    """Session with children that have no type → None."""
+    text = (
+        "## Training\n\n"
+        "# Part A\n\n- bike 30min\n\n"
+        "# Part B\n\n- bench press 3x8rep @80kg"
+    )
+    doc = parse_document(text)
+    assert doc.workouts[0].workout_type is None
+
+
+def test_session_explicit_type_kept():
+    """Session with explicit [type] keeps it, no combination override."""
+    text = (
+        "## Training [wod]\n\n"
+        "# Ride [bike]\n\n- bike 30min\n\n"
+        "# Strength [strength]\n\n- bench press 3x8rep @80kg"
+    )
+    doc = parse_document(text)
+    assert doc.workouts[0].workout_type == "wod"
+
+
+def test_session_combination_roundtrip():
+    """Combination is not written to .owf but re-inferred on re-parse."""
+    from owf.serializer import dumps
+
+    text = (
+        "## Training\n\n"
+        "# Ride [bike]\n\n- bike 30min\n\n"
+        "# Strength [strength]\n\n- bench press 3x8rep @80kg"
+    )
+    doc1 = parse_document(text)
+    assert doc1.workouts[0].workout_type == "combination"
+    serialized = dumps(doc1)
+    assert "[combination]" not in serialized
+    doc2 = parse_document(serialized)
+    assert doc2.workouts[0].workout_type == "combination"
+
+
 def test_strength_with_percentage_weight():
     text = (
         "# Strength\n\n"
