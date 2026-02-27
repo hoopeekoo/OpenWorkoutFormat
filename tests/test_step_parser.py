@@ -318,6 +318,52 @@ def test_session_combination_roundtrip():
     assert doc2.workouts[0].workout_type == "combination"
 
 
+def test_heading_with_rpe():
+    text = "# Run [run] @RPE 7\n\n- run 5km\n"
+    doc = parse_document(text)
+    w = doc.workouts[0]
+    assert w.rpe == 7.0
+    assert w.rir is None
+
+
+def test_heading_with_rir():
+    text = "# Strength [strength] @RIR 2\n\n- bench press 3x8rep @80kg\n"
+    doc = parse_document(text)
+    w = doc.workouts[0]
+    assert w.rir == 2
+    assert w.rpe is None
+
+
+def test_heading_with_both():
+    text = "# Gym [strength] @RPE 8 @RIR 2\n\n- bench press 3x8rep @80kg\n"
+    doc = parse_document(text)
+    w = doc.workouts[0]
+    assert w.rpe == 8.0
+    assert w.rir == 2
+
+
+def test_heading_with_date_and_params():
+    text = "# Gym [strength] (2025-02-27) @RIR 2 @RPE 7\n\n- bench press 3x8rep\n"
+    doc = parse_document(text)
+    w = doc.workouts[0]
+    assert w.date is not None
+    assert w.date.date == "2025-02-27"
+    assert w.rpe == 7.0
+    assert w.rir == 2
+
+
+def test_heading_params_dont_affect_steps():
+    text = "# Gym [strength] @RIR 2\n\n- bench press 3x8rep @80kg rest:90s\n"
+    doc = parse_document(text)
+    w = doc.workouts[0]
+    assert w.rir == 2
+    step = w.steps[0]
+    assert isinstance(step, StrengthStep)
+    # Step should have only the weight param, no RIR injected
+    rir_params = [p for p in step.params if isinstance(p, RIRParam)]
+    assert len(rir_params) == 0
+
+
 def test_strength_with_percentage_weight():
     text = (
         "# Strength\n\n"

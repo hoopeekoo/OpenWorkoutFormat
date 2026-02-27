@@ -102,6 +102,26 @@ def test_serialize_superset():
     assert "- 3x superset:" in result
 
 
+def test_serialize_workout_rpe():
+    text = "# Run [run] @RPE 7\n\n- run 5km\n"
+    doc = parse_document(text)
+    result = dumps(doc)
+    assert "# Run [run] @RPE 7" in result
+    # Round-trip
+    doc2 = parse_document(result)
+    assert doc2.workouts[0].rpe == 7.0
+
+
+def test_serialize_workout_rir():
+    text = "# Strength [strength] @RIR 2\n\n- bench press 3x8rep @80kg\n"
+    doc = parse_document(text)
+    result = dumps(doc)
+    assert "# Strength [strength] @RIR 2" in result
+    # Round-trip
+    doc2 = parse_document(result)
+    assert doc2.workouts[0].rir == 2
+
+
 def test_serialize_circuit():
     text = (
         "# Strength\n\n- 3x circuit:\n"

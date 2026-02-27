@@ -100,6 +100,7 @@ def test_gym_session():
     w = doc.workouts[0]
     assert w.name == "Full Gym Session"
     assert w.workout_type == "strength"
+    assert w.rir == 2
     assert len(w.steps) == 6
     assert all(isinstance(s, StrengthStep) for s in w.steps)
 
@@ -131,23 +132,21 @@ def test_gym_session():
     assert s2.reps is None
     assert s2.sets is None
 
-    # RIR: back squat 5x5rep @RIR 3 rest:120s
+    # back squat 5x5rep rest:120s (no per-step RIR, inherits workout-level)
     s3 = w.steps[3]
     assert s3.exercise == "back squat"
     assert s3.sets == 5
     assert s3.reps == 5
     assert s3.rest.seconds == 120
-    assert isinstance(s3.params[0], RIRParam)
-    assert s3.params[0].value == 3
+    assert len(s3.params) == 0
 
-    # RIR: romanian deadlift 3x10rep @60kg @RIR 2 rest:90s
+    # romanian deadlift 3x10rep @60kg rest:90s (no per-step RIR)
     s4 = w.steps[4]
     assert s4.exercise == "romanian deadlift"
     rir_params = [p for p in s4.params if isinstance(p, RIRParam)]
-    assert len(rir_params) == 1
-    assert rir_params[0].value == 2
+    assert len(rir_params) == 0
 
-    # maxrep: face pull 3xmaxrep @15kg rest:60s
+    # face pull 3xmaxrep @15kg @RIR 3 rest:60s (per-step override)
     s5 = w.steps[5]
     assert s5.exercise == "face pull"
     assert s5.sets == 3
@@ -155,6 +154,9 @@ def test_gym_session():
     assert s5.rest.seconds == 60
     assert isinstance(s5.params[0], WeightParam)
     assert s5.params[0].value == Literal(value=15, unit="kg")
+    rir_params_5 = [p for p in s5.params if isinstance(p, RIRParam)]
+    assert len(rir_params_5) == 1
+    assert rir_params_5[0].value == 3
 
 
 def test_gym_session_resolve():

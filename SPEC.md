@@ -89,7 +89,7 @@ The following keys have conventional meaning:
 ### Workout Heading
 
 ```
-# Name [type] (YYYY-MM-DD HH:MM-HH:MM)
+# Name [type] (YYYY-MM-DD HH:MM-HH:MM) @RPE N @RIR N
 ```
 
 All parts except `#` and the name are optional:
@@ -97,6 +97,8 @@ All parts except `#` and the name are optional:
 - **Name**: Free text identifying the workout.
 - **Type** (optional): A bracket-enclosed tag classifying the workout. Common types: `run`, `bike`, `swim`, `row`, `strength`, `wod`, `combination`.
 - **Date** (optional): A parenthesized date or date-time range. See [Section 11: Dates](#11-dates).
+- **@RPE** (optional): Workout-level Rate of Perceived Exertion (float, 1-10).
+- **@RIR** (optional): Default Reps In Reserve for strength exercises (integer). Individual exercises may override with their own `@RIR`.
 
 Examples:
 
@@ -105,12 +107,15 @@ Examples:
 # Threshold Ride [bike]
 # Morning Run [run] (2025-02-27)
 # Upper Body [strength] (2025-02-27 15:00-16:00)
+# Full Gym Session [strength] @RIR 2
+# Morning Run [run] @RPE 7
+# Upper Body [strength] (2025-02-27) @RPE 8 @RIR 2
 ```
 
 ### Session Heading (Two-Level)
 
 ```
-## Session Name [type] (date)
+## Session Name [type] (date) @RPE N @RIR N
 ```
 
 A `##` heading creates a session that contains `#` child workouts. See [Section 12: Two-Level Hierarchy](#12-two-level-hierarchy).
@@ -350,7 +355,7 @@ Format: `MM:SS/unit` where unit is `km`, `mi`, or `mile`.
 @RPE 7    @RPE 8.5
 ```
 
-Value is a float (typically 1-10 scale).
+Value is a float (typically 1-10 scale). Can also appear at the heading level to set workout-wide RPE.
 
 ### RIR (Reps In Reserve)
 
@@ -358,7 +363,7 @@ Value is a float (typically 1-10 scale).
 @RIR 2    @RIR 0
 ```
 
-Value is an integer indicating how many reps could have been performed before failure.
+Value is an integer indicating how many reps could have been performed before failure. Can also appear at the heading level to set a default RIR for all strength exercises; individual exercises may override with their own `@RIR`.
 
 ### Rest (Strength Steps)
 
@@ -555,7 +560,8 @@ key             = { any_char - ":" - newline } ;
 value           = { any_char - newline } ;
 
 workout         = heading newline { blank } { step_or_note } ;
-heading         = ( "# " | "## " ) name [ SP "[" type "]" ] [ SP "(" date_spec ")" ] ;
+heading         = ( "# " | "## " ) name [ SP "[" type "]" ] [ SP "(" date_spec ")" ] { SP heading_param } ;
+heading_param   = "@RPE" SP number | "@RIR" SP integer ;
 name            = { any_char - "[" - "(" - newline } ;
 type            = { word_char } ;
 date_spec       = date [ SP time_range ] ;

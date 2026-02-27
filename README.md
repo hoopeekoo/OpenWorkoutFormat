@@ -145,11 +145,24 @@ Weight parameters and expressions:
 - dip 3x8rep @bodyweight + 20kg rest:90s
 ```
 
-RIR (Reps In Reserve):
+RIR (Reps In Reserve) — workout-level default with per-step override:
 
 ```
-- back squat 5x5rep @RIR 3 rest:120s
-- romanian deadlift 3x10rep @60kg @RIR 2 rest:90s
+# Full Gym Session [strength] @RIR 2
+
+- back squat 5x5rep rest:120s
+- romanian deadlift 3x10rep @60kg rest:90s
+- face pull 3xmaxrep @15kg @RIR 3 rest:60s
+```
+
+RPE (Rate of Perceived Exertion) — on endurance or strength headings:
+
+```
+# Morning Run [run] @RPE 7
+
+- warmup 15min @easy
+- run 5km @4:30/km
+- cooldown 10min @easy
 ```
 
 ### Container Blocks

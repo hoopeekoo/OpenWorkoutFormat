@@ -59,12 +59,17 @@ def dumps(doc: Document) -> str:
 
 
 def _heading_line(prefix: str, workout: Workout) -> str:
-    """Build a heading line like ``# Name [type] (date)``."""
+    """Build a heading line like ``# Name [type] (date) @RPE N @RIR N``."""
     parts = [f"{prefix} {workout.name}"]
     if workout.workout_type and workout.workout_type != "combination":
         parts.append(f" [{workout.workout_type}]")
     if workout.date:
         parts.append(f" ({workout.date})")
+    if workout.rpe is not None:
+        v = int(workout.rpe) if workout.rpe == int(workout.rpe) else workout.rpe
+        parts.append(f" @RPE {v}")
+    if workout.rir is not None:
+        parts.append(f" @RIR {workout.rir}")
     return "".join(parts)
 
 

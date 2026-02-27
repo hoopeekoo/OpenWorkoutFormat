@@ -165,7 +165,9 @@ def _build_session_workout(
     sections.  Each ``#`` section becomes a child ``Workout`` placed inline
     in the session's ``steps`` tuple.
     """
-    name, workout_type, date = _parse_heading(session_heading.content)
+    name, workout_type, date, rpe, rir = _parse_heading(
+        session_heading.content,
+    )
 
     # Split body into segments: each segment is either a group of
     # non-heading lines (steps/notes/blanks) or a # heading section.
@@ -220,6 +222,8 @@ def _build_session_workout(
         name=name,
         workout_type=workout_type,
         date=date,
+        rpe=rpe,
+        rir=rir,
         steps=tuple(all_steps),
         notes=tuple(trailing_notes),
         span=session_heading.span,
@@ -233,10 +237,12 @@ def _build_workout(
     name = ""
     workout_type: str | None = None
     date: WorkoutDate | None = None
+    rpe: float | None = None
+    rir: int | None = None
     span: SourceSpan | None = None
 
     if heading is not None:
-        name, workout_type, date = _parse_heading(heading.content)
+        name, workout_type, date, rpe, rir = _parse_heading(heading.content)
         span = heading.span
 
     blocks, trailing_notes = build_blocks_for_workout(lines)
@@ -246,6 +252,8 @@ def _build_workout(
         name=name,
         workout_type=workout_type,
         date=date,
+        rpe=rpe,
+        rir=rir,
         steps=steps,
         notes=tuple(trailing_notes),
         span=span,
@@ -256,15 +264,34 @@ _DATE_RE = re.compile(
     r"\((\d{4}-\d{2}-\d{2})(?:\s+(\d{2}:\d{2})(?:-(\d{2}:\d{2}))?)?\)\s*$"
 )
 
+_RPE_RE = re.compile(r"@RPE\s+(\d+(?:\.\d+)?)")
+_RIR_RE = re.compile(r"@RIR\s+(\d+)")
+
 
 def _parse_heading(
     content: str,
-) -> tuple[str, str | None, WorkoutDate | None]:
-    """Parse heading content like 'Name [type] (2025-02-27)'.
+) -> tuple[str, str | None, WorkoutDate | None, float | None, int | None]:
+    """Parse heading content like 'Name [type] (2025-02-27) @RPE 7 @RIR 2'.
 
-    Returns (name, workout_type, date).
+    Returns (name, workout_type, date, rpe, rir).
     """
     text = content
+
+    # Extract @RPE and @RIR first (they may appear after date or type)
+    rpe: float | None = None
+    rir: int | None = None
+
+    rpe_m = _RPE_RE.search(text)
+    if rpe_m:
+        rpe = float(rpe_m.group(1))
+        text = text[: rpe_m.start()] + text[rpe_m.end() :]
+
+    rir_m = _RIR_RE.search(text)
+    if rir_m:
+        rir = int(rir_m.group(1))
+        text = text[: rir_m.start()] + text[rir_m.end() :]
+
+    text = text.rstrip()
 
     # Extract trailing (date ...) first
     date: WorkoutDate | None = None
@@ -280,8 +307,8 @@ def _parse_heading(
     # Extract [type]
     tm = re.match(r"^(.+?)\s*\[(\w+)\]\s*$", text)
     if tm:
-        return tm.group(1).strip(), tm.group(2).strip(), date
-    return text.strip(), None, date
+        return tm.group(1).strip(), tm.group(2).strip(), date, rpe, rir
+    return text.strip(), None, date, rpe, rir
 
 
 def _parse_block(block: RawBlock) -> Any:
