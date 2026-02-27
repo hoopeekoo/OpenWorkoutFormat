@@ -91,10 +91,11 @@ def _serialize_workout(workout: Workout) -> str:
         else:
             lines.extend(_serialize_node(step, indent=0))
 
-    # Workout-level notes
-    for note in workout.notes:
-        lines.append("")
-        lines.append(f"> {note}")
+    # Workout-level notes (skip if already emitted on the last leaf step)
+    if workout.notes and workout.notes != _last_leaf_notes(workout.steps):
+        for note in workout.notes:
+            lines.append("")
+            lines.append(f"> {note}")
 
     return "\n".join(lines)
 
@@ -110,11 +111,30 @@ def _serialize_child_workout(workout: Workout) -> str:
     for step in workout.steps:
         lines.extend(_serialize_node(step, indent=0))
 
-    for note in workout.notes:
-        lines.append("")
-        lines.append(f"> {note}")
+    # Skip notes already emitted on the last leaf step
+    if workout.notes and workout.notes != _last_leaf_notes(workout.steps):
+        for note in workout.notes:
+            lines.append("")
+            lines.append(f"> {note}")
 
     return "\n".join(lines)
+
+
+def _last_leaf_notes(steps: tuple[Any, ...]) -> tuple[str, ...]:
+    """Return the notes tuple from the deepest last step in *steps*.
+
+    The parser duplicates trailing notes onto both the last leaf step
+    and the workout/container.  The serializer uses this to skip the
+    workout-level copy when it would be identical.
+    """
+    if not steps:
+        return ()
+    last = steps[-1]
+    # Recurse into child Workouts and container blocks
+    child_steps: tuple[Any, ...] | None = getattr(last, "steps", None)
+    if child_steps:
+        return _last_leaf_notes(child_steps)
+    return getattr(last, "notes", ())
 
 
 def _serialize_node(node: Any, indent: int) -> list[str]:
