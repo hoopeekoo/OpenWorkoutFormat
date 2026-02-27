@@ -11,6 +11,7 @@ from owf.ast.blocks import (
     AMRAP,
     EMOM,
     AlternatingEMOM,
+    Circuit,
     CustomInterval,
     ForTime,
     Superset,
@@ -30,17 +31,16 @@ from owf.ast.steps import (
 from owf.errors import ResolveError
 
 
-def resolve(doc: Document, extra_variables: dict[str, str] | None = None) -> Document:
-    """Resolve all expressions in a document against its variables.
+def resolve(doc: Document, variables: dict[str, str] | None = None) -> Document:
+    """Resolve all expressions in a document against caller-supplied variables.
 
-    Merges extra_variables on top of the document's own frontmatter.
+    Training reference variables (FTP, 1RM, bodyweight, max HR) are provided
+    by the calling application, not stored in the document.
     """
-    variables = dict(doc.variables)
-    if extra_variables:
-        variables.update(extra_variables)
+    ctx = dict(variables) if variables else {}
 
     resolved_workouts = tuple(
-        _resolve_workout(w, variables) for w in doc.workouts
+        _resolve_workout(w, ctx) for w in doc.workouts
     )
     return replace(doc, workouts=resolved_workouts)
 
@@ -62,7 +62,7 @@ def _resolve_step(step: Any, variables: dict[str, str]) -> Any:
         resolved_params = tuple(_resolve_param(p, variables) for p in step.params)
         return replace(step, params=resolved_params)
 
-    if isinstance(step, (RepeatStep, Superset)):
+    if isinstance(step, (RepeatStep, Superset, Circuit)):
         resolved_children = tuple(_resolve_step(s, variables) for s in step.steps)
         return replace(step, steps=resolved_children)
 

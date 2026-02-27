@@ -5,6 +5,7 @@ from owf.ast.blocks import (
     AMRAP,
     EMOM,
     AlternatingEMOM,
+    Circuit,
     CustomInterval,
     ForTime,
     Superset,
@@ -95,6 +96,20 @@ def test_superset():
     assert isinstance(step, Superset)
     assert step.count == 3
     assert len(step.steps) == 2
+
+
+def test_circuit():
+    text = (
+        "# Strength\n\n- 3x circuit:\n"
+        "  - kettlebell swing 10rep @24kg\n"
+        "  - push-up 15rep\n"
+        "  - air squat 20rep"
+    )
+    doc = parse_document(text)
+    step = doc.workouts[0].steps[0]
+    assert isinstance(step, Circuit)
+    assert step.count == 3
+    assert len(step.steps) == 3
 
 
 def test_emom():
@@ -194,7 +209,7 @@ def test_frontmatter():
         "# Ride [bike]\n\n- bike 30min @80% of FTP"
     )
     doc = parse_document(text)
-    assert doc.variables == {"FTP": "250W", "1RM bench press": "100kg"}
+    assert doc.metadata == {"FTP": "250W", "1RM bench press": "100kg"}
     assert len(doc.workouts) == 1
 
 

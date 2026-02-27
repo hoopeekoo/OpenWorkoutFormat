@@ -84,3 +84,12 @@ def test_roundtrip_superset():
         "  - bench press 3x8rep @80kg rest:90s\n"
         "  - bent-over row 3x8rep @60kg rest:90s"
     )
+
+
+def test_roundtrip_circuit():
+    _roundtrip(
+        "# Strength\n\n- 3x circuit:\n"
+        "  - kettlebell swing 10rep @24kg\n"
+        "  - push-up 15rep\n"
+        "  - air squat 20rep"
+    )

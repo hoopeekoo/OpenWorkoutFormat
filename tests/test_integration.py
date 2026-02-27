@@ -15,13 +15,6 @@ from owf.resolver import resolve
 from owf.serializer import dumps
 
 FULL_EXAMPLE = """\
----
-FTP: 250W
-1RM bench press: 100kg
-bodyweight: 80kg
-max HR: 185bpm
----
-
 # Threshold Ride [bike]
 
 - warmup 15min @60% of FTP
@@ -75,10 +68,6 @@ max HR: 185bpm
 """
 
 SESSION_EXAMPLE = """\
----
-FTP: 250W
----
-
 ## Saturday Training
 
 - warmup 10min @easy
@@ -100,10 +89,7 @@ FTP: 250W
 def test_parse_full_example():
     doc = parse_document(FULL_EXAMPLE)
     assert len(doc.workouts) == 7
-    assert doc.variables["FTP"] == "250W"
-    assert doc.variables["1RM bench press"] == "100kg"
-    assert doc.variables["bodyweight"] == "80kg"
-    assert doc.variables["max HR"] == "185bpm"
+    assert doc.metadata == {}
 
 
 def test_workout_types():
@@ -225,7 +211,12 @@ def test_session_structure():
 
 def test_resolve_full_example():
     doc = parse_document(FULL_EXAMPLE)
-    resolved = resolve(doc)
+    resolved = resolve(doc, {
+        "FTP": "250W",
+        "1RM bench press": "100kg",
+        "bodyweight": "80kg",
+        "max HR": "185bpm",
+    })
 
     # Check that FTP-based expressions were resolved
     ride = resolved.workouts[0]
@@ -245,7 +236,7 @@ def test_resolve_full_example():
 def test_resolve_session_example():
     """Resolver should descend into child workouts."""
     doc = parse_document(SESSION_EXAMPLE)
-    resolved = resolve(doc)
+    resolved = resolve(doc, {"FTP": "250W"})
     session = resolved.workouts[0]
 
     # The child Threshold Ride should have resolved FTP expressions
@@ -333,7 +324,12 @@ def test_public_api():
     doc = owf.parse(FULL_EXAMPLE)
     assert len(doc.workouts) == 7
 
-    resolved = owf.resolve(doc)
+    resolved = owf.resolve(doc, {
+        "FTP": "250W",
+        "1RM bench press": "100kg",
+        "bodyweight": "80kg",
+        "max HR": "185bpm",
+    })
     assert len(resolved.workouts) == 7
 
     text = owf.dumps(doc)

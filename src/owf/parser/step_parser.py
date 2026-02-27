@@ -5,11 +5,12 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from owf.ast.base import Document, Workout
+from owf.ast.base import Document, Workout, WorkoutDate
 from owf.ast.blocks import (
     AMRAP,
     EMOM,
     AlternatingEMOM,
+    Circuit,
     CustomInterval,
     ForTime,
     Superset,
@@ -52,7 +53,7 @@ SETS_REPS_PATTERN = re.compile(
 def parse_document(text: str) -> Document:
     """Parse a full OWF document from text."""
     # Extract frontmatter
-    variables, remaining = parse_frontmatter(text)
+    metadata, remaining = parse_frontmatter(text)
 
     # Scan remaining text
     lines = scan(remaining)
@@ -62,7 +63,7 @@ def parse_document(text: str) -> Document:
 
     return Document(
         workouts=tuple(workouts),
-        variables=variables,
+        metadata=metadata,
         span=SourceSpan(line=1, col=1),
     )
 
@@ -164,7 +165,7 @@ def _build_session_workout(
     sections.  Each ``#`` section becomes a child ``Workout`` placed inline
     in the session's ``steps`` tuple.
     """
-    name, workout_type = _parse_heading(session_heading.content)
+    name, workout_type, date = _parse_heading(session_heading.content)
 
     # Split body into segments: each segment is either a group of
     # non-heading lines (steps/notes/blanks) or a # heading section.
@@ -209,6 +210,7 @@ def _build_session_workout(
     return Workout(
         name=name,
         workout_type=workout_type,
+        date=date,
         steps=tuple(all_steps),
         notes=tuple(trailing_notes),
         span=session_heading.span,
@@ -221,10 +223,11 @@ def _build_workout(
     """Build a Workout node from a heading and its body lines."""
     name = ""
     workout_type: str | None = None
+    date: WorkoutDate | None = None
     span: SourceSpan | None = None
 
     if heading is not None:
-        name, workout_type = _parse_heading(heading.content)
+        name, workout_type, date = _parse_heading(heading.content)
         span = heading.span
 
     blocks, trailing_notes = build_blocks_for_workout(lines)
@@ -233,18 +236,43 @@ def _build_workout(
     return Workout(
         name=name,
         workout_type=workout_type,
+        date=date,
         steps=steps,
         notes=tuple(trailing_notes),
         span=span,
     )
 
 
-def _parse_heading(content: str) -> tuple[str, str | None]:
-    """Parse heading content like 'Name [type]' into (name, type)."""
-    m = re.match(r"^(.+?)\s*\[(\w+)\]\s*$", content)
-    if m:
-        return m.group(1).strip(), m.group(2).strip()
-    return content.strip(), None
+_DATE_RE = re.compile(
+    r"\((\d{4}-\d{2}-\d{2})(?:\s+(\d{2}:\d{2})(?:-(\d{2}:\d{2}))?)?\)\s*$"
+)
+
+
+def _parse_heading(
+    content: str,
+) -> tuple[str, str | None, WorkoutDate | None]:
+    """Parse heading content like 'Name [type] (2025-02-27)'.
+
+    Returns (name, workout_type, date).
+    """
+    text = content
+
+    # Extract trailing (date ...) first
+    date: WorkoutDate | None = None
+    dm = _DATE_RE.search(text)
+    if dm:
+        date = WorkoutDate(
+            date=dm.group(1),
+            start_time=dm.group(2),
+            end_time=dm.group(3),
+        )
+        text = text[: dm.start()].rstrip()
+
+    # Extract [type]
+    tm = re.match(r"^(.+?)\s*\[(\w+)\]\s*$", text)
+    if tm:
+        return tm.group(1).strip(), tm.group(2).strip(), date
+    return text.strip(), None, date
 
 
 def _parse_block(block: RawBlock) -> Any:
@@ -263,14 +291,24 @@ def _parse_block(block: RawBlock) -> Any:
         except ValueError:
             pass
 
-    # Repeat: Nx: or Nx superset:
-    repeat_m = re.match(r"^(\d+)x\s*(?:superset\s*)?:\s*$", content)
+    # Repeat: Nx: or Nx superset: or Nx circuit:
+    repeat_m = re.match(
+        r"^(\d+)x\s*(?:superset|circuit\s*)?:\s*$", content
+    )
     if repeat_m:
         count = int(repeat_m.group(1))
         children = tuple(_parse_block(c) for c in block.children)
 
         if "superset" in content.lower():
             return Superset(
+                count=count,
+                steps=children,
+                notes=tuple(block.notes),
+                span=span,
+            )
+
+        if "circuit" in content.lower():
+            return Circuit(
                 count=count,
                 steps=children,
                 notes=tuple(block.notes),

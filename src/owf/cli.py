@@ -13,6 +13,7 @@ from owf.ast.blocks import (
     AMRAP,
     EMOM,
     AlternatingEMOM,
+    Circuit,
     CustomInterval,
     ForTime,
     Superset,
@@ -45,7 +46,7 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument(
         "--resolve",
         action="store_true",
-        help="Resolve expressions against frontmatter variables",
+        help="Resolve expressions against variables",
     )
     parser.add_argument(
         "--json",
@@ -67,9 +68,9 @@ def main(argv: list[str] | None = None) -> None:
             print(json.dumps(_to_dict(doc), indent=2))
             continue
 
-        if doc.variables:
-            print("Variables:")
-            for key, value in doc.variables.items():
+        if doc.metadata:
+            print("Metadata:")
+            for key, value in doc.metadata.items():
                 print(f"  {key}: {value}")
             print()
 
@@ -165,6 +166,11 @@ def _print_node(node: Any, indent: int) -> None:
 
     elif isinstance(node, Superset):
         print(f"{prefix}{node.count}x superset:")
+        for child in node.steps:
+            _print_node(child, indent + 1)
+
+    elif isinstance(node, Circuit):
+        print(f"{prefix}{node.count}x circuit:")
         for child in node.steps:
             _print_node(child, indent + 1)
 

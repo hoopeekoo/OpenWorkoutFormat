@@ -1,6 +1,6 @@
 """AST node types for the OpenWorkoutFormat."""
 
-from owf.ast.base import Document, Workout
+from owf.ast.base import Document, Workout, WorkoutDate
 from owf.ast.blocks import (
     AMRAP,
     EMOM,
@@ -57,4 +57,5 @@ __all__ = [
     "VarRef",
     "WeightParam",
     "Workout",
+    "WorkoutDate",
 ]

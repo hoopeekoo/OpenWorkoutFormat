@@ -9,6 +9,7 @@ from owf.ast.blocks import (
     AMRAP,
     EMOM,
     AlternatingEMOM,
+    Circuit,
     CustomInterval,
     ForTime,
     Superset,
@@ -37,16 +38,16 @@ def dumps(doc: Document) -> str:
     parts: list[str] = []
 
     # Frontmatter
-    if doc.variables:
+    if doc.metadata:
         parts.append("---")
-        for key, value in doc.variables.items():
+        for key, value in doc.metadata.items():
             parts.append(f"{key}: {value}")
         parts.append("---")
         parts.append("")
 
     # Workouts
     for i, workout in enumerate(doc.workouts):
-        if i > 0 or doc.variables:
+        if i > 0 or doc.metadata:
             parts.append("")
         parts.append(_serialize_workout(workout))
 
@@ -57,6 +58,16 @@ def dumps(doc: Document) -> str:
     return result
 
 
+def _heading_line(prefix: str, workout: Workout) -> str:
+    """Build a heading line like ``# Name [type] (date)``."""
+    parts = [f"{prefix} {workout.name}"]
+    if workout.workout_type:
+        parts.append(f" [{workout.workout_type}]")
+    if workout.date:
+        parts.append(f" ({workout.date})")
+    return "".join(parts)
+
+
 def _serialize_workout(workout: Workout) -> str:
     is_session = any(isinstance(s, Workout) for s in workout.steps)
     prefix = "##" if is_session else "#"
@@ -64,10 +75,7 @@ def _serialize_workout(workout: Workout) -> str:
 
     # Heading
     if workout.name:
-        if workout.workout_type:
-            lines.append(f"{prefix} {workout.name} [{workout.workout_type}]")
-        else:
-            lines.append(f"{prefix} {workout.name}")
+        lines.append(_heading_line(prefix, workout))
         lines.append("")
 
     # Steps (child Workouts are serialized inline with # headings)
@@ -91,10 +99,7 @@ def _serialize_child_workout(workout: Workout) -> str:
     lines: list[str] = []
 
     if workout.name:
-        if workout.workout_type:
-            lines.append(f"# {workout.name} [{workout.workout_type}]")
-        else:
-            lines.append(f"# {workout.name}")
+        lines.append(_heading_line("#", workout))
         lines.append("")
 
     for step in workout.steps:
@@ -154,6 +159,13 @@ def _serialize_node(node: Any, indent: int) -> list[str]:
 
     elif isinstance(node, Superset):
         lines.append(f"{prefix}- {node.count}x superset:")
+        for child in node.steps:
+            lines.extend(_serialize_node(child, indent + 1))
+        for note in node.notes:
+            lines.append(f"{prefix}> {note}")
+
+    elif isinstance(node, Circuit):
+        lines.append(f"{prefix}- {node.count}x circuit:")
         for child in node.steps:
             lines.extend(_serialize_node(child, indent + 1))
         for note in node.notes:

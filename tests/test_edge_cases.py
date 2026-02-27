@@ -105,7 +105,7 @@ def test_pace_invalid():
 def test_only_frontmatter():
     text = "---\nFTP: 250W\n---"
     doc = parse_document(text)
-    assert doc.variables == {"FTP": "250W"}
+    assert doc.metadata == {"FTP": "250W"}
     assert len(doc.workouts) == 0
 
 
@@ -176,7 +176,7 @@ def test_roundtrip_preserves_variables():
     doc = parse_document(text)
     result = dumps(doc)
     doc2 = parse_document(result)
-    assert doc2.variables == doc.variables
+    assert doc2.metadata == doc.metadata
 
 
 def test_unclosed_frontmatter():
@@ -188,7 +188,7 @@ def test_unclosed_frontmatter():
 def test_empty_string():
     doc = parse_document("")
     assert len(doc.workouts) == 0
-    assert doc.variables == {}
+    assert doc.metadata == {}
 
 
 def test_blank_lines_only():

@@ -17,7 +17,7 @@ def test_load_simple_file(valid_dir: Path):
 
 def test_load_with_frontmatter(valid_dir: Path):
     doc = load(valid_dir / "with_frontmatter.owf")
-    assert doc.variables == {"FTP": "250W"}
+    assert doc.metadata == {"FTP": "250W"}
     assert len(doc.workouts) == 1
 
 
@@ -44,7 +44,7 @@ def test_load_session_fixture(valid_dir: Path):
 def test_load_examples_endurance():
     doc = load(Path("examples/endurance.owf"))
     assert len(doc.workouts) == 1
-    assert doc.variables["FTP"] == "250W"
+    assert doc.metadata == {}
 
 
 def test_load_examples_strength():

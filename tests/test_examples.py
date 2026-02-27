@@ -24,7 +24,7 @@ from owf.units import Pace
 
 def test_heart_rate_run():
     doc = load(Path("examples/heart_rate_run.owf"))
-    assert doc.variables == {"max HR": "190bpm"}
+    assert doc.metadata == {}
     assert len(doc.workouts) == 1
 
     w = doc.workouts[0]
@@ -79,7 +79,7 @@ def test_heart_rate_run():
 
 def test_heart_rate_run_resolve():
     doc = load(Path("examples/heart_rate_run.owf"))
-    resolved = resolve(doc)
+    resolved = resolve(doc, {"max HR": "190bpm"})
     # 70% of 190bpm = 133bpm
     s2 = resolved.workouts[0].steps[2]
     param = s2.params[0]
@@ -94,7 +94,7 @@ def test_heart_rate_run_resolve():
 
 def test_gym_session():
     doc = load(Path("examples/gym_session.owf"))
-    assert doc.variables == {"bodyweight": "80kg"}
+    assert doc.metadata == {}
     assert len(doc.workouts) == 1
 
     w = doc.workouts[0]
@@ -159,7 +159,7 @@ def test_gym_session():
 
 def test_gym_session_resolve():
     doc = load(Path("examples/gym_session.owf"))
-    resolved = resolve(doc)
+    resolved = resolve(doc, {"bodyweight": "80kg"})
     # bodyweight(80kg) + 20kg = 100kg
     s1 = resolved.workouts[0].steps[1]
     param = s1.params[0]
@@ -174,7 +174,7 @@ def test_gym_session_resolve():
 
 def test_triathlon():
     doc = load(Path("examples/triathlon.owf"))
-    assert doc.variables == {"FTP": "230W"}
+    assert doc.metadata == {}
     assert len(doc.workouts) == 4
 
     # Swim Intervals
@@ -223,7 +223,7 @@ def test_triathlon():
 
 def test_triathlon_resolve():
     doc = load(Path("examples/triathlon.owf"))
-    resolved = resolve(doc)
+    resolved = resolve(doc, {"FTP": "230W"})
     # 85% of 230W = 195.5W
     bike_step = resolved.workouts[2].steps[1]
     param = bike_step.params[0]
@@ -238,7 +238,7 @@ def test_triathlon_resolve():
 
 def test_pyramid():
     doc = load(Path("examples/pyramid.owf"))
-    assert doc.variables == {}
+    assert doc.metadata == {}
     assert len(doc.workouts) == 1
 
     w = doc.workouts[0]

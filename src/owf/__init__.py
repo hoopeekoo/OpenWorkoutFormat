@@ -4,7 +4,7 @@ Public API:
     parse(text)             — parse OWF text into a Document AST
     load(path)              — parse an OWF file
     dumps(doc)              — serialize a Document AST back to OWF text
-    resolve(doc, variables) — evaluate expressions against variables
+    resolve(doc, variables) — evaluate expressions against caller-supplied variables
 """
 
 from __future__ import annotations

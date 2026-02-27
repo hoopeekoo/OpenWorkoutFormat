@@ -100,3 +100,16 @@ def test_serialize_superset():
     doc = parse_document(text)
     result = dumps(doc)
     assert "- 3x superset:" in result
+
+
+def test_serialize_circuit():
+    text = (
+        "# Strength\n\n- 3x circuit:\n"
+        "  - kettlebell swing 10rep @24kg\n"
+        "  - push-up 15rep\n"
+        "  - air squat 20rep\n"
+    )
+    doc = parse_document(text)
+    result = dumps(doc)
+    assert "- 3x circuit:" in result
+    assert "  - kettlebell swing 10rep @24kg" in result

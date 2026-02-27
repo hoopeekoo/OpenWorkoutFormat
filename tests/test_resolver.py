@@ -11,9 +11,9 @@ from owf.resolver import resolve
 
 
 def test_resolve_percentage_of_ftp():
-    text = "---\nFTP: 250W\n---\n\n# Ride [bike]\n\n- bike 5min @80% of FTP"
+    text = "# Ride [bike]\n\n- bike 5min @80% of FTP"
     doc = parse_document(text)
-    resolved = resolve(doc)
+    resolved = resolve(doc, {"FTP": "250W"})
     step = resolved.workouts[0].steps[0]
     assert isinstance(step, EnduranceStep)
     param = step.params[0]
@@ -24,12 +24,9 @@ def test_resolve_percentage_of_ftp():
 
 
 def test_resolve_percentage_of_1rm():
-    text = (
-        "---\n1RM bench press: 100kg\n---\n\n"
-        "# Strength\n\n- bench press 3x8rep @80% of 1RM bench press"
-    )
+    text = "# Strength\n\n- bench press 3x8rep @80% of 1RM bench press"
     doc = parse_document(text)
-    resolved = resolve(doc)
+    resolved = resolve(doc, {"1RM bench press": "100kg"})
     step = resolved.workouts[0].steps[0]
     assert isinstance(step, StrengthStep)
     param = step.params[0]
@@ -39,7 +36,7 @@ def test_resolve_percentage_of_1rm():
     assert param.value.unit == "kg"
 
 
-def test_resolve_with_extra_variables():
+def test_resolve_with_variables():
     text = "# Ride [bike]\n\n- bike 5min @80% of FTP"
     doc = parse_document(text)
     resolved = resolve(doc, {"FTP": "300W"})
