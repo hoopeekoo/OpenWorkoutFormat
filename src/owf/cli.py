@@ -8,6 +8,7 @@ import json
 import sys
 from typing import Any
 
+from owf.ast.base import Workout
 from owf.ast.blocks import (
     AMRAP,
     EMOM,
@@ -27,7 +28,6 @@ from owf.ast.params import (
 )
 from owf.ast.steps import (
     EnduranceStep,
-    IncludeStep,
     RepeatStep,
     RestStep,
     StrengthStep,
@@ -155,8 +155,8 @@ def _print_node(node: Any, indent: int) -> None:
         for note in node.notes:
             print(f"{prefix}> {note}")
 
-    elif isinstance(node, IncludeStep):
-        print(f"{prefix}include: {node.workout_name}")
+    elif isinstance(node, Workout):
+        _print_workout(node)
 
     elif isinstance(node, RepeatStep):
         print(f"{prefix}{node.count}x:")

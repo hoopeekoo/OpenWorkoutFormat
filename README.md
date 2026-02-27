@@ -50,7 +50,7 @@ import owf
 # Parse from text
 doc = owf.parse(open("workout.owf").read())
 
-# Parse from file (resolves includes)
+# Parse from file
 doc = owf.load("workout.owf")
 
 # Resolve expressions against variables
@@ -65,6 +65,7 @@ text = owf.dumps(doc)
 | Element | Syntax |
 |---|---|
 | Frontmatter | `---` delimited key-value pairs |
+| Session | `## Name [type]` — groups `#` workouts into a session |
 | Heading | `# Name [type]` |
 | Step | `- action [setsXreps] [duration/distance] [@params] [rest:duration]` |
 | Repeat | `- Nx:` with sub-steps |
@@ -72,7 +73,6 @@ text = owf.dumps(doc)
 | EMOM | `- emom duration:` / `- emom duration alternating:` |
 | AMRAP | `- amrap duration:` |
 | For-time | `- for-time [cap]:` |
-| Include | `- include: Workout Name` |
 | Notes | `> blockquote` |
 
 ### Parameters (`@` prefix)

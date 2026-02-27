@@ -37,7 +37,3 @@ class ParseError(OWFError):
 
 class ResolveError(OWFError):
     """Raised when expression resolution fails."""
-
-
-class IncludeError(OWFError):
-    """Raised when include resolution fails (missing file, cycle, etc.)."""

@@ -23,7 +23,6 @@ from owf.ast.params import (
 )
 from owf.ast.steps import (
     EnduranceStep,
-    IncludeStep,
     RepeatStep,
     RestStep,
     Step,
@@ -42,7 +41,6 @@ __all__ = [
     "Expression",
     "ForTime",
     "HeartRateParam",
-    "IncludeStep",
     "IntensityParam",
     "Literal",
     "PaceParam",

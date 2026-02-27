@@ -1,7 +1,8 @@
 """Integration tests — parse the full example from the spec."""
 
+from owf.ast.base import Workout
 from owf.ast.blocks import AMRAP, EMOM, AlternatingEMOM, CustomInterval, ForTime, Superset
-from owf.ast.steps import EnduranceStep, IncludeStep, RepeatStep, RestStep, StrengthStep
+from owf.ast.steps import EnduranceStep, RepeatStep, RestStep, StrengthStep
 from owf.parser.step_parser import parse_document
 from owf.resolver import resolve
 from owf.serializer import dumps
@@ -64,18 +65,34 @@ max HR: 185bpm
   - pull-up 5rep
   - push-up 10rep
   - air squat 15rep
+"""
 
-# Full Session
+SESSION_EXAMPLE = """\
+---
+FTP: 250W
+---
 
-- include: Threshold Ride
-- rest 10min
-- include: Upper Body
+## Saturday Training
+
+- warmup 10min @easy
+
+# Threshold Ride [bike]
+
+- 5x:
+  - bike 5min @95% of FTP
+  - recover 3min @50% of FTP
+
+# Upper Body [strength]
+
+- bench press 3x8rep @80kg rest:90s
+
+> Great session overall.
 """
 
 
 def test_parse_full_example():
     doc = parse_document(FULL_EXAMPLE)
-    assert len(doc.workouts) == 8
+    assert len(doc.workouts) == 7
     assert doc.variables["FTP"] == "250W"
     assert doc.variables["1RM bench press"] == "100kg"
     assert doc.variables["bodyweight"] == "80kg"
@@ -88,7 +105,6 @@ def test_workout_types():
     assert ("Threshold Ride", "bike") in types
     assert ("Upper Body", "strength") in types
     assert ("Power Clean EMOM", "wod") in types
-    assert ("Full Session", None) in types
 
 
 def test_threshold_ride_structure():
@@ -177,16 +193,27 @@ def test_amrap_structure():
     assert len(step.steps) == 3
 
 
-def test_include_structure():
-    doc = parse_document(FULL_EXAMPLE)
-    full = doc.workouts[7]
-    assert full.name == "Full Session"
-    assert len(full.steps) == 3
-    assert isinstance(full.steps[0], IncludeStep)
-    assert full.steps[0].workout_name == "Threshold Ride"
-    assert isinstance(full.steps[1], RestStep)
-    assert isinstance(full.steps[2], IncludeStep)
-    assert full.steps[2].workout_name == "Upper Body"
+def test_session_structure():
+    """## heading creates a session workout containing # child workouts."""
+    doc = parse_document(SESSION_EXAMPLE)
+    assert len(doc.workouts) == 1
+    session = doc.workouts[0]
+    assert session.name == "Saturday Training"
+    assert session.workout_type is None
+
+    # warmup (session-level), child Threshold Ride, child Upper Body
+    assert len(session.steps) == 3
+    assert isinstance(session.steps[0], EnduranceStep)
+    assert session.steps[0].action == "warmup"
+
+    assert isinstance(session.steps[1], Workout)
+    assert session.steps[1].name == "Threshold Ride"
+    assert session.steps[1].workout_type == "bike"
+
+    assert isinstance(session.steps[2], Workout)
+    assert session.steps[2].name == "Upper Body"
+    assert session.steps[2].workout_type == "strength"
+    assert len(session.steps[2].steps) == 1  # bench press
 
 
 def test_resolve_full_example():
@@ -208,6 +235,30 @@ def test_resolve_full_example():
     assert param.value.unit == "W"
 
 
+def test_resolve_session_example():
+    """Resolver should descend into child workouts."""
+    doc = parse_document(SESSION_EXAMPLE)
+    resolved = resolve(doc)
+    session = resolved.workouts[0]
+
+    # The child Threshold Ride should have resolved FTP expressions
+    from owf.ast.expressions import Literal
+    from owf.ast.params import PowerParam
+
+    child_ride = session.steps[1]
+    assert isinstance(child_ride, Workout)
+    repeat = child_ride.steps[0]
+    assert isinstance(repeat, RepeatStep)
+    bike = repeat.steps[0]
+    assert isinstance(bike, EnduranceStep)
+    param = bike.params[0]
+    assert isinstance(param, PowerParam)
+    assert isinstance(param.value, Literal)
+    # 95% of 250W = 237.5W
+    assert param.value.value == 237.5
+    assert param.value.unit == "W"
+
+
 def test_serialize_full_example():
     doc = parse_document(FULL_EXAMPLE)
     serialized = dumps(doc)
@@ -218,14 +269,23 @@ def test_serialize_full_example():
     assert "# Power Clean EMOM [wod]" in serialized
     assert "# Murph [wod]" in serialized
     assert "# Metcon [wod]" in serialized
-    assert "# Full Session" in serialized
 
     # Should contain key structural elements
     assert "- 5x:" in serialized
     assert "- emom 10min:" in serialized
     assert "- amrap 12min:" in serialized
     assert "- for-time:" in serialized
-    assert "- include: Threshold Ride" in serialized
+
+
+def test_serialize_session_example():
+    doc = parse_document(SESSION_EXAMPLE)
+    serialized = dumps(doc)
+
+    assert "## Saturday Training" in serialized
+    assert "# Threshold Ride [bike]" in serialized
+    assert "# Upper Body [strength]" in serialized
+    assert "- warmup 10min @easy" in serialized
+    assert "> Great session overall." in serialized
 
 
 def test_roundtrip_full_example():
@@ -241,15 +301,33 @@ def test_roundtrip_full_example():
         assert len(w1.steps) == len(w2.steps)
 
 
+def test_roundtrip_session_example():
+    """parse → dumps → parse for session documents."""
+    doc1 = parse_document(SESSION_EXAMPLE)
+    serialized = dumps(doc1)
+    doc2 = parse_document(serialized)
+
+    assert len(doc1.workouts) == len(doc2.workouts)
+    session1 = doc1.workouts[0]
+    session2 = doc2.workouts[0]
+    assert session1.name == session2.name
+    assert len(session1.steps) == len(session2.steps)
+    for s1, s2 in zip(session1.steps, session2.steps):
+        if isinstance(s1, Workout):
+            assert isinstance(s2, Workout)
+            assert s1.name == s2.name
+            assert s1.workout_type == s2.workout_type
+
+
 def test_public_api():
     """Test the public API (owf.parse, owf.dumps, owf.resolve)."""
     import owf
 
     doc = owf.parse(FULL_EXAMPLE)
-    assert len(doc.workouts) == 8
+    assert len(doc.workouts) == 7
 
     resolved = owf.resolve(doc)
-    assert len(resolved.workouts) == 8
+    assert len(resolved.workouts) == 7
 
     text = owf.dumps(doc)
     assert "# Threshold Ride [bike]" in text

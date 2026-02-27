@@ -46,8 +46,8 @@ def test_roundtrip_frontmatter():
     _roundtrip("---\nFTP: 250W\n---\n\n# Ride [bike]\n\n- bike 30min @200W")
 
 
-def test_roundtrip_includes():
-    _roundtrip("# Full\n\n- include: Threshold Ride\n- rest 10min\n- include: Upper Body")
+def test_roundtrip_session():
+    _roundtrip("## Session\n\n- warmup 10min @easy\n\n# Ride [bike]\n\n- bike 30min\n\n- cooldown 10min @easy")
 
 
 def test_roundtrip_superset():

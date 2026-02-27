@@ -3,13 +3,7 @@
 from owf.ast.base import Document, Workout
 from owf.ast.blocks import AMRAP, EMOM, AlternatingEMOM, CustomInterval, ForTime, Superset
 from owf.ast.params import IntensityParam, PaceParam, PowerParam, RIRParam, WeightParam
-from owf.ast.steps import (
-    EnduranceStep,
-    IncludeStep,
-    RepeatStep,
-    RestStep,
-    StrengthStep,
-)
+from owf.ast.steps import EnduranceStep, RepeatStep, RestStep, StrengthStep
 from owf.parser.step_parser import parse_document
 
 
@@ -138,14 +132,21 @@ def test_for_time_with_cap():
     assert step.time_cap.seconds == 1200
 
 
-def test_include_step():
-    text = "# Full Session\n\n- include: Threshold Ride\n- rest 10min\n- include: Upper Body"
+def test_session_with_child_workouts():
+    text = "## Session\n\n- warmup 10min @easy\n\n# Ride [bike]\n\n- bike 30min\n\n# Strength [strength]\n\n- bench press 3x8rep @80kg"
     doc = parse_document(text)
-    assert len(doc.workouts[0].steps) == 3
-    assert isinstance(doc.workouts[0].steps[0], IncludeStep)
-    assert doc.workouts[0].steps[0].workout_name == "Threshold Ride"
-    assert isinstance(doc.workouts[0].steps[1], RestStep)
-    assert isinstance(doc.workouts[0].steps[2], IncludeStep)
+    assert len(doc.workouts) == 1
+    session = doc.workouts[0]
+    assert session.name == "Session"
+    # warmup (session-level), child Ride, child Strength
+    assert len(session.steps) == 3
+    assert isinstance(session.steps[0], EnduranceStep)
+    assert isinstance(session.steps[1], Workout)
+    assert session.steps[1].name == "Ride"
+    assert session.steps[1].workout_type == "bike"
+    assert isinstance(session.steps[2], Workout)
+    assert session.steps[2].name == "Strength"
+    assert session.steps[2].workout_type == "strength"
 
 
 def test_frontmatter():

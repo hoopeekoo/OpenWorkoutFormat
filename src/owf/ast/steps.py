@@ -61,14 +61,5 @@ class RepeatStep:
     span: SourceSpan | None = field(default=None, compare=False, repr=False)
 
 
-@dataclass(frozen=True, slots=True)
-class IncludeStep:
-    """Include another workout by name: include: Workout Name."""
-
-    workout_name: str
-    resolved: Any | None = None  # Workout once resolved
-    span: SourceSpan | None = field(default=None, compare=False, repr=False)
-
-
 # Union type for all steps
-Step = EnduranceStep | StrengthStep | RestStep | RepeatStep | IncludeStep
+Step = EnduranceStep | StrengthStep | RestStep | RepeatStep

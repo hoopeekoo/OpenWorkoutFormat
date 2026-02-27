@@ -61,12 +61,14 @@ def test_serialize_for_time():
     assert "  - run 1mile" in result
 
 
-def test_serialize_include():
-    text = "# Full\n\n- include: Threshold Ride\n- rest 10min\n"
+def test_serialize_session():
+    text = "## Session\n\n- warmup 10min @easy\n\n# Ride [bike]\n\n- bike 30min\n\n- cooldown 10min @easy\n"
     doc = parse_document(text)
     result = dumps(doc)
-    assert "- include: Threshold Ride" in result
-    assert "- rest 10min" in result
+    assert "## Session" in result
+    assert "# Ride [bike]" in result
+    assert "- warmup 10min @easy" in result
+    assert "- cooldown 10min @easy" in result
 
 
 def test_serialize_rir():

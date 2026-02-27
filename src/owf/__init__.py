@@ -2,7 +2,7 @@
 
 Public API:
     parse(text)             — parse OWF text into a Document AST
-    load(path)              — parse an OWF file (resolves includes)
+    load(path)              — parse an OWF file
     dumps(doc)              — serialize a Document AST back to OWF text
     resolve(doc, variables) — evaluate expressions against variables
 """
@@ -17,7 +17,7 @@ from owf.serializer import dumps
 
 
 def parse(text: str) -> Document:
-    """Parse OWF text into a Document AST (no include resolution)."""
+    """Parse OWF text into a Document AST."""
     return parse_document(text)
 
 

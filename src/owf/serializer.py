@@ -26,7 +26,6 @@ from owf.ast.params import (
 )
 from owf.ast.steps import (
     EnduranceStep,
-    IncludeStep,
     RepeatStep,
     RestStep,
     StrengthStep,
@@ -59,9 +58,38 @@ def dumps(doc: Document) -> str:
 
 
 def _serialize_workout(workout: Workout) -> str:
+    is_session = any(isinstance(s, Workout) for s in workout.steps)
+    prefix = "##" if is_session else "#"
     lines: list[str] = []
 
     # Heading
+    if workout.name:
+        if workout.workout_type:
+            lines.append(f"{prefix} {workout.name} [{workout.workout_type}]")
+        else:
+            lines.append(f"{prefix} {workout.name}")
+        lines.append("")
+
+    # Steps (child Workouts are serialized inline with # headings)
+    for step in workout.steps:
+        if isinstance(step, Workout):
+            lines.append("")
+            lines.append(_serialize_child_workout(step))
+        else:
+            lines.extend(_serialize_node(step, indent=0))
+
+    # Workout-level notes
+    for note in workout.notes:
+        lines.append("")
+        lines.append(f"> {note}")
+
+    return "\n".join(lines)
+
+
+def _serialize_child_workout(workout: Workout) -> str:
+    """Serialize a child workout (``#`` heading) within a session."""
+    lines: list[str] = []
+
     if workout.name:
         if workout.workout_type:
             lines.append(f"# {workout.name} [{workout.workout_type}]")
@@ -69,11 +97,9 @@ def _serialize_workout(workout: Workout) -> str:
             lines.append(f"# {workout.name}")
         lines.append("")
 
-    # Steps
     for step in workout.steps:
         lines.extend(_serialize_node(step, indent=0))
 
-    # Workout-level notes
     for note in workout.notes:
         lines.append("")
         lines.append(f"> {note}")
@@ -118,9 +144,6 @@ def _serialize_node(node: Any, indent: int) -> list[str]:
         lines.append(f"{prefix}- rest {node.duration}")
         for note in node.notes:
             lines.append(f"{prefix}> {note}")
-
-    elif isinstance(node, IncludeStep):
-        lines.append(f"{prefix}- include: {node.workout_name}")
 
     elif isinstance(node, RepeatStep):
         lines.append(f"{prefix}- {node.count}x:")

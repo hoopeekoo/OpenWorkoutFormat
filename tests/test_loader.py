@@ -1,12 +1,11 @@
-"""Tests for the loader (file I/O and include resolution)."""
+"""Tests for the loader (file I/O)."""
 
 from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
-
-from owf.ast.steps import IncludeStep, RestStep
+from owf.ast.base import Workout
+from owf.ast.steps import EnduranceStep, RestStep, StrengthStep
 from owf.loader import load
 
 
@@ -22,25 +21,24 @@ def test_load_with_frontmatter(valid_dir: Path):
     assert len(doc.workouts) == 1
 
 
-def test_load_with_same_file_includes(valid_dir: Path):
+def test_load_session_fixture(valid_dir: Path):
     doc = load(valid_dir / "includes_source.owf")
-    assert len(doc.workouts) == 3
-    session = doc.workouts[2]
+    assert len(doc.workouts) == 1
+    session = doc.workouts[0]
     assert session.name == "Session"
-    assert len(session.steps) == 3
+    assert len(session.steps) == 2
 
-    # Includes should be resolved to Workout objects
-    inc1 = session.steps[0]
-    assert isinstance(inc1, IncludeStep)
-    assert inc1.resolved is not None
-    assert inc1.resolved.name == "Warm Up"
+    child1 = session.steps[0]
+    assert isinstance(child1, Workout)
+    assert child1.name == "Warm Up"
+    assert len(child1.steps) == 1
+    assert isinstance(child1.steps[0], EnduranceStep)
 
-    assert isinstance(session.steps[1], RestStep)
-
-    inc2 = session.steps[2]
-    assert isinstance(inc2, IncludeStep)
-    assert inc2.resolved is not None
-    assert inc2.resolved.name == "Cool Down"
+    child2 = session.steps[1]
+    assert isinstance(child2, Workout)
+    assert child2.name == "Cool Down"
+    assert len(child2.steps) == 1
+    assert isinstance(child2.steps[0], EnduranceStep)
 
 
 def test_load_examples_endurance():
@@ -62,11 +60,25 @@ def test_load_examples_crossfit():
 
 def test_load_examples_composed():
     doc = load(Path("examples/composed.owf"))
-    assert len(doc.workouts) == 3
-    # Full Session should have resolved includes
-    full = doc.workouts[2]
-    assert full.name == "Full Session"
-    inc = full.steps[0]
-    assert isinstance(inc, IncludeStep)
-    assert inc.resolved is not None
-    assert inc.resolved.name == "Threshold Ride"
+    assert len(doc.workouts) == 1
+    session = doc.workouts[0]
+    assert session.name == "Full Session"
+
+    # Should contain: warmup, Threshold Ride child, Upper Body child
+    child_workouts = [s for s in session.steps if isinstance(s, Workout)]
+    assert len(child_workouts) == 2
+    assert child_workouts[0].name == "Threshold Ride"
+    assert child_workouts[1].name == "Upper Body"
+
+
+def test_load_examples_weekend_session():
+    doc = load(Path("examples/weekend_session.owf"))
+    assert len(doc.workouts) == 1
+    session = doc.workouts[0]
+    assert session.name == "Saturday Session"
+
+    child_workouts = [s for s in session.steps if isinstance(s, Workout)]
+    assert len(child_workouts) == 3
+    assert child_workouts[0].name == "Run Warmup"
+    assert child_workouts[1].name == "Chipper"
+    assert child_workouts[2].name == "Cooldown"

@@ -20,6 +20,12 @@ def test_heading():
     assert lines[0].content == "Threshold Ride [bike]"
 
 
+def test_session_heading():
+    lines = scan("## Saturday Training")
+    assert lines[0].line_type == LineType.SESSION_HEADING
+    assert lines[0].content == "Saturday Training"
+
+
 def test_step_line():
     lines = scan("- warmup 15min @easy")
     assert lines[0].line_type == LineType.STEP

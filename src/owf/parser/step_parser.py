@@ -16,7 +16,6 @@ from owf.ast.blocks import (
 )
 from owf.ast.steps import (
     EnduranceStep,
-    IncludeStep,
     RepeatStep,
     RestStep,
     StrengthStep,
@@ -69,7 +68,29 @@ def parse_document(text: str) -> Document:
 
 
 def _split_into_workouts(lines: list[LogicalLine]) -> list[Workout]:
-    """Split scanned lines into Workout sections by heading."""
+    """Split scanned lines into Workout sections by heading.
+
+    If any ``SESSION_HEADING`` (``##``) lines are present, the document uses
+    two-level nesting: ``##`` defines session workouts whose ``steps`` may
+    contain child ``Workout`` nodes (from ``#`` headings) alongside regular
+    steps.  ``#`` headings that appear before the first ``##`` become
+    top-level workouts (backward compat).
+
+    If no ``SESSION_HEADING`` lines exist the original flat behaviour is
+    used — each ``#`` heading becomes a top-level workout.
+    """
+    has_sessions = any(
+        ln.line_type == LineType.SESSION_HEADING for ln in lines
+    )
+
+    if not has_sessions:
+        return _split_flat(lines)
+
+    return _split_two_level(lines)
+
+
+def _split_flat(lines: list[LogicalLine]) -> list[Workout]:
+    """Original flat splitting: each ``#`` heading → top-level workout."""
     workouts: list[Workout] = []
     current_heading: LogicalLine | None = None
     current_lines: list[LogicalLine] = []
@@ -77,23 +98,121 @@ def _split_into_workouts(lines: list[LogicalLine]) -> list[Workout]:
     for ln in lines:
         if ln.line_type == LineType.HEADING:
             if current_heading is not None or current_lines:
-                # Emit previous workout
                 workouts.append(
                     _build_workout(current_heading, current_lines)
                 )
             current_heading = ln
             current_lines = []
         elif ln.line_type == LineType.FRONTMATTER_FENCE:
-            continue  # Skip any stray fences
+            continue
         else:
             current_lines.append(ln)
 
-    # Emit last workout
     if current_heading is not None or current_lines:
         workouts.append(_build_workout(current_heading, current_lines))
 
-    # Filter out empty workouts (no heading, no steps, no notes)
     return [w for w in workouts if w.name or w.steps or w.notes]
+
+
+def _split_two_level(lines: list[LogicalLine]) -> list[Workout]:
+    """Two-level splitting: ``##`` sessions contain ``#`` child workouts."""
+    workouts: list[Workout] = []
+
+    # Accumulate sections: each section is (heading_line_or_None, body_lines)
+    # A SESSION_HEADING starts a new session section.
+    # A HEADING before the first SESSION_HEADING becomes a standalone workout.
+    # A HEADING inside a session section becomes a child workout.
+
+    # First, split into top-level chunks separated by SESSION_HEADING.
+    # The chunk before the first SESSION_HEADING is the "orphan" chunk.
+    chunks: list[tuple[LogicalLine | None, list[LogicalLine]]] = []
+    current_session: LogicalLine | None = None
+    current_lines: list[LogicalLine] = []
+    seen_session = False
+
+    for ln in lines:
+        if ln.line_type == LineType.SESSION_HEADING:
+            if seen_session or current_lines:
+                chunks.append((current_session, current_lines))
+            current_session = ln
+            current_lines = []
+            seen_session = True
+        elif ln.line_type == LineType.FRONTMATTER_FENCE:
+            continue
+        else:
+            current_lines.append(ln)
+
+    if current_session is not None or current_lines:
+        chunks.append((current_session, current_lines))
+
+    for session_heading, body_lines in chunks:
+        if session_heading is None:
+            # Orphan lines before first ##: split by # as flat workouts
+            workouts.extend(_split_flat(body_lines))
+        else:
+            workouts.append(_build_session_workout(session_heading, body_lines))
+
+    return [w for w in workouts if w.name or w.steps or w.notes]
+
+
+def _build_session_workout(
+    session_heading: LogicalLine, body_lines: list[LogicalLine]
+) -> Workout:
+    """Build a session-level workout from a ``##`` heading and its body.
+
+    The body may contain interleaved steps/notes and ``#`` child workout
+    sections.  Each ``#`` section becomes a child ``Workout`` placed inline
+    in the session's ``steps`` tuple.
+    """
+    name, workout_type = _parse_heading(session_heading.content)
+
+    # Split body into segments: each segment is either a group of
+    # non-heading lines (steps/notes/blanks) or a # heading section.
+    segments: list[tuple[LogicalLine | None, list[LogicalLine]]] = []
+    current_child_heading: LogicalLine | None = None
+    current_child_lines: list[LogicalLine] = []
+    in_child = False
+
+    for ln in body_lines:
+        if ln.line_type == LineType.HEADING:
+            # Flush previous segment
+            if in_child:
+                segments.append((current_child_heading, current_child_lines))
+            elif current_child_lines:
+                segments.append((None, current_child_lines))
+            current_child_heading = ln
+            current_child_lines = []
+            in_child = True
+        else:
+            current_child_lines.append(ln)
+
+    # Flush final segment
+    if in_child:
+        segments.append((current_child_heading, current_child_lines))
+    elif current_child_lines:
+        segments.append((None, current_child_lines))
+
+    # Build steps list: non-heading segments become parsed steps,
+    # heading segments become child Workout nodes.
+    all_steps: list[Any] = []
+    trailing_notes: list[str] = []
+
+    for child_heading, child_lines in segments:
+        if child_heading is not None:
+            child_workout = _build_workout(child_heading, child_lines)
+            all_steps.append(child_workout)
+        else:
+            blocks, notes = build_blocks_for_workout(child_lines)
+            all_steps.extend(_parse_block(b) for b in blocks)
+            trailing_notes.extend(notes)
+
+    return Workout(
+        name=name,
+        workout_type=workout_type,
+        steps=tuple(all_steps),
+        notes=tuple(trailing_notes),
+        span=session_heading.span,
+    )
 
 
 def _build_workout(
@@ -132,11 +251,6 @@ def _parse_block(block: RawBlock) -> Any:
     """Parse a single RawBlock into the appropriate AST node."""
     content = block.content
     span = block.span
-
-    # Include: include: Name
-    if content.startswith("include:"):
-        workout_name = content[8:].strip()
-        return IncludeStep(workout_name=workout_name, span=span)
 
     # Rest: rest <duration>
     rest_m = re.match(r"^rest\s+(.+)$", content)

@@ -2,6 +2,8 @@
 max HR: 190bpm
 ---
 
+## Saturday Session
+
 # Run Warmup [run]
 
 - warmup 10min @easy
@@ -23,16 +25,11 @@ max HR: 190bpm
   - kettlebell swing 9rep @24kg
   - pull-up 9rep
 
+- rest 3min
+
 # Cooldown [run]
 
 - cooldown 5min @easy
 - walk 5min @easy
 
 > Focus on deep breathing and bringing HR below 120bpm.
-
-# Saturday Session
-
-- include: Run Warmup
-- include: Chipper
-- rest 3min
-- include: Cooldown
