@@ -1,8 +1,15 @@
 """Integration tests — parse the full example from the spec."""
 
 from owf.ast.base import Workout
-from owf.ast.blocks import AMRAP, EMOM, AlternatingEMOM, CustomInterval, ForTime, Superset
-from owf.ast.steps import EnduranceStep, RepeatStep, RestStep, StrengthStep
+from owf.ast.blocks import (
+    AMRAP,
+    EMOM,
+    AlternatingEMOM,
+    CustomInterval,
+    ForTime,
+    Superset,
+)
+from owf.ast.steps import EnduranceStep, RepeatStep, StrengthStep
 from owf.parser.step_parser import parse_document
 from owf.resolver import resolve
 from owf.serializer import dumps

@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from owf.ast.base import Workout
-from owf.ast.steps import EnduranceStep, RestStep, StrengthStep
+from owf.ast.steps import EnduranceStep
 from owf.loader import load
 
 

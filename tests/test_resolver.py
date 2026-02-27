@@ -1,13 +1,13 @@
 """Tests for the expression resolver."""
 
+import pytest
+
 from owf.ast.expressions import Literal
 from owf.ast.params import PowerParam, WeightParam
 from owf.ast.steps import EnduranceStep, StrengthStep
 from owf.errors import ResolveError
 from owf.parser.step_parser import parse_document
 from owf.resolver import resolve
-
-import pytest
 
 
 def test_resolve_percentage_of_ftp():
@@ -24,7 +24,10 @@ def test_resolve_percentage_of_ftp():
 
 
 def test_resolve_percentage_of_1rm():
-    text = "---\n1RM bench press: 100kg\n---\n\n# Strength\n\n- bench press 3x8rep @80% of 1RM bench press"
+    text = (
+        "---\n1RM bench press: 100kg\n---\n\n"
+        "# Strength\n\n- bench press 3x8rep @80% of 1RM bench press"
+    )
     doc = parse_document(text)
     resolved = resolve(doc)
     step = resolved.workouts[0].steps[0]

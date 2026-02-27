@@ -11,7 +11,7 @@ from owf.ast.params import (
     WeightParam,
 )
 from owf.parser.param_parser import parse_params
-from owf.units import Duration, Pace
+from owf.units import Pace
 
 
 def test_pace_param():

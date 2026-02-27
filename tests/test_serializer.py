@@ -5,7 +5,10 @@ from owf.serializer import dumps
 
 
 def test_serialize_simple_endurance():
-    text = "# Easy Run [run]\n\n- warmup 15min @easy\n- run 5km @4:30/km\n- cooldown 10min @easy\n"
+    text = (
+        "# Easy Run [run]\n\n- warmup 15min @easy\n"
+        "- run 5km @4:30/km\n- cooldown 10min @easy\n"
+    )
     doc = parse_document(text)
     result = dumps(doc)
     assert "# Easy Run [run]" in result
@@ -23,7 +26,10 @@ def test_serialize_with_frontmatter():
 
 
 def test_serialize_repeat_block():
-    text = "# Intervals\n\n- 5x:\n  - bike 5min @200W\n  - recover 3min @easy\n"
+    text = (
+        "# Intervals\n\n- 5x:\n"
+        "  - bike 5min @200W\n  - recover 3min @easy\n"
+    )
     doc = parse_document(text)
     result = dumps(doc)
     assert "- 5x:" in result
@@ -47,7 +53,10 @@ def test_serialize_emom():
 
 
 def test_serialize_amrap():
-    text = "# Metcon [wod]\n\n- amrap 12min:\n  - pull-up 5rep\n  - push-up 10rep\n"
+    text = (
+        "# Metcon [wod]\n\n- amrap 12min:\n"
+        "  - pull-up 5rep\n  - push-up 10rep\n"
+    )
     doc = parse_document(text)
     result = dumps(doc)
     assert "- amrap 12min:" in result
@@ -62,7 +71,11 @@ def test_serialize_for_time():
 
 
 def test_serialize_session():
-    text = "## Session\n\n- warmup 10min @easy\n\n# Ride [bike]\n\n- bike 30min\n\n- cooldown 10min @easy\n"
+    text = (
+        "## Session\n\n- warmup 10min @easy\n\n"
+        "# Ride [bike]\n\n- bike 30min\n\n"
+        "- cooldown 10min @easy\n"
+    )
     doc = parse_document(text)
     result = dumps(doc)
     assert "## Session" in result
@@ -79,7 +92,11 @@ def test_serialize_rir():
 
 
 def test_serialize_superset():
-    text = "# Strength\n\n- 3x superset:\n  - bench press 3x8rep @80kg rest:90s\n  - bent-over row 3x8rep @60kg rest:90s\n"
+    text = (
+        "# Strength\n\n- 3x superset:\n"
+        "  - bench press 3x8rep @80kg rest:90s\n"
+        "  - bent-over row 3x8rep @60kg rest:90s\n"
+    )
     doc = parse_document(text)
     result = dumps(doc)
     assert "- 3x superset:" in result

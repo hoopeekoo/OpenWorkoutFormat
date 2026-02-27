@@ -12,14 +12,12 @@ from owf.ast.params import (
     PaceParam,
     PowerParam,
     RIRParam,
-    RPEParam,
     WeightParam,
 )
 from owf.ast.steps import EnduranceStep, RepeatStep, StrengthStep
 from owf.loader import load
 from owf.resolver import resolve
 from owf.units import Pace
-
 
 # --- heart_rate_run.owf ---
 
@@ -339,6 +337,8 @@ def test_hero_wod_notes():
     kalsu = doc.workouts[1]
     # Multiple notes on the Kalsu workout
     all_notes = kalsu.notes + kalsu.steps[-1].notes
-    assert "Every minute starts with 5 thrusters; fill remaining time with burpees." in all_notes
-    assert "Time cap is 30 minutes \u2014 aim to finish 100 thrusters total." in all_notes
+    note1 = "Every minute starts with 5 thrusters; fill remaining time with burpees."
+    assert note1 in all_notes
+    note2 = "Time cap is 30 minutes \u2014 aim to finish 100 thrusters total."
+    assert note2 in all_notes
     assert len([n for n in all_notes if n]) >= 2

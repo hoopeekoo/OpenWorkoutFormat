@@ -3,12 +3,11 @@
 import pytest
 
 from owf.ast.blocks import EMOM, ForTime
-from owf.ast.steps import EnduranceStep, RestStep, StrengthStep
+from owf.ast.steps import EnduranceStep, StrengthStep
 from owf.errors import ParseError
 from owf.parser.step_parser import parse_document
 from owf.serializer import dumps
 from owf.units import Distance, Duration, Pace
-
 
 # --- Duration edge cases ---
 
@@ -170,7 +169,10 @@ def test_whitespace_handling():
 
 
 def test_roundtrip_preserves_variables():
-    text = "---\nFTP: 250W\nbodyweight: 80kg\n---\n\n# Ride [bike]\n\n- bike 30min @200W\n"
+    text = (
+        "---\nFTP: 250W\nbodyweight: 80kg\n---\n\n"
+        "# Ride [bike]\n\n- bike 30min @200W\n"
+    )
     doc = parse_document(text)
     result = dumps(doc)
     doc2 = parse_document(result)
