@@ -59,27 +59,37 @@ def build_blocks_for_workout(
         elif ln.line_type == LineType.BLANK:
             continue
 
-    # Collect trailing notes (notes after the last step)
-    found_last_step = False
-    for ln in reversed(lines):
-        if ln.line_type == LineType.NOTE:
-            if not found_last_step:
-                trailing_notes.insert(0, ln.content)
-        elif ln.line_type == LineType.STEP:
-            found_last_step = True
-            break
-        elif ln.line_type == LineType.BLANK:
-            continue
-
     if not step_lines:
         # Might just have notes
         all_notes = [ln.content for ln in lines if ln.line_type == LineType.NOTE]
         return [], all_notes
 
+    # Find where workout-level (trailing) notes begin.
+    # Trailing notes are separated from the last step by at least one blank
+    # line.  Notes immediately after the last step (no blank line) are
+    # step-level and will be attached by _attach_notes below.
+    last_step_idx = max(
+        i for i, ln in enumerate(lines) if ln.line_type == LineType.STEP
+    )
+
+    saw_blank = False
+    attach_boundary = len(lines)
+    for i in range(last_step_idx + 1, len(lines)):
+        ln = lines[i]
+        if ln.line_type == LineType.BLANK:
+            saw_blank = True
+        elif ln.line_type == LineType.NOTE and saw_blank:
+            attach_boundary = i
+            break
+
+    for i in range(attach_boundary, len(lines)):
+        if lines[i].line_type == LineType.NOTE:
+            trailing_notes.append(lines[i].content)
+
     blocks = _build_tree(step_lines, 0, len(step_lines), _min_indent(step_lines))
 
-    # Now attach inline notes: notes that appear between steps
-    _attach_notes(blocks, lines)
+    # Attach step-level notes only (up to the trailing boundary)
+    _attach_notes(blocks, lines[:attach_boundary])
 
     return blocks, trailing_notes
 

@@ -126,10 +126,10 @@ def test_heading_without_type():
 def test_multiple_notes():
     text = "# Ride [bike]\n\n- bike 30min @easy\n\n> Note 1.\n> Note 2."
     doc = parse_document(text)
-    step = doc.workouts[0].steps[0]
-    assert isinstance(step, EnduranceStep)
-    # Notes should be attached
-    assert len(step.notes) >= 1
+    w = doc.workouts[0]
+    # Blank line before notes → workout-level, not step-level
+    assert w.notes == ("Note 1.", "Note 2.")
+    assert w.steps[0].notes == ()
 
 
 def test_strength_reps_only():

@@ -39,8 +39,18 @@ def test_trailing_notes():
     text = "- run 5km\n\n> Great run!"
     blocks, notes = build_blocks_for_workout(_get_workout_lines(text))
     assert len(blocks) == 1
-    # The note after the step gets attached to the block
+    # Blank line before note → workout-level trailing note, not step note
+    assert blocks[0].notes == []
+    assert notes == ["Great run!"]
+
+
+def test_step_level_notes():
+    text = "- run 5km\n> Great run!"
+    blocks, notes = build_blocks_for_workout(_get_workout_lines(text))
+    assert len(blocks) == 1
+    # No blank line → step-level note
     assert blocks[0].notes == ["Great run!"]
+    assert notes == []
 
 
 def test_deeply_nested():
