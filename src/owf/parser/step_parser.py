@@ -264,8 +264,8 @@ _DATE_RE = re.compile(
     r"\((\d{4}-\d{2}-\d{2})(?:\s+(\d{2}:\d{2})(?:-(\d{2}:\d{2}))?)?\)\s*$"
 )
 
-_RPE_RE = re.compile(r"@RPE\s+(\d+(?:\.\d+)?)")
-_RIR_RE = re.compile(r"@RIR\s+(\d+)")
+_RPE_TAIL_RE = re.compile(r"\s+@RPE\s+(\d+(?:\.\d+)?)\s*$")
+_RIR_TAIL_RE = re.compile(r"\s+@RIR\s+(\d+)\s*$")
 
 
 def _parse_heading(
@@ -277,21 +277,22 @@ def _parse_heading(
     """
     text = content
 
-    # Extract @RPE and @RIR first (they may appear after date or type)
+    # Strip trailing @RPE / @RIR (EBNF: heading ends with { SP heading_param })
     rpe: float | None = None
     rir: int | None = None
 
-    rpe_m = _RPE_RE.search(text)
-    if rpe_m:
-        rpe = float(rpe_m.group(1))
-        text = text[: rpe_m.start()] + text[rpe_m.end() :]
-
-    rir_m = _RIR_RE.search(text)
-    if rir_m:
-        rir = int(rir_m.group(1))
-        text = text[: rir_m.start()] + text[rir_m.end() :]
-
-    text = text.rstrip()
+    for _ in range(2):
+        m = _RIR_TAIL_RE.search(text)
+        if m:
+            rir = int(m.group(1))
+            text = text[: m.start()]
+            continue
+        m = _RPE_TAIL_RE.search(text)
+        if m:
+            rpe = float(m.group(1))
+            text = text[: m.start()]
+            continue
+        break
 
     # Extract trailing (date ...) first
     date: WorkoutDate | None = None
