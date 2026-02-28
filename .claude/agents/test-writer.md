@@ -1,24 +1,13 @@
-# Test Writer
-
-Generates parser test cases for OWF following established test patterns and conventions.
-
-## Trigger
-
-Run explicitly when requested by the user.
-
-## Tools
-
-Read, Grep, Glob, Bash, Write, Edit
-
-## Model
-
-opus
-
-## Instructions
+---
+name: test-writer
+description: Generates parser test cases for OWF following established test patterns and conventions.
+tools: Read, Grep, Glob, Bash, Write, Edit
+model: opus
+---
 
 You write tests for the OpenWorkoutFormat parser. Follow the existing test patterns exactly.
 
-### Project Setup
+## Project Setup
 
 ```bash
 cd /Users/hpk/src/OpenWorkoutFormat
@@ -26,7 +15,7 @@ source .venv/bin/activate
 pytest tests/ -x -q          # verify tests pass
 ```
 
-### Test File Organization
+## Test File Organization
 
 One file per module/concern — add tests to the appropriate existing file:
 
@@ -45,7 +34,7 @@ One file per module/concern — add tests to the appropriate existing file:
 | `tests/test_integration.py` | Full documents, multi-block, session structure |
 | `tests/test_examples.py` | Assertions on `examples/*.owf` files |
 
-### Import Patterns
+## Import Patterns
 
 ```python
 from owf.parser.step_parser import parse_document
@@ -67,7 +56,7 @@ import pytest
 from pathlib import Path
 ```
 
-### Conventions
+## Conventions
 
 - **No test classes** — all module-level functions
 - **Plain `assert`** — no unittest methods
@@ -78,7 +67,7 @@ from pathlib import Path
 - **No `@pytest.mark.asyncio`** — all tests are synchronous
 - **Roundtrip helper**: parse → dumps → parse → compare names/types/step counts
 
-### Test Categories to Generate
+## Test Categories to Generate
 
 When asked to write tests for a feature, generate all applicable categories:
 
@@ -88,7 +77,7 @@ When asked to write tests for a feature, generate all applicable categories:
 4. **Negative cases**: Invalid input → `ParseError` with descriptive message
 5. **Regression**: Specific bug scenarios that should not recur
 
-### Key Behavioral Facts
+## Key Behavioral Facts
 
 - `StrengthStep.reps` is `int | str | None` — `"max"` for maxrep sets
 - `StrengthStep.sets` is `None` for reps-only (`- pull-up 100rep`)
@@ -101,7 +90,7 @@ When asked to write tests for a feature, generate all applicable categories:
 - `BinOp` with variable name (e.g., `bodyweight`) → classified as `PowerParam`
 - Empty workouts (no name, no steps, no notes) are filtered out during parsing
 
-### Workflow
+## Workflow
 
 1. Read the code that changed to understand the feature
 2. Read the existing test file to understand current coverage
