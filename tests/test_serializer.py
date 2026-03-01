@@ -6,23 +6,23 @@ from owf.serializer import dumps
 
 def test_serialize_simple_endurance():
     text = (
-        "# Easy Run [run]\n\n- warmup 15min @easy\n"
+        "# Easy Run [endurance]\n\n- warmup 15min @easy\n"
         "- run 5km @4:30/km\n- cooldown 10min @easy\n"
     )
     doc = parse_document(text)
     result = dumps(doc)
-    assert "# Easy Run [run]" in result
+    assert "# Easy Run [endurance]" in result
     assert "- warmup 15min @easy" in result
     assert "- run 5km @4:30/km" in result
 
 
 def test_serialize_with_frontmatter():
-    text = "---\nFTP: 250W\n---\n\n# Ride [bike]\n\n- bike 30min @200W\n"
+    text = "---\nFTP: 250W\n---\n\n# Ride [endurance]\n\n- bike 30min @200W\n"
     doc = parse_document(text)
     result = dumps(doc)
     assert "---" in result
     assert "FTP: 250W" in result
-    assert "# Ride [bike]" in result
+    assert "# Ride [endurance]" in result
 
 
 def test_serialize_repeat_block():
@@ -45,7 +45,7 @@ def test_serialize_strength():
 
 
 def test_serialize_emom():
-    text = "# WoD [wod]\n\n- emom 10min:\n  - power clean 3rep @70kg\n"
+    text = "# WoD [mixed]\n\n- emom 10min:\n  - power clean 3rep @70kg\n"
     doc = parse_document(text)
     result = dumps(doc)
     assert "- emom 10min:" in result
@@ -54,7 +54,7 @@ def test_serialize_emom():
 
 def test_serialize_amrap():
     text = (
-        "# Metcon [wod]\n\n- amrap 12min:\n"
+        "# Metcon [mixed]\n\n- amrap 12min:\n"
         "  - pull-up 5rep\n  - push-up 10rep\n"
     )
     doc = parse_document(text)
@@ -63,7 +63,7 @@ def test_serialize_amrap():
 
 
 def test_serialize_for_time():
-    text = "# Murph [wod]\n\n- for-time:\n  - run 1mile\n  - pull-up 100rep\n"
+    text = "# Murph [mixed]\n\n- for-time:\n  - run 1mile\n  - pull-up 100rep\n"
     doc = parse_document(text)
     result = dumps(doc)
     assert "- for-time:" in result
@@ -73,13 +73,13 @@ def test_serialize_for_time():
 def test_serialize_session():
     text = (
         "## Session\n\n- warmup 10min @easy\n\n"
-        "# Ride [bike]\n\n- bike 30min\n\n"
+        "# Ride [endurance]\n\n- bike 30min\n\n"
         "- cooldown 10min @easy\n"
     )
     doc = parse_document(text)
     result = dumps(doc)
     assert "## Session" in result
-    assert "# Ride [bike]" in result
+    assert "# Ride [endurance]" in result
     assert "- warmup 10min @easy" in result
     assert "- cooldown 10min @easy" in result
 
@@ -103,10 +103,10 @@ def test_serialize_superset():
 
 
 def test_serialize_workout_rpe():
-    text = "# Run [run] @RPE 7\n\n- run 5km\n"
+    text = "# Run [endurance] @RPE 7\n\n- run 5km\n"
     doc = parse_document(text)
     result = dumps(doc)
-    assert "# Run [run] @RPE 7" in result
+    assert "# Run [endurance] @RPE 7" in result
     # Round-trip
     doc2 = parse_document(result)
     assert doc2.workouts[0].rpe == 7.0

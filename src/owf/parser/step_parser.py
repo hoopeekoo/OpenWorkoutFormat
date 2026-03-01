@@ -231,7 +231,7 @@ def _build_session_workout(
             if isinstance(s, Workout) and s.workout_type is not None
         }
         if len(child_types) >= 2:
-            workout_type = "combination"
+            workout_type = "mixed"
 
     return Workout(
         name=name,

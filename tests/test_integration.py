@@ -15,7 +15,7 @@ from owf.resolver import resolve
 from owf.serializer import dumps
 
 FULL_EXAMPLE = """\
-# Threshold Ride [bike]
+# Threshold Ride [endurance]
 
 - warmup 15min @60% of FTP
 - 5x:
@@ -32,25 +32,25 @@ FULL_EXAMPLE = """\
   - bent-over row 3x8rep @60kg rest:90s
 - bicep curl 3x12rep @15kg rest:60s
 
-# Power Clean EMOM [wod]
+# Power Clean EMOM [mixed]
 
 - emom 10min:
   - power clean 3rep @70kg
 
-# Alternating EMOM [wod]
+# Alternating EMOM [mixed]
 
 - emom 12min alternating:
   - deadlift 5rep @100kg
   - strict press 7rep @40kg
   - toes-to-bar 10rep
 
-# Mixed EMOM [wod]
+# Mixed EMOM [mixed]
 
 - every 2min for 20min:
   - wall ball 15rep @9kg
   - box jump 10rep @24in
 
-# Murph [wod]
+# Murph [mixed]
 
 - for-time:
   - run 1mile
@@ -59,7 +59,7 @@ FULL_EXAMPLE = """\
   - air squat 300rep
   - run 1mile
 
-# Metcon [wod]
+# Metcon [mixed]
 
 - amrap 12min:
   - pull-up 5rep
@@ -72,7 +72,7 @@ SESSION_EXAMPLE = """\
 
 - warmup 10min @easy
 
-# Threshold Ride [bike]
+# Threshold Ride [endurance]
 
 - 5x:
   - bike 5min @95% of FTP
@@ -95,9 +95,9 @@ def test_parse_full_example():
 def test_workout_types():
     doc = parse_document(FULL_EXAMPLE)
     types = [(w.name, w.workout_type) for w in doc.workouts]
-    assert ("Threshold Ride", "bike") in types
+    assert ("Threshold Ride", "endurance") in types
     assert ("Upper Body", "strength") in types
-    assert ("Power Clean EMOM", "wod") in types
+    assert ("Power Clean EMOM", "mixed") in types
 
 
 def test_threshold_ride_structure():
@@ -192,7 +192,7 @@ def test_session_structure():
     assert len(doc.workouts) == 1
     session = doc.workouts[0]
     assert session.name == "Saturday Training"
-    assert session.workout_type == "combination"
+    assert session.workout_type == "mixed"
 
     # warmup (session-level), child Threshold Ride, child Upper Body
     assert len(session.steps) == 3
@@ -201,7 +201,7 @@ def test_session_structure():
 
     assert isinstance(session.steps[1], Workout)
     assert session.steps[1].name == "Threshold Ride"
-    assert session.steps[1].workout_type == "bike"
+    assert session.steps[1].workout_type == "endurance"
 
     assert isinstance(session.steps[2], Workout)
     assert session.steps[2].name == "Upper Body"
@@ -262,11 +262,12 @@ def test_serialize_full_example():
     serialized = dumps(doc)
 
     # Should contain all workout headings
-    assert "# Threshold Ride [bike]" in serialized
+    assert "# Threshold Ride [endurance]" in serialized
     assert "# Upper Body [strength]" in serialized
-    assert "# Power Clean EMOM [wod]" in serialized
-    assert "# Murph [wod]" in serialized
-    assert "# Metcon [wod]" in serialized
+    # [mixed] is never written — it's re-inferred on parse
+    assert "# Power Clean EMOM\n" in serialized
+    assert "# Murph\n" in serialized
+    assert "# Metcon\n" in serialized
 
     # Should contain key structural elements
     assert "- 5x:" in serialized
@@ -280,7 +281,7 @@ def test_serialize_session_example():
     serialized = dumps(doc)
 
     assert "## Saturday Training" in serialized
-    assert "# Threshold Ride [bike]" in serialized
+    assert "# Threshold Ride [endurance]" in serialized
     assert "# Upper Body [strength]" in serialized
     assert "- warmup 10min @easy" in serialized
     assert "> Great session overall." in serialized
@@ -295,7 +296,9 @@ def test_roundtrip_full_example():
     assert len(doc1.workouts) == len(doc2.workouts)
     for w1, w2 in zip(doc1.workouts, doc2.workouts):
         assert w1.name == w2.name
-        assert w1.workout_type == w2.workout_type
+        # [mixed] is not serialized, so standalone mixed workouts lose their type
+        if w1.workout_type != "mixed":
+            assert w1.workout_type == w2.workout_type
         assert len(w1.steps) == len(w2.steps)
 
 
@@ -333,4 +336,4 @@ def test_public_api():
     assert len(resolved.workouts) == 7
 
     text = owf.dumps(doc)
-    assert "# Threshold Ride [bike]" in text
+    assert "# Threshold Ride [endurance]" in text

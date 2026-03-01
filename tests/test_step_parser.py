@@ -25,14 +25,14 @@ def test_empty_document():
 
 def test_simple_endurance():
     text = (
-        "# Easy Run [run]\n\n- warmup 15min @easy\n"
+        "# Easy Run [endurance]\n\n- warmup 15min @easy\n"
         "- run 5km @4:30/km\n- cooldown 10min @easy"
     )
     doc = parse_document(text)
     assert len(doc.workouts) == 1
     w = doc.workouts[0]
     assert w.name == "Easy Run"
-    assert w.workout_type == "run"
+    assert w.workout_type == "endurance"
     assert len(w.steps) == 3
     assert isinstance(w.steps[0], EnduranceStep)
     assert w.steps[0].action == "warmup"
@@ -115,7 +115,7 @@ def test_circuit():
 
 
 def test_emom():
-    text = "# WoD [wod]\n\n- emom 10min:\n  - power clean 3rep @70kg"
+    text = "# WoD [mixed]\n\n- emom 10min:\n  - power clean 3rep @70kg"
     doc = parse_document(text)
     step = doc.workouts[0].steps[0]
     assert isinstance(step, EMOM)
@@ -125,7 +125,7 @@ def test_emom():
 
 def test_emom_alternating():
     text = (
-        "# WoD [wod]\n\n- emom 12min alternating:\n"
+        "# WoD [mixed]\n\n- emom 12min alternating:\n"
         "  - deadlift 5rep @100kg\n"
         "  - strict press 7rep @40kg"
     )
@@ -138,7 +138,7 @@ def test_emom_alternating():
 
 def test_custom_interval():
     text = (
-        "# WoD [wod]\n\n- every 2min for 20min:\n"
+        "# WoD [mixed]\n\n- every 2min for 20min:\n"
         "  - wall ball 15rep @9kg"
     )
     doc = parse_document(text)
@@ -151,7 +151,7 @@ def test_custom_interval():
 
 def test_amrap():
     text = (
-        "# Metcon [wod]\n\n- amrap 12min:\n"
+        "# Metcon [mixed]\n\n- amrap 12min:\n"
         "  - pull-up 5rep\n  - push-up 10rep\n"
         "  - air squat 15rep"
     )
@@ -164,7 +164,7 @@ def test_amrap():
 
 def test_for_time():
     text = (
-        "# Murph [wod]\n\n- for-time:\n"
+        "# Murph [mixed]\n\n- for-time:\n"
         "  - run 1mile\n  - pull-up 100rep\n"
         "  - push-up 200rep"
     )
@@ -176,7 +176,7 @@ def test_for_time():
 
 
 def test_for_time_with_cap():
-    text = "# WoD [wod]\n\n- for-time 20min:\n  - run 5km"
+    text = "# WoD [mixed]\n\n- for-time 20min:\n  - run 5km"
     doc = parse_document(text)
     step = doc.workouts[0].steps[0]
     assert isinstance(step, ForTime)
@@ -187,7 +187,7 @@ def test_for_time_with_cap():
 def test_session_with_child_workouts():
     text = (
         "## Session\n\n- warmup 10min @easy\n\n"
-        "# Ride [bike]\n\n- bike 30min\n\n"
+        "# Ride [endurance]\n\n- bike 30min\n\n"
         "# Strength [strength]\n\n- bench press 3x8rep @80kg"
     )
     doc = parse_document(text)
@@ -199,7 +199,7 @@ def test_session_with_child_workouts():
     assert isinstance(session.steps[0], EnduranceStep)
     assert isinstance(session.steps[1], Workout)
     assert session.steps[1].name == "Ride"
-    assert session.steps[1].workout_type == "bike"
+    assert session.steps[1].workout_type == "endurance"
     assert isinstance(session.steps[2], Workout)
     assert session.steps[2].name == "Strength"
     assert session.steps[2].workout_type == "strength"
@@ -208,7 +208,7 @@ def test_session_with_child_workouts():
 def test_frontmatter():
     text = (
         "---\nFTP: 250W\n1RM bench press: 100kg\n---\n\n"
-        "# Ride [bike]\n\n- bike 30min @80% of FTP"
+        "# Ride [endurance]\n\n- bike 30min @80% of FTP"
     )
     doc = parse_document(text)
     assert doc.metadata == {"FTP": "250W", "1RM bench press": "100kg"}
@@ -216,7 +216,7 @@ def test_frontmatter():
 
 
 def test_notes_on_workout():
-    text = "# Ride [bike]\n\n- bike 30min @easy\n\n> Great ride today."
+    text = "# Ride [endurance]\n\n- bike 30min @easy\n\n> Great ride today."
     doc = parse_document(text)
     w = doc.workouts[0]
     # The note should be either on the last step or as a workout-level note
@@ -228,7 +228,7 @@ def test_notes_on_workout():
 
 def test_multiple_workouts():
     text = (
-        "# Ride [bike]\n\n- bike 30min\n\n"
+        "# Ride [endurance]\n\n- bike 30min\n\n"
         "# Strength [strength]\n\n- bench press 3x8rep @80kg"
     )
     doc = parse_document(text)
@@ -238,7 +238,7 @@ def test_multiple_workouts():
 
 
 def test_endurance_with_power_param():
-    text = "# Ride [bike]\n\n- bike 5min @200W"
+    text = "# Ride [endurance]\n\n- bike 5min @200W"
     doc = parse_document(text)
     step = doc.workouts[0].steps[0]
     assert isinstance(step, EnduranceStep)
@@ -259,23 +259,23 @@ def test_strength_with_rir():
     assert rir_params[0].value == 2
 
 
-def test_session_combination_inferred():
-    """Session with 2+ distinct child workout types → combination."""
+def test_session_mixed_inferred():
+    """Session with 2+ distinct child workout types → mixed."""
     text = (
         "## Training\n\n"
-        "# Ride [bike]\n\n- bike 30min\n\n"
+        "# Ride [endurance]\n\n- bike 30min\n\n"
         "# Strength [strength]\n\n- bench press 3x8rep @80kg"
     )
     doc = parse_document(text)
-    assert doc.workouts[0].workout_type == "combination"
+    assert doc.workouts[0].workout_type == "mixed"
 
 
 def test_session_single_child_type_no_combination():
     """Session where all children have the same type → None."""
     text = (
         "## Training\n\n"
-        "# Ride A [bike]\n\n- bike 30min\n\n"
-        "# Ride B [bike]\n\n- bike 20min"
+        "# Ride A [endurance]\n\n- bike 30min\n\n"
+        "# Ride B [endurance]\n\n- bike 20min"
     )
     doc = parse_document(text)
     assert doc.workouts[0].workout_type is None
@@ -295,33 +295,33 @@ def test_session_no_child_types_no_combination():
 def test_session_explicit_type_kept():
     """Session with explicit [type] keeps it, no combination override."""
     text = (
-        "## Training [wod]\n\n"
-        "# Ride [bike]\n\n- bike 30min\n\n"
+        "## Training [mixed]\n\n"
+        "# Ride [endurance]\n\n- bike 30min\n\n"
         "# Strength [strength]\n\n- bench press 3x8rep @80kg"
     )
     doc = parse_document(text)
-    assert doc.workouts[0].workout_type == "wod"
+    assert doc.workouts[0].workout_type == "mixed"
 
 
-def test_session_combination_roundtrip():
-    """Combination is not written to .owf but re-inferred on re-parse."""
+def test_session_mixed_roundtrip():
+    """Mixed is not written to .owf but re-inferred on re-parse."""
     from owf.serializer import dumps
 
     text = (
         "## Training\n\n"
-        "# Ride [bike]\n\n- bike 30min\n\n"
+        "# Ride [endurance]\n\n- bike 30min\n\n"
         "# Strength [strength]\n\n- bench press 3x8rep @80kg"
     )
     doc1 = parse_document(text)
-    assert doc1.workouts[0].workout_type == "combination"
+    assert doc1.workouts[0].workout_type == "mixed"
     serialized = dumps(doc1)
-    assert "[combination]" not in serialized
+    assert "[mixed]" not in serialized
     doc2 = parse_document(serialized)
-    assert doc2.workouts[0].workout_type == "combination"
+    assert doc2.workouts[0].workout_type == "mixed"
 
 
 def test_heading_with_rpe():
-    text = "# Run [run] @RPE 7\n\n- run 5km\n"
+    text = "# Run [endurance] @RPE 7\n\n- run 5km\n"
     doc = parse_document(text)
     w = doc.workouts[0]
     assert w.rpe == 7.0

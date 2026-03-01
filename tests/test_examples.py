@@ -29,7 +29,7 @@ def test_heart_rate_run():
 
     w = doc.workouts[0]
     assert w.name == "HR Zone Run"
-    assert w.workout_type == "run"
+    assert w.workout_type == "endurance"
     assert len(w.steps) == 8
     assert all(isinstance(s, EnduranceStep) for s in w.steps)
 
@@ -182,7 +182,7 @@ def test_triathlon():
     # Swim Intervals
     swim = doc.workouts[0]
     assert swim.name == "Swim Intervals"
-    assert swim.workout_type == "swim"
+    assert swim.workout_type == "endurance"
     assert len(swim.steps) == 3
     assert isinstance(swim.steps[0], EnduranceStep)
     assert swim.steps[0].distance.value == 200
@@ -195,7 +195,7 @@ def test_triathlon():
     # Rowing Warmup
     row_w = doc.workouts[1]
     assert row_w.name == "Rowing Warmup"
-    assert row_w.workout_type == "row"
+    assert row_w.workout_type == "endurance"
     row_last = row_w.steps[2]
     assert isinstance(row_last, EnduranceStep)
     assert row_last.action == "row"
@@ -205,7 +205,7 @@ def test_triathlon():
     # Bike Tempo — @85% of FTP
     bike = doc.workouts[2]
     assert bike.name == "Bike Tempo"
-    assert bike.workout_type == "bike"
+    assert bike.workout_type == "endurance"
     bike_step = bike.steps[1]
     assert isinstance(bike_step.params[0], PowerParam)
     assert isinstance(bike_step.params[0].value, Percentage)
@@ -215,7 +215,7 @@ def test_triathlon():
     # Brick Run — 3mi @7:00/mi
     run_w = doc.workouts[3]
     assert run_w.name == "Brick Run"
-    assert run_w.workout_type == "run"
+    assert run_w.workout_type == "endurance"
     run_step = run_w.steps[0]
     assert run_step.distance.value == 3
     assert run_step.distance.unit == "mi"
@@ -285,7 +285,7 @@ def test_pyramid():
 def test_hero_wod():
     doc = load(Path("examples/hero_wod.owf"))
     assert len(doc.workouts) == 3
-    assert all(w.workout_type == "wod" for w in doc.workouts)
+    assert all(w.workout_type == "mixed" for w in doc.workouts)
 
     # DT: for-time 20min containing 5x repeat
     dt = doc.workouts[0]

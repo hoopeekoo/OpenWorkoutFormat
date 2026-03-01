@@ -1,4 +1,4 @@
-# Swim Intervals [swim]
+# Swim Intervals [endurance]
 
 - warmup 200m @easy
 - 4x:
@@ -6,7 +6,7 @@
   - recover 50m @easy
 - cooldown 200m @easy
 
-# Rowing Warmup [row]
+# Rowing Warmup [endurance]
 
 - row 500m @easy
 - 3x:
@@ -14,13 +14,13 @@
   - recover 250m @easy
 - row 100yd @moderate
 
-# Bike Tempo [bike]
+# Bike Tempo [endurance]
 
 - warmup 10min @easy
 - bike 30min @85% of FTP
 - cooldown 10min @easy
 
-# Brick Run [run]
+# Brick Run [endurance]
 
 - run 3mi @7:00/mi
 - cooldown 1mi @easy

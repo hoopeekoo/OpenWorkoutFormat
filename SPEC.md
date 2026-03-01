@@ -95,7 +95,7 @@ The following keys have conventional meaning:
 All parts except `#` and the name are optional:
 
 - **Name**: Free text identifying the workout.
-- **Type** (optional): A bracket-enclosed tag classifying the workout. Common types: `run`, `bike`, `swim`, `row`, `strength`, `wod`, `combination`.
+- **Type** (optional): A bracket-enclosed tag classifying the workout. Common types: `endurance`, `strength`, `mixed`, `mobility`.
 - **Date** (optional): A parenthesized date or date-time range. See [Section 11: Dates](#11-dates).
 - **@RPE** (optional): Workout-level Rate of Perceived Exertion (float, 1-10).
 - **@RIR** (optional): Default Reps In Reserve for strength exercises (integer). Individual exercises may override with their own `@RIR`.
@@ -104,11 +104,11 @@ Examples:
 
 ```
 # Easy Run
-# Threshold Ride [bike]
-# Morning Run [run] (2025-02-27)
+# Threshold Ride [endurance]
+# Morning Run [endurance] (2025-02-27)
 # Upper Body [strength] (2025-02-27 15:00-16:00)
 # Full Gym Session [strength] @RIR 2
-# Morning Run [run] @RPE 7
+# Morning Run [endurance] @RPE 7
 # Upper Body [strength] (2025-02-27) @RPE 8 @RIR 2
 ```
 
@@ -563,7 +563,7 @@ Documents may use `##` session headings to group `#` child workouts.
 4. `#` headings before the first `##` remain **top-level workouts** (backward compatibility).
 5. Notes after the last `#` section attach to the session workout.
 6. If no `##` headings exist, each `#` heading is a top-level workout (flat mode).
-7. **Combination inference:** If a `##` session has no explicit `[type]` and contains child workouts with 2 or more distinct types, its type is automatically inferred as `combination`. The `[combination]` tag is never written to `.owf` files — it is re-inferred on each parse.
+7. **Mixed inference:** If a `##` session has no explicit `[type]` and contains child workouts with 2 or more distinct types, its type is automatically inferred as `mixed`. The `[mixed]` tag is never written to `.owf` files — it is re-inferred on each parse.
 
 ## Appendix A: EBNF Grammar
 
