@@ -21,7 +21,7 @@ def test_duration_seconds():
 def test_duration_seconds_unit_sec():
     d = Duration.parse("90sec")
     assert d.seconds == 90
-    assert str(d) == "90s"
+    assert str(d) == "1min30s"
 
 
 def test_duration_minutes():
@@ -39,13 +39,27 @@ def test_duration_hours():
 def test_duration_mm_ss():
     d = Duration.parse("1:30")
     assert d.seconds == 90
-    assert str(d) == "90s"
+    assert str(d) == "1min30s"
 
 
 def test_duration_hh_mm_ss():
     d = Duration.parse("1:30:00")
     assert d.seconds == 5400
-    assert str(d) == "90min"
+    assert str(d) == "1h30min"
+
+
+def test_duration_compound():
+    d = Duration.parse("1h28min2s")
+    assert d.seconds == 5282
+    assert str(d) == "1h28min2s"
+
+    d2 = Duration.parse("1h30min")
+    assert d2.seconds == 5400
+    assert str(d2) == "1h30min"
+
+    d3 = Duration.parse("5min30s")
+    assert d3.seconds == 330
+    assert str(d3) == "5min30s"
 
 
 def test_duration_invalid():

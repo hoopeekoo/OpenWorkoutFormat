@@ -21,8 +21,8 @@ from owf.units import Duration, Pace
 
 INTENSITY_NAMES = frozenset({"easy", "moderate", "hard", "max", "threshold", "tempo"})
 
-# Regex for rest:duration
-REST_PATTERN = re.compile(r"rest:(\d+(?:\.\d+)?(?:s|sec|min|h|hr|hour))")
+# Regex for rest:duration (captures everything after "rest:")
+REST_PATTERN = re.compile(r"rest:(.+)")
 
 
 def parse_params(

@@ -41,7 +41,7 @@ def test_serialize_strength():
     text = "# Strength [strength]\n\n- bench press 3x8rep @80kg rest:90s\n"
     doc = parse_document(text)
     result = dumps(doc)
-    assert "- bench press 3x8rep @80kg rest:90s" in result
+    assert "- bench press 3x8rep @80kg rest:1min30s" in result
 
 
 def test_serialize_emom():
