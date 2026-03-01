@@ -395,6 +395,7 @@ _NEW_ACTIONS = [
     "stairs",
     "jumprope",
     "ebike",
+    "other",
 ]
 
 

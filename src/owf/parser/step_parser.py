@@ -55,6 +55,7 @@ ENDURANCE_ACTIONS = frozenset(
         "stairs",
         "jumprope",
         "ebike",
+        "other",
     }
 )
 

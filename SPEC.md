@@ -151,6 +151,7 @@ An endurance step starts with one of the known actions:
 | `stairs` | Stair climber |
 | `jumprope` | Jump rope |
 | `ebike` | E-bike riding |
+| `other` | Other / uncategorized activity |
 | `warmup` | Warm-up (any modality) |
 | `cooldown` | Cool-down (any modality) |
 | `recover` | Recovery interval |
@@ -613,7 +614,7 @@ action          = "run" | "bike" | "swim" | "row" | "ski"
                 | "alpine-ski" | "snowboard" | "snowshoe" | "skate"
                 | "paddle" | "kayak" | "surf" | "climb"
                 | "elliptical" | "stairs" | "jumprope" | "ebike"
-                | "warmup" | "cooldown" | "recover" ;
+                | "other" | "warmup" | "cooldown" | "recover" ;
 exercise        = word { SP word } ;
 
 sets_reps       = [ count "x" ] ( count | "max" ) [ "rep" | "reps" ] ;
@@ -652,7 +653,7 @@ blank           = newline ;
 
 ### Endurance Actions
 
-`run`, `bike`, `swim`, `row`, `ski`, `walk`, `hike`, `skate-ski`, `classic-ski`, `alpine-ski`, `snowboard`, `snowshoe`, `skate`, `paddle`, `kayak`, `surf`, `climb`, `elliptical`, `stairs`, `jumprope`, `ebike`, `warmup`, `cooldown`, `recover`
+`run`, `bike`, `swim`, `row`, `ski`, `walk`, `hike`, `skate-ski`, `classic-ski`, `alpine-ski`, `snowboard`, `snowshoe`, `skate`, `paddle`, `kayak`, `surf`, `climb`, `elliptical`, `stairs`, `jumprope`, `ebike`, `other`, `warmup`, `cooldown`, `recover`
 
 ### Intensity Names
 

@@ -100,7 +100,7 @@ author: Coach Smith
 
 ### Endurance Steps
 
-All 24 known actions:
+All 25 known actions:
 
 ```
 - run 5km @4:30/km
@@ -124,6 +124,7 @@ All 24 known actions:
 - stairs 20min @hard
 - jumprope 10min @moderate
 - ebike 60min @easy
+- other 30min @moderate
 - warmup 15min @easy
 - cooldown 10min @easy
 - recover 3min @easy
