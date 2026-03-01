@@ -1,5 +1,7 @@
 """Tests for the step parser and full document parsing."""
 
+import pytest
+
 from owf.ast.base import Document, Workout
 from owf.ast.blocks import (
     AMRAP,
@@ -374,3 +376,50 @@ def test_strength_with_percentage_weight():
     assert isinstance(step, StrengthStep)
     assert len(step.params) == 1
     assert isinstance(step.params[0], WeightParam)
+
+
+# -- Parametrized test for all new endurance actions (parse + round-trip) --
+
+_NEW_ACTIONS = [
+    "skate-ski",
+    "classic-ski",
+    "alpine-ski",
+    "snowboard",
+    "snowshoe",
+    "skate",
+    "paddle",
+    "kayak",
+    "surf",
+    "climb",
+    "elliptical",
+    "stairs",
+    "jumprope",
+    "ebike",
+]
+
+
+@pytest.mark.parametrize("action", _NEW_ACTIONS)
+def test_new_endurance_action_parse(action: str) -> None:
+    text = f"# Workout\n\n- {action} 30min @easy"
+    doc = parse_document(text)
+    step = doc.workouts[0].steps[0]
+    assert isinstance(step, EnduranceStep)
+    assert step.action == action
+    assert step.duration is not None
+    assert step.duration.seconds == 1800
+
+
+@pytest.mark.parametrize("action", _NEW_ACTIONS)
+def test_new_endurance_action_roundtrip(action: str) -> None:
+    from owf.serializer import dumps
+
+    text = f"# Workout\n\n- {action} 30min @easy"
+    doc1 = parse_document(text)
+    serialized = dumps(doc1)
+    doc2 = parse_document(serialized)
+    step1 = doc1.workouts[0].steps[0]
+    step2 = doc2.workouts[0].steps[0]
+    assert isinstance(step1, EnduranceStep)
+    assert isinstance(step2, EnduranceStep)
+    assert step1.action == step2.action
+    assert step1.duration == step2.duration

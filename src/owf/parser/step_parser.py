@@ -41,6 +41,20 @@ ENDURANCE_ACTIONS = frozenset(
         "warmup",
         "cooldown",
         "recover",
+        "skate-ski",
+        "classic-ski",
+        "alpine-ski",
+        "snowboard",
+        "snowshoe",
+        "skate",
+        "paddle",
+        "kayak",
+        "surf",
+        "climb",
+        "elliptical",
+        "stairs",
+        "jumprope",
+        "ebike",
     }
 )
 

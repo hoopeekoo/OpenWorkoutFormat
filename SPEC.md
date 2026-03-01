@@ -126,7 +126,7 @@ Every step line begins with `- ` followed by the step content.
 
 ### EnduranceStep
 
-An endurance step starts with one of 10 known actions:
+An endurance step starts with one of the known actions:
 
 | Action | Description |
 |--------|-------------|
@@ -137,6 +137,20 @@ An endurance step starts with one of 10 known actions:
 | `ski` | Skiing / ski erg |
 | `walk` | Walking |
 | `hike` | Hiking |
+| `skate-ski` | XC skate skiing |
+| `classic-ski` | XC classic skiing |
+| `alpine-ski` | Downhill skiing |
+| `snowboard` | Snowboarding |
+| `snowshoe` | Snowshoeing |
+| `skate` | Inline / ice skating |
+| `paddle` | SUP / kayak / canoe |
+| `kayak` | Kayaking |
+| `surf` | Surfing / windsurfing / kite |
+| `climb` | Mountaineering |
+| `elliptical` | Elliptical trainer |
+| `stairs` | Stair climber |
+| `jumprope` | Jump rope |
+| `ebike` | E-bike riding |
 | `warmup` | Warm-up (any modality) |
 | `cooldown` | Cool-down (any modality) |
 | `recover` | Recovery interval |
@@ -595,7 +609,11 @@ endurance_step  = action [ SP duration ] [ SP distance ] { SP param } ;
 strength_step   = exercise [ SP sets_reps ] [ SP duration ] { SP param } [ SP rest_param ] ;
 
 action          = "run" | "bike" | "swim" | "row" | "ski"
-                | "walk" | "hike" | "warmup" | "cooldown" | "recover" ;
+                | "walk" | "hike" | "skate-ski" | "classic-ski"
+                | "alpine-ski" | "snowboard" | "snowshoe" | "skate"
+                | "paddle" | "kayak" | "surf" | "climb"
+                | "elliptical" | "stairs" | "jumprope" | "ebike"
+                | "warmup" | "cooldown" | "recover" ;
 exercise        = word { SP word } ;
 
 sets_reps       = [ count "x" ] ( count | "max" ) [ "rep" | "reps" ] ;
@@ -634,7 +652,7 @@ blank           = newline ;
 
 ### Endurance Actions
 
-`run`, `bike`, `swim`, `row`, `ski`, `walk`, `hike`, `warmup`, `cooldown`, `recover`
+`run`, `bike`, `swim`, `row`, `ski`, `walk`, `hike`, `skate-ski`, `classic-ski`, `alpine-ski`, `snowboard`, `snowshoe`, `skate`, `paddle`, `kayak`, `surf`, `climb`, `elliptical`, `stairs`, `jumprope`, `ebike`, `warmup`, `cooldown`, `recover`
 
 ### Intensity Names
 

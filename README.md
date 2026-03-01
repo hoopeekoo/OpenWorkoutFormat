@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/hoopeekoo/OpenWorkoutFormat/actions/workflows/ci.yml/badge.svg)](https://github.com/hoopeekoo/OpenWorkoutFormat/actions/workflows/ci.yml)
 
-A human-readable workout description language with a Python parser. Supports endurance (running, cycling, swimming, rowing), strength (weightlifting), and CrossFit WoDs (EMOM, AMRAP, for-time, circuits).
+A human-readable workout description language with a Python parser. Supports endurance (running, cycling, swimming, rowing, skiing, skating, paddling, climbing, and more), strength (weightlifting), and CrossFit WoDs (EMOM, AMRAP, for-time, circuits).
 
 ## Example
 
@@ -100,7 +100,7 @@ author: Coach Smith
 
 ### Endurance Steps
 
-All 10 known actions:
+All 24 known actions:
 
 ```
 - run 5km @4:30/km
@@ -110,6 +110,20 @@ All 10 known actions:
 - ski 20min @moderate
 - walk 5min @easy
 - hike 2h @easy
+- skate-ski 30min @moderate
+- classic-ski 45min @easy
+- alpine-ski 3h
+- snowboard 2h
+- snowshoe 60min @easy
+- skate 30min @moderate
+- paddle 45min @easy
+- kayak 60min @moderate
+- surf 90min
+- climb 4h
+- elliptical 30min @Z2
+- stairs 20min @hard
+- jumprope 10min @moderate
+- ebike 60min @easy
 - warmup 15min @easy
 - cooldown 10min @easy
 - recover 3min @easy
