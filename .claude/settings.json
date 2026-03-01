@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "FILE=$(cat /dev/stdin | python3 -c \"import sys,json; print(json.load(sys.stdin).get('tool_input',{}).get('file_path',''))\" 2>/dev/null); [ -n \"$FILE\" ] && [ \"${FILE%.py}\" != \"$FILE\" ] && source .venv/bin/activate 2>/dev/null && ruff check --quiet \"$FILE\" 2>&1 | head -10 || true"
+          }
+        ]
+      }
+    ]
+  }
+}
