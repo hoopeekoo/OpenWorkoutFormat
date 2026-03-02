@@ -1,4 +1,4 @@
-"""Expression resolver — evaluates expressions against variable context."""
+"""Expression resolver — evaluates parameters against variable context."""
 
 from __future__ import annotations
 
@@ -16,10 +16,11 @@ from owf.ast.blocks import (
     ForTime,
     Superset,
 )
-from owf.ast.expressions import BinOp, Expression, Literal, Percentage, VarRef
 from owf.ast.params import (
+    BodyweightPlusParam,
     HeartRateParam,
     Param,
+    PercentOfParam,
     PowerParam,
     WeightParam,
 )
@@ -74,57 +75,55 @@ def _resolve_step(step: Any, variables: dict[str, str]) -> Any:
 
 
 def _resolve_param(param: Param, variables: dict[str, str]) -> Param:
-    if isinstance(param, (PowerParam, WeightParam, HeartRateParam)):
-        if isinstance(param.value, Expression):
-            resolved = _resolve_expression(param.value, variables)
-            return replace(param, value=resolved)
+    """Resolve a single parameter against variables.
+
+    Only PercentOfParam and BodyweightPlusParam need resolution.
+    All other param types are already concrete values.
+    """
+    if isinstance(param, PercentOfParam):
+        var_name = param.variable
+        if var_name not in variables:
+            raise ResolveError(
+                f"Undefined variable: {var_name!r}",
+                param.span,
+            )
+        val = _parse_variable_value(variables[var_name])
+        computed = param.percent / 100 * val[0]
+        unit = val[1]
+
+        if unit == "W":
+            return PowerParam(value=computed, span=param.span)
+        if unit == "bpm":
+            return HeartRateParam(value=int(computed), span=param.span)
+        if unit in ("kg", "lb", "lbs"):
+            return WeightParam(value=computed, unit=unit, span=param.span)
+        # Default: return PowerParam for unitless values
+        return PowerParam(value=computed, span=param.span)
+
+    if isinstance(param, BodyweightPlusParam):
+        if "bodyweight" not in variables:
+            raise ResolveError(
+                "Undefined variable: 'bodyweight'",
+                param.span,
+            )
+        bw_val = _parse_variable_value(variables["bodyweight"])
+        total = bw_val[0] + param.added
+        unit = param.unit or bw_val[1] or "kg"
+        return WeightParam(value=total, unit=unit, span=param.span)
+
     return param
 
 
-def _resolve_expression(expr: Expression, variables: dict[str, str]) -> Expression:
-    if isinstance(expr, Literal):
-        return expr
+def _parse_variable_value(val: str) -> tuple[float, str | None]:
+    """Parse a variable value like '250W', '100kg', '185bpm'.
 
-    if isinstance(expr, VarRef):
-        if expr.name not in variables:
-            raise ResolveError(
-                f"Undefined variable: {expr.name!r}",
-                expr.span,
-            )
-        val_str = variables[expr.name]
-        return _parse_variable_value(val_str)
-
-    if isinstance(expr, Percentage):
-        resolved_of = _resolve_expression(expr.of, variables)
-        if isinstance(resolved_of, Literal) and resolved_of.value is not None:
-            computed = expr.percent / 100 * resolved_of.value
-            return Literal(value=computed, unit=resolved_of.unit)
-        return replace(expr, of=resolved_of)
-
-    if isinstance(expr, BinOp):
-        left = _resolve_expression(expr.left, variables)
-        right = _resolve_expression(expr.right, variables)
-        if isinstance(left, Literal) and isinstance(right, Literal):
-            if expr.op == "+":
-                result = left.value + right.value
-            elif expr.op == "-":
-                result = left.value - right.value
-            else:
-                raise ResolveError(f"Unknown operator: {expr.op!r}")
-            unit = left.unit or right.unit
-            return Literal(value=result, unit=unit)
-        return replace(expr, left=left, right=right)
-
-    return expr
-
-
-def _parse_variable_value(val: str) -> Literal:
-    """Parse a variable value like '250W', '100kg', '185bpm'."""
+    Returns (numeric_value, unit_or_none).
+    """
     m = re.match(r"^(\d+(?:\.\d+)?)\s*(W|kg|lb|lbs|bpm|in|m|km)$", val)
     if m:
-        return Literal(value=float(m.group(1)), unit=m.group(2))
+        return float(m.group(1)), m.group(2)
     # Try bare number
     try:
-        return Literal(value=float(val))
+        return float(val), None
     except ValueError:
         raise ResolveError(f"Cannot parse variable value: {val!r}")

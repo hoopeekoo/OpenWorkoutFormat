@@ -14,16 +14,17 @@ from owf.ast.blocks import (
     ForTime,
     Superset,
 )
-from owf.ast.expressions import BinOp, Expression, Literal, Percentage, VarRef
 from owf.ast.params import (
+    BodyweightPlusParam,
     HeartRateParam,
-    IntensityParam,
     PaceParam,
     Param,
+    PercentOfParam,
     PowerParam,
     RIRParam,
     RPEParam,
     WeightParam,
+    ZoneParam,
 )
 from owf.ast.steps import (
     EnduranceStep,
@@ -45,7 +46,7 @@ def dumps(doc: Document) -> str:
         parts.append("---")
         parts.append("")
 
-    # Workouts
+    # Workouts — always serialized as ## sessions
     for i, workout in enumerate(doc.workouts):
         if i > 0 or doc.metadata:
             parts.append("")
@@ -59,7 +60,7 @@ def dumps(doc: Document) -> str:
 
 
 def _heading_line(prefix: str, workout: Workout) -> str:
-    """Build a heading line like ``# Name [type] (date) @RPE N @RIR N``."""
+    """Build a heading line like ``## Name [type] (date) @RPE N @RIR N``."""
     parts = [f"{prefix} {workout.name}"]
     if workout.workout_type and workout.workout_type != "mixed":
         parts.append(f" [{workout.workout_type}]")
@@ -74,21 +75,27 @@ def _heading_line(prefix: str, workout: Workout) -> str:
 
 
 def _serialize_workout(workout: Workout) -> str:
+    """Serialize a top-level workout as a ## session."""
     is_session = any(isinstance(s, Workout) for s in workout.steps)
-    prefix = "##" if is_session else "#"
     lines: list[str] = []
 
-    # Heading
-    if workout.name:
-        lines.append(_heading_line(prefix, workout))
+    if is_session:
+        # Session with child workouts — always ##
+        lines.append(_heading_line("##", workout))
         lines.append("")
 
-    # Steps (child Workouts are serialized inline with # headings)
-    for step in workout.steps:
-        if isinstance(step, Workout):
-            lines.append("")
-            lines.append(_serialize_child_workout(step))
-        else:
+        for step in workout.steps:
+            if isinstance(step, Workout):
+                lines.append("")
+                lines.append(_serialize_child_workout(step))
+            else:
+                lines.extend(_serialize_node(step, indent=0))
+    else:
+        # No child workouts — wrap as ## session
+        lines.append(_heading_line("##", workout))
+        lines.append("")
+
+        for step in workout.steps:
             lines.extend(_serialize_node(step, indent=0))
 
     # Workout-level notes (preceded by blank line)
@@ -105,7 +112,20 @@ def _serialize_child_workout(workout: Workout) -> str:
     lines: list[str] = []
 
     if workout.name:
-        lines.append(_heading_line("#", workout))
+        # Child workouts never get dates (dates are session-level only)
+        child_parts = [f"# {workout.name}"]
+        if workout.workout_type and workout.workout_type != "mixed":
+            child_parts.append(f" [{workout.workout_type}]")
+        if workout.rpe is not None:
+            v = (
+                int(workout.rpe)
+                if workout.rpe == int(workout.rpe)
+                else workout.rpe
+            )
+            child_parts.append(f" @RPE {v}")
+        if workout.rir is not None:
+            child_parts.append(f" @RIR {workout.rir}")
+        lines.append("".join(child_parts))
         lines.append("")
 
     for step in workout.steps:
@@ -223,11 +243,34 @@ def _serialize_node(node: Any, indent: int) -> list[str]:
 
 def _serialize_param(param: Param) -> str:
     """Serialize a parameter to its @-prefixed string."""
+    if isinstance(param, ZoneParam):
+        return f"@{param.zone}"
+
+    if isinstance(param, PercentOfParam):
+        pct = (
+            int(param.percent)
+            if param.percent == int(param.percent)
+            else param.percent
+        )
+        return f"@{pct}% of {param.variable}"
+
+    if isinstance(param, PowerParam):
+        v = int(param.value) if param.value == int(param.value) else param.value
+        return f"@{v}W"
+
+    if isinstance(param, HeartRateParam):
+        return f"@{param.value}bpm"
+
     if isinstance(param, PaceParam):
         return f"@{param.pace}"
 
-    if isinstance(param, IntensityParam):
-        return f"@{param.name}"
+    if isinstance(param, WeightParam):
+        v = int(param.value) if param.value == int(param.value) else param.value
+        return f"@{v}{param.unit}"
+
+    if isinstance(param, BodyweightPlusParam):
+        v = int(param.added) if param.added == int(param.added) else param.added
+        return f"@bodyweight + {v}{param.unit}"
 
     if isinstance(param, RPEParam):
         v = int(param.value) if param.value == int(param.value) else param.value
@@ -236,38 +279,4 @@ def _serialize_param(param: Param) -> str:
     if isinstance(param, RIRParam):
         return f"@RIR {param.value}"
 
-    if isinstance(param, HeartRateParam):
-        if isinstance(param.value, str):
-            return f"@{param.value}"
-        return f"@{_serialize_expression(param.value)}"
-
-    if isinstance(param, PowerParam):
-        return f"@{_serialize_expression(param.value)}"
-
-    if isinstance(param, WeightParam):
-        return f"@{_serialize_expression(param.value)}"
-
     return ""
-
-
-def _serialize_expression(expr: Expression) -> str:
-    """Serialize an expression to string."""
-    if isinstance(expr, Literal):
-        v = int(expr.value) if expr.value == int(expr.value) else expr.value
-        if expr.unit:
-            return f"{v}{expr.unit}"
-        return str(v)
-
-    if isinstance(expr, VarRef):
-        return expr.name
-
-    if isinstance(expr, Percentage):
-        pct = int(expr.percent) if expr.percent == int(expr.percent) else expr.percent
-        return f"{pct}% of {_serialize_expression(expr.of)}"
-
-    if isinstance(expr, BinOp):
-        left = _serialize_expression(expr.left)
-        right = _serialize_expression(expr.right)
-        return f"{left} {expr.op} {right}"
-
-    return str(expr)

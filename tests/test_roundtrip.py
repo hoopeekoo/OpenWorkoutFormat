@@ -1,5 +1,6 @@
-"""Round-trip tests: parse → serialize → parse should produce equivalent AST."""
+"""Round-trip tests: parse -> serialize -> parse should produce equivalent AST."""
 
+from owf.ast.base import Workout
 from owf.parser.step_parser import parse_document
 from owf.serializer import dumps
 
@@ -14,20 +15,22 @@ def _roundtrip(text: str) -> None:
     assert len(doc1.workouts) == len(doc2.workouts)
     for w1, w2 in zip(doc1.workouts, doc2.workouts):
         assert w1.name == w2.name
-        assert w1.workout_type == w2.workout_type
+        # [mixed] is not serialized, so skip comparison for mixed
+        if w1.workout_type != "mixed":
+            assert w1.workout_type == w2.workout_type
         assert len(w1.steps) == len(w2.steps)
 
 
 def test_roundtrip_endurance():
     _roundtrip(
-        "# Run [run]\n\n- warmup 15min @easy\n"
-        "- run 5km @4:30/km\n- cooldown 10min @easy"
+        "## Run [run]\n\n- warmup 15min @Z1\n"
+        "- run 5km @4:30/km\n- cooldown 10min @Z1"
     )
 
 
 def test_roundtrip_strength():
     _roundtrip(
-        "# Strength [strength]\n\n"
+        "## Strength [strength]\n\n"
         "- bench press 3x8rep @80kg rest:90s\n"
         "- bicep curl 3x12rep @15kg rest:60s"
     )
@@ -35,21 +38,21 @@ def test_roundtrip_strength():
 
 def test_roundtrip_intervals():
     _roundtrip(
-        "# Intervals\n\n- 5x:\n"
-        "  - bike 5min @200W\n  - recover 3min @easy"
+        "## Intervals\n\n- 5x:\n"
+        "  - bike 5min @200W\n  - recover 3min @Z1"
     )
 
 
 def test_roundtrip_emom():
     _roundtrip(
-        "# WoD [wod]\n\n- emom 10min:\n"
+        "## WoD [wod]\n\n- emom 10min:\n"
         "  - power clean 3rep @70kg"
     )
 
 
 def test_roundtrip_amrap():
     _roundtrip(
-        "# Metcon [wod]\n\n- amrap 12min:\n"
+        "## Metcon [wod]\n\n- amrap 12min:\n"
         "  - pull-up 5rep\n  - push-up 10rep\n"
         "  - air squat 15rep"
     )
@@ -57,7 +60,7 @@ def test_roundtrip_amrap():
 
 def test_roundtrip_for_time():
     _roundtrip(
-        "# Murph [wod]\n\n- for-time:\n"
+        "## Murph [wod]\n\n- for-time:\n"
         "  - run 1mile\n  - pull-up 100rep\n"
         "  - push-up 200rep"
     )
@@ -66,21 +69,21 @@ def test_roundtrip_for_time():
 def test_roundtrip_frontmatter():
     _roundtrip(
         "---\nFTP: 250W\n---\n\n"
-        "# Ride [bike]\n\n- bike 30min @200W"
+        "## Ride [bike]\n\n- bike 30min @200W"
     )
 
 
 def test_roundtrip_session():
     _roundtrip(
-        "## Session\n\n- warmup 10min @easy\n\n"
+        "## Session\n\n- warmup 10min @Z1\n\n"
         "# Ride [bike]\n\n- bike 30min\n\n"
-        "- cooldown 10min @easy"
+        "- cooldown 10min @Z1"
     )
 
 
 def test_roundtrip_superset():
     _roundtrip(
-        "# Strength\n\n- 3x superset:\n"
+        "## Strength\n\n- 3x superset:\n"
         "  - bench press 3x8rep @80kg rest:90s\n"
         "  - bent-over row 3x8rep @60kg rest:90s"
     )
@@ -88,8 +91,24 @@ def test_roundtrip_superset():
 
 def test_roundtrip_circuit():
     _roundtrip(
-        "# Strength\n\n- 3x circuit:\n"
+        "## Strength\n\n- 3x circuit:\n"
         "  - kettlebell swing 10rep @24kg\n"
         "  - push-up 15rep\n"
         "  - air squat 20rep"
     )
+
+
+def test_roundtrip_percent_of():
+    _roundtrip("## Ride\n\n- bike 30min @80% of FTP")
+
+
+def test_roundtrip_bodyweight_plus():
+    _roundtrip("## Gym\n\n- dip 3x8rep @bodyweight + 20kg rest:90s")
+
+
+def test_roundtrip_zone():
+    _roundtrip("## Run\n\n- run 10min @Z2\n- recover 5min @Z1")
+
+
+def test_roundtrip_heart_rate():
+    _roundtrip("## Run\n\n- run 10min @140bpm")

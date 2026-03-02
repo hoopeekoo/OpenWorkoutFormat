@@ -1,28 +1,30 @@
+## Triathlon Training
+
 # Swim Intervals [endurance]
 
-- warmup 200m @easy
+- warmup 200m @Z1
 - 4x:
-  - swim 100m @hard
-  - recover 50m @easy
-- cooldown 200m @easy
+  - swim 100m @Z4
+  - recover 50m @Z1
+- cooldown 200m @Z1
 
 # Rowing Warmup [endurance]
 
-- row 500m @easy
+- row 500m @Z1
 - 3x:
-  - row 250m @hard
-  - recover 250m @easy
-- row 100yd @moderate
+  - row 250m @Z4
+  - recover 250m @Z1
+- row 100yd @Z2
 
 # Bike Tempo [endurance]
 
-- warmup 10min @easy
+- warmup 10min @Z1
 - bike 30min @85% of FTP
-- cooldown 10min @easy
+- cooldown 10min @Z1
 
 # Brick Run [endurance]
 
 - run 3mi @7:00/mi
-- cooldown 1mi @easy
+- cooldown 1mi @Z1
 
 > Transition quickly from bike to run — simulate race day.

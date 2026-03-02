@@ -1,18 +1,19 @@
-"""Tests for the five new example files covering all spec features."""
+"""Tests for the example files covering all spec features."""
 
 from __future__ import annotations
 
 from pathlib import Path
 
 from owf.ast.blocks import EMOM, ForTime
-from owf.ast.expressions import BinOp, Literal, Percentage, VarRef
 from owf.ast.params import (
+    BodyweightPlusParam,
     HeartRateParam,
-    IntensityParam,
     PaceParam,
+    PercentOfParam,
     PowerParam,
     RIRParam,
     WeightParam,
+    ZoneParam,
 )
 from owf.ast.steps import EnduranceStep, RepeatStep, StrengthStep
 from owf.loader import load
@@ -30,47 +31,39 @@ def test_heart_rate_run():
     w = doc.workouts[0]
     assert w.name == "HR Zone Run"
     assert w.workout_type == "endurance"
-    assert len(w.steps) == 8
+    assert len(w.steps) == 6
     assert all(isinstance(s, EnduranceStep) for s in w.steps)
+
+    # @Z1
+    s0 = w.steps[0]
+    assert s0.action == "warmup"
+    assert isinstance(s0.params[0], ZoneParam)
+    assert s0.params[0].zone == "Z1"
 
     # @140bpm
     s1 = w.steps[1]
     assert s1.action == "run"
     assert s1.duration.seconds == 600
     assert isinstance(s1.params[0], HeartRateParam)
-    assert isinstance(s1.params[0].value, Literal)
-    assert s1.params[0].value.value == 140
-    assert s1.params[0].value.unit == "bpm"
+    assert s1.params[0].value == 140
 
     # @70% of max HR
     s2 = w.steps[2]
-    assert isinstance(s2.params[0], HeartRateParam)
-    assert isinstance(s2.params[0].value, Percentage)
-    assert s2.params[0].value.percent == 70
-    assert isinstance(s2.params[0].value.of, VarRef)
-    assert s2.params[0].value.of.name == "max HR"
+    assert isinstance(s2.params[0], PercentOfParam)
+    assert s2.params[0].percent == 70
+    assert s2.params[0].variable == "max HR"
 
     # @Z3
     s3 = w.steps[3]
-    assert isinstance(s3.params[0], HeartRateParam)
-    assert s3.params[0].value == "Z3"
+    assert isinstance(s3.params[0], ZoneParam)
+    assert s3.params[0].zone == "Z3"
 
-    # @threshold
+    # @4:30/km
     s4 = w.steps[4]
-    assert isinstance(s4.params[0], IntensityParam)
-    assert s4.params[0].name == "threshold"
-
-    # @tempo
-    s5 = w.steps[5]
-    assert isinstance(s5.params[0], IntensityParam)
-    assert s5.params[0].name == "tempo"
-
-    # @pace:5:00/km
-    s6 = w.steps[6]
-    assert s6.distance.value == 5
-    assert s6.distance.unit == "km"
-    assert isinstance(s6.params[0], PaceParam)
-    assert s6.params[0].pace == Pace(minutes=5, seconds=0, unit="km")
+    assert s4.distance.value == 5
+    assert s4.distance.unit == "km"
+    assert isinstance(s4.params[0], PaceParam)
+    assert s4.params[0].pace == Pace(minutes=4, seconds=30, unit="km")
 
     # workout note
     note = "Great session for building aerobic base and pace awareness."
@@ -84,9 +77,7 @@ def test_heart_rate_run_resolve():
     s2 = resolved.workouts[0].steps[2]
     param = s2.params[0]
     assert isinstance(param, HeartRateParam)
-    assert isinstance(param.value, Literal)
-    assert param.value.value == 133.0
-    assert param.value.unit == "bpm"
+    assert param.value == 133
 
 
 # --- gym_session.owf ---
@@ -110,20 +101,15 @@ def test_gym_session():
     assert s0.reps == 100
     assert s0.sets is None
 
-    # BinOp: dip 3x8rep @bodyweight + 20kg rest:90s
+    # BodyweightPlus: dip 3x8rep @bodyweight + 20kg rest:90s
     s1 = w.steps[1]
     assert s1.exercise == "dip"
     assert s1.sets == 3
     assert s1.reps == 8
     assert s1.rest.seconds == 90
-    assert isinstance(s1.params[0], PowerParam)
-    assert isinstance(s1.params[0].value, BinOp)
-    assert s1.params[0].value.op == "+"
-    assert isinstance(s1.params[0].value.left, VarRef)
-    assert s1.params[0].value.left.name == "bodyweight"
-    assert isinstance(s1.params[0].value.right, Literal)
-    assert s1.params[0].value.right.value == 20
-    assert s1.params[0].value.right.unit == "kg"
+    assert isinstance(s1.params[0], BodyweightPlusParam)
+    assert s1.params[0].added == 20
+    assert s1.params[0].unit == "kg"
 
     # timed set: plank 60s
     s2 = w.steps[2]
@@ -153,7 +139,8 @@ def test_gym_session():
     assert s5.reps == "max"
     assert s5.rest.seconds == 60
     assert isinstance(s5.params[0], WeightParam)
-    assert s5.params[0].value == Literal(value=15, unit="kg")
+    assert s5.params[0].value == 15
+    assert s5.params[0].unit == "kg"
     rir_params_5 = [p for p in s5.params if isinstance(p, RIRParam)]
     assert len(rir_params_5) == 1
     assert rir_params_5[0].value == 3
@@ -165,10 +152,9 @@ def test_gym_session_resolve():
     # bodyweight(80kg) + 20kg = 100kg
     s1 = resolved.workouts[0].steps[1]
     param = s1.params[0]
-    assert isinstance(param, PowerParam)
-    assert isinstance(param.value, Literal)
-    assert param.value.value == 100.0
-    assert param.value.unit == "kg"
+    assert isinstance(param, WeightParam)
+    assert param.value == 100.0
+    assert param.unit == "kg"
 
 
 # --- triathlon.owf ---
@@ -177,10 +163,17 @@ def test_gym_session_resolve():
 def test_triathlon():
     doc = load(Path("examples/triathlon.owf"))
     assert doc.metadata == {}
-    assert len(doc.workouts) == 4
+    assert len(doc.workouts) == 1
+
+    session = doc.workouts[0]
+    assert session.name == "Triathlon Training"
+    from owf.ast.base import Workout
+
+    children = [s for s in session.steps if isinstance(s, Workout)]
+    assert len(children) == 4
 
     # Swim Intervals
-    swim = doc.workouts[0]
+    swim = children[0]
     assert swim.name == "Swim Intervals"
     assert swim.workout_type == "endurance"
     assert len(swim.steps) == 3
@@ -193,7 +186,7 @@ def test_triathlon():
     assert swim.steps[1].steps[0].action == "swim"
 
     # Rowing Warmup
-    row_w = doc.workouts[1]
+    row_w = children[1]
     assert row_w.name == "Rowing Warmup"
     assert row_w.workout_type == "endurance"
     row_last = row_w.steps[2]
@@ -203,17 +196,16 @@ def test_triathlon():
     assert row_last.distance.unit == "yd"
 
     # Bike Tempo — @85% of FTP
-    bike = doc.workouts[2]
+    bike = children[2]
     assert bike.name == "Bike Tempo"
     assert bike.workout_type == "endurance"
     bike_step = bike.steps[1]
-    assert isinstance(bike_step.params[0], PowerParam)
-    assert isinstance(bike_step.params[0].value, Percentage)
-    assert bike_step.params[0].value.percent == 85
-    assert bike_step.params[0].value.of == VarRef(name="FTP")
+    assert isinstance(bike_step.params[0], PercentOfParam)
+    assert bike_step.params[0].percent == 85
+    assert bike_step.params[0].variable == "FTP"
 
     # Brick Run — 3mi @7:00/mi
-    run_w = doc.workouts[3]
+    run_w = children[3]
     assert run_w.name == "Brick Run"
     assert run_w.workout_type == "endurance"
     run_step = run_w.steps[0]
@@ -227,12 +219,14 @@ def test_triathlon_resolve():
     doc = load(Path("examples/triathlon.owf"))
     resolved = resolve(doc, {"FTP": "230W"})
     # 85% of 230W = 195.5W
-    bike_step = resolved.workouts[2].steps[1]
+    from owf.ast.base import Workout
+
+    session = resolved.workouts[0]
+    children = [s for s in session.steps if isinstance(s, Workout)]
+    bike_step = children[2].steps[1]
     param = bike_step.params[0]
     assert isinstance(param, PowerParam)
-    assert isinstance(param.value, Literal)
-    assert param.value.value == 195.5
-    assert param.value.unit == "W"
+    assert param.value == 195.5
 
 
 # --- pyramid.owf ---
@@ -245,7 +239,7 @@ def test_pyramid():
 
     w = doc.workouts[0]
     assert w.name == "Pyramid Intervals"
-    assert w.workout_type is None  # heading without type bracket
+    assert w.workout_type == "endurance"
 
     assert len(w.steps) == 3
     assert isinstance(w.steps[0], EnduranceStep)  # warmup

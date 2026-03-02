@@ -124,30 +124,33 @@ def test_only_frontmatter():
 
 
 def test_only_heading():
+    """A single heading with no steps is auto-wrapped in session."""
     text = "# My Workout"
     doc = parse_document(text)
     assert len(doc.workouts) == 1
-    assert doc.workouts[0].name == "My Workout"
-    assert len(doc.workouts[0].steps) == 0
+    session = doc.workouts[0]
+    child = session.steps[0]
+    assert child.name == "My Workout"
+    assert len(child.steps) == 0
 
 
 def test_heading_without_type():
-    text = "# Recovery Day\n\n- rest 30min"
+    text = "## Recovery Day\n\n- rest 30min"
     doc = parse_document(text)
     assert doc.workouts[0].workout_type is None
 
 
 def test_multiple_notes():
-    text = "# Ride [bike]\n\n- bike 30min @easy\n\n> Note 1.\n> Note 2."
+    text = "## Ride [bike]\n\n- bike 30min @Z1\n\n> Note 1.\n> Note 2."
     doc = parse_document(text)
     w = doc.workouts[0]
-    # Blank line before notes → workout-level, not step-level
+    # Blank line before notes -> workout-level, not step-level
     assert w.notes == ("Note 1.", "Note 2.")
     assert w.steps[0].notes == ()
 
 
 def test_strength_reps_only():
-    text = "# WoD\n\n- pull-up 100rep"
+    text = "## WoD\n\n- pull-up 100rep"
     doc = parse_document(text)
     step = doc.workouts[0].steps[0]
     assert isinstance(step, StrengthStep)
@@ -156,7 +159,7 @@ def test_strength_reps_only():
 
 
 def test_for_time_with_distance():
-    text = "# WoD [wod]\n\n- for-time:\n  - run 1mile"
+    text = "## WoD [wod]\n\n- for-time:\n  - run 1mile"
     doc = parse_document(text)
     ft = doc.workouts[0].steps[0]
     assert isinstance(ft, ForTime)
@@ -168,7 +171,7 @@ def test_for_time_with_distance():
 
 def test_emom_bare_minutes():
     """EMOM with bare number defaults to minutes."""
-    text = "# WoD\n\n- emom 10:\n  - burpee 5rep"
+    text = "## WoD\n\n- emom 10:\n  - burpee 5rep"
     doc = parse_document(text)
     step = doc.workouts[0].steps[0]
     assert isinstance(step, EMOM)
@@ -177,7 +180,7 @@ def test_emom_bare_minutes():
 
 def test_whitespace_handling():
     """Extra blank lines should not break parsing."""
-    text = "\n\n# Ride [bike]\n\n\n- bike 30min @easy\n\n\n"
+    text = "\n\n## Ride [bike]\n\n\n- bike 30min @Z1\n\n\n"
     doc = parse_document(text)
     assert len(doc.workouts) == 1
 
@@ -185,7 +188,7 @@ def test_whitespace_handling():
 def test_roundtrip_preserves_variables():
     text = (
         "---\nFTP: 250W\nbodyweight: 80kg\n---\n\n"
-        "# Ride [bike]\n\n- bike 30min @200W\n"
+        "## Ride [bike]\n\n- bike 30min @200W\n"
     )
     doc = parse_document(text)
     result = dumps(doc)
@@ -208,3 +211,10 @@ def test_empty_string():
 def test_blank_lines_only():
     doc = parse_document("\n\n\n")
     assert len(doc.workouts) == 0
+
+
+def test_rejected_intensity_in_step():
+    """Old @easy syntax in a step raises ParseError."""
+    text = "## Run\n\n- run 10min @easy"
+    with pytest.raises(ParseError, match="no longer supported"):
+        parse_document(text)

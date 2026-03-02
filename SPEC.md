@@ -1,6 +1,6 @@
 # OpenWorkoutFormat (OWF) Specification
 
-**Version:** 1.0
+**Version:** 1.1
 
 ## 1. Overview
 
@@ -18,7 +18,7 @@ OWF is a human-readable text format for describing workouts. It supports enduran
 An OWF document consists of:
 
 1. Optional **metadata** block (frontmatter)
-2. One or more **workout** sections
+2. One or more **sessions**, each containing steps and/or child workouts
 
 ```
 ---
@@ -26,21 +26,30 @@ description: Saturday training block
 author: Coach Smith
 ---
 
-# Workout Name [type]
+## Saturday Training (2025-02-27)
 
-- step description
-- step description
+# Threshold Ride [endurance]
 
-> Note text
+- 5x:
+  - bike 5min @95% of FTP
+  - recover 3min @Z1
+
+# Upper Body [strength]
+
+- bench press 3x8rep @80kg rest:90s
+
+> Great session overall.
 ```
+
+Every document has at least one session (`##` heading). Files with only `#` headings are auto-wrapped in an implicit unnamed session by the parser.
 
 ### Line Types
 
 | Prefix | Meaning | Example |
 |--------|---------|---------|
 | `---` | Metadata fence (open/close) | `---` |
-| `## ` | Session heading (two-level) | `## Saturday Training` |
-| `# ` | Workout heading | `# Threshold Ride [bike]` |
+| `## ` | Session heading | `## Saturday Training` |
+| `# ` | Child workout heading | `# Threshold Ride [endurance]` |
 | `- ` | Step line | `- run 5km @4:30/km` |
 | `> ` | Note | `> Felt strong today.` |
 | *(blank)* | Section separator | |
@@ -53,7 +62,7 @@ author: Coach Smith
 ```
 - 5x:
   - bike 5min @200W
-  - recover 3min @easy
+  - recover 3min @Z1
 ```
 
 ## 3. Metadata (Frontmatter)
@@ -86,39 +95,48 @@ The following keys have conventional meaning:
 
 ## 4. Headings
 
-### Workout Heading
+### Session Heading
 
 ```
-# Name [type] (YYYY-MM-DD HH:MM-HH:MM) @RPE N @RIR N
+## Name [type] (YYYY-MM-DD HH:MM-HH:MM) @RPE N @RIR N
 ```
 
-All parts except `#` and the name are optional:
+All parts except `##` and the name are optional:
 
-- **Name**: Free text identifying the workout.
-- **Type** (optional): A bracket-enclosed tag classifying the workout. Common types: `endurance`, `strength`, `mixed`, `mobility`.
+- **Name**: Free text identifying the session.
+- **Type** (optional): A bracket-enclosed tag classifying the session. Types: `endurance`, `strength`, `mixed`, `mobility`.
 - **Date** (optional): A parenthesized date or date-time range. See [Section 11: Dates](#11-dates).
-- **@RPE** (optional): Workout-level Rate of Perceived Exertion (float, 1-10).
+- **@RPE** (optional): Session-level Rate of Perceived Exertion (float, 1-10).
 - **@RIR** (optional): Default Reps In Reserve for strength exercises (integer). Individual exercises may override with their own `@RIR`.
 
 Examples:
 
 ```
-# Easy Run
+## Easy Run [endurance]
+## Morning Run [endurance] (2025-02-27)
+## Upper Body [strength] (2025-02-27 15:00-16:00)
+## Full Gym Session [strength] @RIR 2
+## Morning Run [endurance] @RPE 7
+```
+
+### Child Workout Heading
+
+```
+# Name [type] @RPE N @RIR N
+```
+
+A `#` heading creates a child workout within a session. Child workouts **may not** have dates — dates are only allowed on `##` session headings.
+
+Examples:
+
+```
 # Threshold Ride [endurance]
-# Morning Run [endurance] (2025-02-27)
-# Upper Body [strength] (2025-02-27 15:00-16:00)
-# Full Gym Session [strength] @RIR 2
-# Morning Run [endurance] @RPE 7
-# Upper Body [strength] (2025-02-27) @RPE 8 @RIR 2
+# Upper Body [strength] @RIR 2
 ```
 
-### Session Heading (Two-Level)
+### Implicit Sessions
 
-```
-## Session Name [type] (date) @RPE N @RIR N
-```
-
-A `##` heading creates a session that contains `#` child workouts. See [Section 12: Two-Level Hierarchy](#12-two-level-hierarchy).
+Files with only `#` headings (no `##` headings) are auto-wrapped in an implicit unnamed session by the parser for backward compatibility. If such a file has a single `#` heading with a date, the date is lifted to the implicit session.
 
 ## 5. Step Types
 
@@ -167,9 +185,9 @@ Examples:
 ```
 - run 5km @4:30/km
 - bike 30min @200W
-- warmup 15min @easy
-- swim 200m @easy
-- recover 3min @easy
+- warmup 15min @Z1
+- swim 200m @Z2
+- recover 3min @Z1
 ```
 
 ### StrengthStep
@@ -313,22 +331,51 @@ Container blocks may be nested:
 ```
 - 3x:
   - 2x:
-    - run 30s @hard
-    - recover 30s @easy
-  - run 1min @hard
-  - recover 1min @easy
+    - run 30s @Z4
+    - recover 30s @Z1
+  - run 1min @Z4
+  - recover 1min @Z1
 ```
 
 ## 7. Parameters
 
 Parameters modify steps with training targets. They are prefixed with `@`.
 
-### Intensity
+### Zone
 
-Named effort levels:
+Heart rate / effort zones:
 
 ```
-@easy  @moderate  @hard  @max  @threshold  @tempo
+@Z1  @Z2  @Z3  @Z4  @Z5
+```
+
+### Percentage of Variable
+
+A percentage of a training variable. The variable is resolved at runtime.
+
+```
+@80% of FTP
+@70% of max HR
+@95% of 1RM bench press
+@90% of LTHR
+```
+
+Known variables: `FTP`, `LTHR`, `max HR`, `TP` (threshold pace), `1RM <exercise>`.
+
+### Power
+
+Literal watts:
+
+```
+@200W
+```
+
+### Heart Rate
+
+Literal beats per minute:
+
+```
+@140bpm
 ```
 
 ### Pace
@@ -338,30 +385,19 @@ Named effort levels:
 @pace:5:00/km          (explicit prefix form)
 ```
 
-Format: `MM:SS/unit` where unit is `km`, `mi`, or `mile`.
-
-### Power
-
-```
-@200W                  (literal watts)
-@80% of FTP            (percentage of variable)
-@FTP                   (variable reference)
-```
+Format: `[pace:]MM:SS/unit` where unit is `km`, `mi`, or `mile`.
 
 ### Weight
 
 ```
-@80kg  @175lb          (literal weight)
-@80% of 1RM bench press  (percentage of variable)
-@bodyweight + 20kg     (binary expression)
+@80kg  @175lb
 ```
 
-### Heart Rate
+### Bodyweight Plus
 
 ```
-@140bpm                (literal bpm)
-@70% of max HR         (percentage of variable)
-@Z2  @Z3               (heart rate zone)
+@bodyweight + 20kg
+@bodyweight + 45lb
 ```
 
 ### RPE (Rate of Perceived Exertion)
@@ -370,7 +406,7 @@ Format: `MM:SS/unit` where unit is `km`, `mi`, or `mile`.
 @RPE 7    @RPE 8.5
 ```
 
-Value is a float (typically 1-10 scale). Can also appear at the heading level to set workout-wide RPE.
+Value is a float (typically 1-10 scale). Can also appear at the heading level to set session-wide RPE.
 
 ### RIR (Reps In Reserve)
 
@@ -388,51 +424,9 @@ rest:90s    rest:2min    rest:120s
 
 Appears at the end of a strength step line. Specifies rest between sets.
 
-## 8. Expressions
+## 8. Variable Resolution
 
-Expressions appear as parameter values and are resolved against caller-supplied variables.
-
-### Literal
-
-A numeric value with optional unit.
-
-```
-200W    80kg    140bpm    15    24in
-```
-
-### VarRef (Variable Reference)
-
-A reference to a variable provided at resolve time. Variable names may contain spaces.
-
-```
-FTP
-1RM bench press
-bodyweight
-max HR
-```
-
-### Percentage
-
-A percentage of another expression.
-
-```
-80% of FTP
-70% of max HR
-95% of 1RM bench press
-```
-
-### BinOp (Binary Operation)
-
-Addition or subtraction of two expressions.
-
-```
-bodyweight + 20kg
-FTP - 50W
-```
-
-### Resolution
-
-Expressions containing variable references remain as unresolved `VarRef` or `Percentage` nodes until an application calls `resolve(doc, variables)` with concrete values:
+Parameters containing variable references remain unresolved until an application calls `resolve(doc, variables)` with concrete values:
 
 ```python
 resolved = owf.resolve(doc, {
@@ -445,6 +439,16 @@ resolved = owf.resolve(doc, {
 
 Variable values are strings in the format `<number><unit>` (e.g., `"250W"`, `"100kg"`, `"185bpm"`).
 
+### Resolution Rules
+
+- `PercentOfParam` resolves to the appropriate literal type based on the variable's unit:
+  - `@80% of FTP` + `FTP=250W` → `PowerParam(200.0)`
+  - `@70% of max HR` + `max HR=185bpm` → `HeartRateParam(130)`
+  - `@80% of 1RM bench press` + `1RM bench press=100kg` → `WeightParam(80.0, "kg")`
+- `BodyweightPlusParam` resolves using the bodyweight variable:
+  - `@bodyweight + 20kg` + `bodyweight=80kg` → `WeightParam(100.0, "kg")`
+- All other param types (`ZoneParam`, `PowerParam`, `HeartRateParam`, `PaceParam`, `WeightParam`, `RPEParam`, `RIRParam`) are already concrete and pass through unchanged.
+
 ## 9. Units
 
 ### Duration
@@ -454,6 +458,7 @@ Variable values are strings in the format `<number><unit>` (e.g., `"250W"`, `"10
 | `Ns` or `Nsec` | `30s`, `90sec` | Seconds |
 | `Nmin` | `5min` | Minutes |
 | `Nh`, `Nhr`, `Nhour` | `2h` | Hours |
+| `NhNmin`, `NhNminNs`, `NminNs` | `1h30min`, `5min30s` | Compound |
 | `MM:SS` | `1:30` | Minutes and seconds (= 90s) |
 | `HH:MM:SS` | `1:30:00` | Hours, minutes, seconds |
 
@@ -469,6 +474,7 @@ Bare numbers in EMOM, AMRAP, Custom Interval, and For-Time default to **minutes*
 | `mile` / `miles` | `1mile` | Miles (long) |
 | `yd` | `400yd` | Yards |
 | `ft` | `20ft` | Feet |
+| `in` | `24in` | Inches |
 
 ### Pace
 
@@ -493,35 +499,35 @@ Notes are lines prefixed with `> `. They can appear:
 2. **After all steps in a workout** — attached to the workout:
 
 ```
-# Easy Run [run]
+## Easy Run [endurance]
 
-- warmup 10min @easy
+- warmup 10min @Z1
 - run 5km @4:30/km
-- cooldown 10min @easy
+- cooldown 10min @Z1
 
 > Great session for building aerobic base.
 ```
 
 ## 11. Dates
 
-Workout headings may include an optional date or date-time range in parentheses, placed after the name and type.
+Session headings (`##`) may include an optional date or date-time range in parentheses, placed after the name and type. Dates are **only allowed on `##` session headings**, not on `#` child workout headings.
 
 ### Date Only
 
 ```
-# Morning Run [run] (2025-02-27)
+## Morning Run [endurance] (2025-02-27)
 ```
 
 ### Date with Time Range
 
 ```
-# Morning Run [run] (2025-02-27 06:00-07:00)
+## Morning Run [endurance] (2025-02-27 06:00-07:00)
 ```
 
 ### Date with Start Time Only
 
 ```
-# Morning Run [run] (2025-02-27 06:00)
+## Morning Run [endurance] (2025-02-27 06:00)
 ```
 
 ### Format
@@ -530,22 +536,20 @@ Workout headings may include an optional date or date-time range in parentheses,
 - Time: `HH:MM` (24-hour)
 - Range: `HH:MM-HH:MM`
 
-Dates apply to both `#` and `##` headings.
+## 12. Session Hierarchy
 
-## 12. Two-Level Hierarchy
-
-Documents may use `##` session headings to group `#` child workouts.
+Every OWF document uses `##` session headings. Sessions may contain steps directly and/or `#` child workouts.
 
 ```
 ## Saturday Training (2025-02-27)
 
-- warmup 10min @easy
+- warmup 10min @Z1
 
-# Threshold Ride [bike]
+# Threshold Ride [endurance]
 
 - 5x:
-  - bike 5min @200W
-  - recover 3min @easy
+  - bike 5min @95% of FTP
+  - recover 3min @Z1
 
 # Upper Body [strength]
 
@@ -557,25 +561,27 @@ Documents may use `##` session headings to group `#` child workouts.
 
 ### Rules
 
-1. If any `##` heading appears in the document, two-level mode is activated.
+1. `##` headings define **sessions** — the top-level grouping in every document.
 2. `#` headings after a `##` become **child workouts** of that session.
 3. Steps between a `##` heading and the first `#` are **session-level steps** (e.g., a shared warmup).
-4. `#` headings before the first `##` remain **top-level workouts** (backward compatibility).
-5. Notes after the last `#` section attach to the session workout.
-6. If no `##` headings exist, each `#` heading is a top-level workout (flat mode).
+4. Notes after the last `#` section attach to the session.
+5. Dates are only allowed on `##` session headings. Dates on `#` child headings raise an error.
+6. **Implicit sessions**: Files with only `#` headings (no `##`) are auto-wrapped in an unnamed session by the parser. If such a file has a single `#` heading with a date, the date is lifted to the implicit session.
 7. **Mixed inference:** If a `##` session has no explicit `[type]` and contains child workouts with 2 or more distinct types, its type is automatically inferred as `mixed`. The `[mixed]` tag is never written to `.owf` files — it is re-inferred on each parse.
 
 ## Appendix A: EBNF Grammar
 
 ```ebnf
-document        = [ frontmatter ] { workout } ;
+document        = [ frontmatter ] { session } ;
 frontmatter     = "---" newline { kv_pair newline } "---" newline ;
 kv_pair         = key ":" SP value ;
 key             = { any_char - ":" - newline } ;
 value           = { any_char - newline } ;
 
-workout         = heading newline { blank } { step_or_note } ;
-heading         = ( "# " | "## " ) name [ SP "[" type "]" ] [ SP "(" date_spec ")" ] { SP heading_param } ;
+session         = session_heading newline { blank } { step_or_note | child_workout } ;
+session_heading = "## " name [ SP "[" type "]" ] [ SP "(" date_spec ")" ] { SP heading_param } ;
+child_workout   = child_heading newline { blank } { step_or_note } ;
+child_heading   = "# " name [ SP "[" type "]" ] { SP heading_param } ;
 heading_param   = "@RPE" SP number | "@RIR" SP integer ;
 name            = { any_char - "[" - "(" - newline } ;
 type            = { word_char } ;
@@ -621,26 +627,27 @@ sets_reps       = [ count "x" ] ( count | "max" ) [ "rep" | "reps" ] ;
 rest_param      = "rest:" duration ;
 
 param           = "@" param_value ;
-param_value     = pace | intensity | rpe | rir | hr_zone | expression ;
-pace            = [ "pace:" ] digit digit ":" digit digit "/" pace_unit ;
-pace_unit       = "km" | "mi" | "mile" ;
-intensity       = "easy" | "moderate" | "hard" | "max" | "threshold" | "tempo" ;
+param_value     = zone | rpe | rir | pace | percent_of
+                | bodyweight_plus | power | heart_rate | weight ;
+zone            = "Z" digit ;
 rpe             = "RPE" [ SP ] number ;
 rir             = "RIR" [ SP ] integer ;
-hr_zone         = "Z" digit ;
+pace            = [ "pace:" ] digit digit ":" digit digit "/" pace_unit ;
+pace_unit       = "km" | "mi" | "mile" ;
+percent_of      = number "%" SP "of" SP variable ;
+variable        = { any_char - "@" - newline } ;
+bodyweight_plus = "bodyweight" SP "+" SP number ( "kg" | "lb" | "lbs" ) ;
+power           = number "W" ;
+heart_rate      = integer "bpm" ;
+weight          = number ( "kg" | "lb" | "lbs" ) ;
 
-expression      = percentage | binop | literal | varref ;
-percentage      = number "%" SP "of" SP expression ;
-binop           = expression SP ( "+" | "-" ) SP expression ;
-literal         = number [ unit ] ;
-varref          = { any_char - "@" - newline } ;
-
-duration        = number time_unit | mm_ss | hh_mm_ss ;
+duration        = compound_dur | number time_unit | mm_ss | hh_mm_ss ;
+compound_dur    = [ number "h" ] [ number "min" ] [ number "s" ] ;
 time_unit       = "s" | "sec" | "min" | "h" | "hr" | "hour" ;
 mm_ss           = digit+ ":" digit digit ;
 hh_mm_ss        = digit+ ":" digit digit ":" digit digit ;
 distance        = number dist_unit ;
-dist_unit       = "m" | "km" | "mi" | "mile" | "miles" | "yd" | "ft" ;
+dist_unit       = "m" | "km" | "mi" | "mile" | "miles" | "yd" | "ft" | "in" ;
 
 count           = digit+ ;
 number          = digit+ [ "." digit+ ] ;
@@ -655,17 +662,13 @@ blank           = newline ;
 
 `run`, `bike`, `swim`, `row`, `ski`, `walk`, `hike`, `skate-ski`, `classic-ski`, `alpine-ski`, `snowboard`, `snowshoe`, `skate`, `paddle`, `kayak`, `surf`, `climb`, `elliptical`, `stairs`, `jumprope`, `ebike`, `other`, `warmup`, `cooldown`, `recover`
 
-### Intensity Names
-
-`easy`, `moderate`, `hard`, `max`, `threshold`, `tempo`
-
 ### Container Keywords
 
 `superset`, `circuit`, `emom`, `alternating`, `amrap`, `for-time`, `every`, `for`
 
 ### Parameter Prefixes
 
-`@RPE`, `@RIR`, `@Z`, `@pace:`, `rest:`
+`@RPE`, `@RIR`, `@Z`, `rest:`
 
 ### Units
 

@@ -2,10 +2,10 @@
 
 # Run Warmup [endurance]
 
-- warmup 10min @easy
+- warmup 10min @Z1
 - 4x:
-  - run 1min @hard
-  - recover 1min @easy
+  - run 1min @Z4
+  - recover 1min @Z1
 - rest 2min
 
 # Chipper [mixed]
@@ -25,7 +25,7 @@
 
 # Cooldown [endurance]
 
-- cooldown 5min @easy
-- walk 5min @easy
+- cooldown 5min @Z1
+- walk 5min @Z1
 
 > Focus on deep breathing and bringing HR below 120bpm.

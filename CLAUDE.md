@@ -6,7 +6,7 @@ Human-readable workout format (`.owf`) with a Python parser. Zero runtime depend
 
 ```bash
 source .venv/bin/activate
-pytest tests/ -v          # 206 tests
+pytest tests/ -v          # 224 tests
 mypy src/                 # strict mode
 ruff check src/           # linting
 ```
@@ -31,8 +31,8 @@ Raw text → Scanner → Block Builder → Step Parser → Resolver → resolved
 - **Scanner** (`parser/scanner.py`): Classifies lines by prefix (`#`, `##`, `-`, `>`, `---`, blank)
 - **Block Builder** (`parser/block_builder.py`): Indentation → tree of `RawBlock` nodes
 - **Step Parser** (`parser/step_parser.py`): Recursive descent → typed AST nodes
-- **Param Parser** (`parser/param_parser.py`): `@intensity`, `@80kg`, `@RPE 8`, `@4:30/km`
-- **Resolver** (`resolver.py`): Evaluates expressions against caller-supplied variables
+- **Param Parser** (`parser/param_parser.py`): `@Z2`, `@80kg`, `@RPE 8`, `@80% of FTP`
+- **Resolver** (`resolver.py`): Resolves `PercentOfParam` and `BodyweightPlusParam` against caller-supplied variables
 
 ## Critical Rules
 
@@ -45,15 +45,37 @@ Raw text → Scanner → Block Builder → Step Parser → Resolver → resolved
 - Duration supports compound formats: `1h30min`, `5min30s`, `1h28min2s` (both parse and `__str__`)
 - `Document.metadata` = frontmatter key-value pairs for doc metadata, NOT training variables
 - `resolve(doc, variables)` only uses caller-supplied variables (does not merge frontmatter)
+- **Sessions are mandatory**: every document has `##` session headings; `#`-only files auto-wrapped in unnamed session
+- **Dates only on `##` headings** — dates on `#` child headings raise `ParseError`
+
+## Parameter Types
+
+Nine flat param types (no expression trees):
+
+| AST Type | Syntax | Example |
+|----------|--------|---------|
+| `ZoneParam` | `@Zn` | `@Z2`, `@Z4` |
+| `PercentOfParam` | `@N% of VAR` | `@80% of FTP`, `@70% of max HR` |
+| `PowerParam` | `@NW` | `@200W` |
+| `HeartRateParam` | `@Nbpm` | `@140bpm` |
+| `PaceParam` | `@MM:SS/unit` | `@4:30/km`, `@7:00/mi` |
+| `WeightParam` | `@Nkg` / `@Nlb` | `@80kg`, `@175lb` |
+| `BodyweightPlusParam` | `@bodyweight + Nkg` | `@bodyweight + 20kg` |
+| `RPEParam` | `@RPE N` | `@RPE 7`, `@RPE 8.5` |
+| `RIRParam` | `@RIR N` | `@RIR 2` |
+
+Removed syntax (parser rejects with error): `@easy`, `@hard`, `@moderate`, `@threshold`, `@tempo`, `@max`, standalone `@FTP`, `@FTP - 50W`.
 
 ## Gotchas
 
 - Empty workouts (no name, no steps, no notes) are **silently filtered** during parsing
-- BinOp params with variable names (e.g. "bodyweight") → `PowerParam`, not `WeightParam`
 - `owf.load()` does NOT resolve includes — it's just read + parse
 - Notes boundary: no blank line before = step-level; blank line before = workout-level
-- Two-level docs: `##` = session, `#` = child workout; steps between `#` headings belong to preceding child
-- Heading-level `@RIR` = default for strength exercises (per-step overrides); `@RPE` = workout-wide
+- `##` = session, `#` = child workout; steps between `#` headings belong to preceding child
+- `#`-only files are auto-wrapped in unnamed session — `doc.workouts[0]` is always a session
+- Single-child implicit session: date on `#` heading is lifted to session wrapper
+- Heading-level `@RIR` = default for strength exercises (per-step overrides); `@RPE` = session-wide
+- Resolver only touches `PercentOfParam` and `BodyweightPlusParam`; all other params pass through
 
 ## Cross-Project Impact (Grit)
 

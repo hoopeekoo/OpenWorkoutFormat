@@ -10,16 +10,17 @@ from owf.ast.blocks import (
     ForTime,
     Superset,
 )
-from owf.ast.expressions import BinOp, Expression, Literal, Percentage, VarRef
 from owf.ast.params import (
+    BodyweightPlusParam,
     HeartRateParam,
-    IntensityParam,
     PaceParam,
     Param,
+    PercentOfParam,
     PowerParam,
     RIRParam,
     RPEParam,
     WeightParam,
+    ZoneParam,
 )
 from owf.ast.steps import (
     EnduranceStep,
@@ -32,20 +33,17 @@ from owf.ast.steps import (
 __all__ = [
     "AMRAP",
     "AlternatingEMOM",
-    "BinOp",
+    "BodyweightPlusParam",
     "Circuit",
     "CustomInterval",
     "Document",
     "EMOM",
     "EnduranceStep",
-    "Expression",
     "ForTime",
     "HeartRateParam",
-    "IntensityParam",
-    "Literal",
     "PaceParam",
     "Param",
-    "Percentage",
+    "PercentOfParam",
     "PowerParam",
     "RIRParam",
     "RPEParam",
@@ -54,8 +52,8 @@ __all__ = [
     "Step",
     "StrengthStep",
     "Superset",
-    "VarRef",
     "WeightParam",
     "Workout",
     "WorkoutDate",
+    "ZoneParam",
 ]

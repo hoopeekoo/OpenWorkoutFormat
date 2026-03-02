@@ -1,15 +1,19 @@
 """Tests for the parameter parser."""
 
-from owf.ast.expressions import Literal, Percentage, VarRef
+import pytest
+
 from owf.ast.params import (
+    BodyweightPlusParam,
     HeartRateParam,
-    IntensityParam,
     PaceParam,
+    PercentOfParam,
     PowerParam,
     RIRParam,
     RPEParam,
     WeightParam,
+    ZoneParam,
 )
+from owf.errors import ParseError
 from owf.parser.param_parser import parse_params
 from owf.units import Pace
 
@@ -27,27 +31,18 @@ def test_pace_with_prefix():
     assert isinstance(params[0], PaceParam)
 
 
-def test_intensity_param():
-    params, rest = parse_params(["@easy"])
-    assert len(params) == 1
-    assert isinstance(params[0], IntensityParam)
-    assert params[0].name == "easy"
-
-
-def test_hr_zone():
+def test_zone_param():
     params, rest = parse_params(["@Z2"])
     assert len(params) == 1
-    assert isinstance(params[0], HeartRateParam)
-    assert params[0].value == "Z2"
+    assert isinstance(params[0], ZoneParam)
+    assert params[0].zone == "Z2"
 
 
 def test_hr_bpm():
     params, rest = parse_params(["@140bpm"])
     assert len(params) == 1
     assert isinstance(params[0], HeartRateParam)
-    assert isinstance(params[0].value, Literal)
-    assert params[0].value.value == 140
-    assert params[0].value.unit == "bpm"
+    assert params[0].value == 140
 
 
 def test_rpe():
@@ -61,37 +56,55 @@ def test_power_watts():
     params, rest = parse_params(["@200W"])
     assert len(params) == 1
     assert isinstance(params[0], PowerParam)
-    assert isinstance(params[0].value, Literal)
-    assert params[0].value.value == 200
-    assert params[0].value.unit == "W"
+    assert params[0].value == 200
 
 
 def test_weight_kg():
     params, rest = parse_params(["@80kg"])
     assert len(params) == 1
     assert isinstance(params[0], WeightParam)
-    assert isinstance(params[0].value, Literal)
-    assert params[0].value.value == 80
+    assert params[0].value == 80
+    assert params[0].unit == "kg"
 
 
-def test_percentage_of_variable():
+def test_weight_lb():
+    params, rest = parse_params(["@175lb"])
+    assert len(params) == 1
+    assert isinstance(params[0], WeightParam)
+    assert params[0].value == 175
+    assert params[0].unit == "lb"
+
+
+def test_percentage_of_ftp():
     params, rest = parse_params(["@80%", "of", "FTP"])
     assert len(params) == 1
-    assert isinstance(params[0], PowerParam)
-    assert isinstance(params[0].value, Percentage)
-    assert params[0].value.percent == 80
-    assert isinstance(params[0].value.of, VarRef)
-    assert params[0].value.of.name == "FTP"
+    assert isinstance(params[0], PercentOfParam)
+    assert params[0].percent == 80
+    assert params[0].variable == "FTP"
 
 
 def test_percentage_of_1rm():
     params, rest = parse_params(["@70%", "of", "1RM", "bench", "press"])
     assert len(params) == 1
-    assert isinstance(params[0], WeightParam)
-    assert isinstance(params[0].value, Percentage)
-    assert params[0].value.percent == 70
-    assert isinstance(params[0].value.of, VarRef)
-    assert params[0].value.of.name == "1RM bench press"
+    assert isinstance(params[0], PercentOfParam)
+    assert params[0].percent == 70
+    assert params[0].variable == "1RM bench press"
+
+
+def test_percentage_of_max_hr():
+    params, rest = parse_params(["@70%", "of", "max", "HR"])
+    assert len(params) == 1
+    assert isinstance(params[0], PercentOfParam)
+    assert params[0].percent == 70
+    assert params[0].variable == "max HR"
+
+
+def test_bodyweight_plus():
+    params, rest = parse_params(["@bodyweight", "+", "20kg"])
+    assert len(params) == 1
+    assert isinstance(params[0], BodyweightPlusParam)
+    assert params[0].added == 20
+    assert params[0].unit == "kg"
 
 
 def test_rest_duration():
@@ -135,3 +148,50 @@ def test_multiple_params():
     assert isinstance(params[0], WeightParam)
     assert rest is not None
     assert rest.seconds == 60
+
+
+def test_multiple_step_params():
+    params, rest = parse_params(["@15kg", "@RIR", "3", "rest:60s"])
+    assert len(params) == 2
+    assert isinstance(params[0], WeightParam)
+    assert isinstance(params[1], RIRParam)
+    assert rest is not None
+
+
+def test_rejected_intensity_easy():
+    with pytest.raises(ParseError, match="no longer supported"):
+        parse_params(["@easy"])
+
+
+def test_rejected_intensity_hard():
+    with pytest.raises(ParseError, match="no longer supported"):
+        parse_params(["@hard"])
+
+
+def test_rejected_intensity_threshold():
+    with pytest.raises(ParseError, match="no longer supported"):
+        parse_params(["@threshold"])
+
+
+def test_rejected_unknown_param():
+    with pytest.raises(ParseError, match="Unknown parameter"):
+        parse_params(["@FTP"])
+
+
+def test_percent_of_stops_at_next_param():
+    """Variable name collection stops at the next @ token."""
+    params, rest = parse_params(["@80%", "of", "FTP", "@Z2"])
+    assert len(params) == 2
+    assert isinstance(params[0], PercentOfParam)
+    assert params[0].variable == "FTP"
+    assert isinstance(params[1], ZoneParam)
+
+
+def test_percent_of_stops_at_rest():
+    """Variable name collection stops at rest: token."""
+    params, rest = parse_params(["@80%", "of", "1RM", "bench", "press", "rest:90s"])
+    assert len(params) == 1
+    assert isinstance(params[0], PercentOfParam)
+    assert params[0].variable == "1RM bench press"
+    assert rest is not None
+    assert rest.seconds == 90

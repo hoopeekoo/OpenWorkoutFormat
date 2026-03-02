@@ -9,48 +9,49 @@ from owf.ast.blocks import (
     ForTime,
     Superset,
 )
+from owf.ast.params import PercentOfParam, PowerParam
 from owf.ast.steps import EnduranceStep, RepeatStep, StrengthStep
 from owf.parser.step_parser import parse_document
 from owf.resolver import resolve
 from owf.serializer import dumps
 
 FULL_EXAMPLE = """\
-# Threshold Ride [endurance]
+## Threshold Ride [endurance]
 
 - warmup 15min @60% of FTP
 - 5x:
   - bike 5min @95% of FTP
   - recover 3min @50% of FTP
-- cooldown 10min @easy
+- cooldown 10min @Z1
 
 > Felt strong through set 3, faded on 4-5.
 
-# Upper Body [strength]
+## Upper Body [strength]
 
 - 3x superset:
   - bench press 3x8rep @80% of 1RM bench press rest:90s
   - bent-over row 3x8rep @60kg rest:90s
 - bicep curl 3x12rep @15kg rest:60s
 
-# Power Clean EMOM [mixed]
+## Power Clean EMOM [mixed]
 
 - emom 10min:
   - power clean 3rep @70kg
 
-# Alternating EMOM [mixed]
+## Alternating EMOM [mixed]
 
 - emom 12min alternating:
   - deadlift 5rep @100kg
   - strict press 7rep @40kg
   - toes-to-bar 10rep
 
-# Mixed EMOM [mixed]
+## Mixed EMOM [mixed]
 
 - every 2min for 20min:
   - wall ball 15rep @9kg
-  - box jump 10rep @24in
+  - box jump 10rep
 
-# Murph [mixed]
+## Murph [mixed]
 
 - for-time:
   - run 1mile
@@ -59,7 +60,7 @@ FULL_EXAMPLE = """\
   - air squat 300rep
   - run 1mile
 
-# Metcon [mixed]
+## Metcon [mixed]
 
 - amrap 12min:
   - pull-up 5rep
@@ -70,7 +71,7 @@ FULL_EXAMPLE = """\
 SESSION_EXAMPLE = """\
 ## Saturday Training
 
-- warmup 10min @easy
+- warmup 10min @Z1
 
 # Threshold Ride [endurance]
 
@@ -223,14 +224,9 @@ def test_resolve_full_example():
     warmup = ride.steps[0]
     assert isinstance(warmup, EnduranceStep)
     # 60% of 250W = 150W
-    from owf.ast.expressions import Literal
-    from owf.ast.params import PowerParam
-
     param = warmup.params[0]
     assert isinstance(param, PowerParam)
-    assert isinstance(param.value, Literal)
-    assert param.value.value == 150.0
-    assert param.value.unit == "W"
+    assert param.value == 150.0
 
 
 def test_resolve_session_example():
@@ -240,9 +236,6 @@ def test_resolve_session_example():
     session = resolved.workouts[0]
 
     # The child Threshold Ride should have resolved FTP expressions
-    from owf.ast.expressions import Literal
-    from owf.ast.params import PowerParam
-
     child_ride = session.steps[1]
     assert isinstance(child_ride, Workout)
     repeat = child_ride.steps[0]
@@ -251,10 +244,8 @@ def test_resolve_session_example():
     assert isinstance(bike, EnduranceStep)
     param = bike.params[0]
     assert isinstance(param, PowerParam)
-    assert isinstance(param.value, Literal)
     # 95% of 250W = 237.5W
-    assert param.value.value == 237.5
-    assert param.value.unit == "W"
+    assert param.value == 237.5
 
 
 def test_serialize_full_example():
@@ -262,12 +253,12 @@ def test_serialize_full_example():
     serialized = dumps(doc)
 
     # Should contain all workout headings
-    assert "# Threshold Ride [endurance]" in serialized
-    assert "# Upper Body [strength]" in serialized
+    assert "## Threshold Ride [endurance]" in serialized
+    assert "## Upper Body [strength]" in serialized
     # [mixed] is never written — it's re-inferred on parse
-    assert "# Power Clean EMOM\n" in serialized
-    assert "# Murph\n" in serialized
-    assert "# Metcon\n" in serialized
+    assert "## Power Clean EMOM\n" in serialized
+    assert "## Murph\n" in serialized
+    assert "## Metcon\n" in serialized
 
     # Should contain key structural elements
     assert "- 5x:" in serialized
@@ -283,12 +274,12 @@ def test_serialize_session_example():
     assert "## Saturday Training" in serialized
     assert "# Threshold Ride [endurance]" in serialized
     assert "# Upper Body [strength]" in serialized
-    assert "- warmup 10min @easy" in serialized
+    assert "- warmup 10min @Z1" in serialized
     assert "> Great session overall." in serialized
 
 
 def test_roundtrip_full_example():
-    """parse → dumps → parse should be structurally equivalent."""
+    """parse -> dumps -> parse should be structurally equivalent."""
     doc1 = parse_document(FULL_EXAMPLE)
     serialized = dumps(doc1)
     doc2 = parse_document(serialized)
@@ -303,7 +294,7 @@ def test_roundtrip_full_example():
 
 
 def test_roundtrip_session_example():
-    """parse → dumps → parse for session documents."""
+    """parse -> dumps -> parse for session documents."""
     doc1 = parse_document(SESSION_EXAMPLE)
     serialized = dumps(doc1)
     doc2 = parse_document(serialized)
@@ -336,4 +327,4 @@ def test_public_api():
     assert len(resolved.workouts) == 7
 
     text = owf.dumps(doc)
-    assert "# Threshold Ride [endurance]" in text
+    assert "## Threshold Ride [endurance]" in text

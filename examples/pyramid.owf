@@ -1,13 +1,13 @@
-# Pyramid Intervals
+## Pyramid Intervals [endurance]
 
-- warmup 10min @easy
+- warmup 10min @Z1
 - 3x:
   - 2x:
-    - run 30s @hard
-    - recover 30s @easy
-  - run 1:00 @hard
-  - recover 1:00 @easy
+    - run 30s @Z4
+    - recover 30s @Z1
+  - run 1:00 @Z4
+  - recover 1:00 @Z1
   - 2x:
-    - run 30s @hard
-    - recover 30s @easy
-- cooldown 10min @easy
+    - run 30s @Z4
+    - recover 30s @Z1
+- cooldown 10min @Z1

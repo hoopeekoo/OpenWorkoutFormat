@@ -18,14 +18,16 @@ from owf.ast.blocks import (
     ForTime,
     Superset,
 )
-from owf.ast.expressions import BinOp, Literal, Percentage, VarRef
 from owf.ast.params import (
+    BodyweightPlusParam,
     HeartRateParam,
-    IntensityParam,
     PaceParam,
+    PercentOfParam,
     PowerParam,
+    RIRParam,
     RPEParam,
     WeightParam,
+    ZoneParam,
 )
 from owf.ast.steps import (
     EnduranceStep,
@@ -206,34 +208,32 @@ def _print_node(node: Any, indent: int) -> None:
 
 
 def _format_param(param: Any) -> str:
+    """Format a parameter for CLI display."""
+    if isinstance(param, ZoneParam):
+        return f"@{param.zone}"
+    if isinstance(param, PercentOfParam):
+        p = param.percent
+        pct = int(p) if p == int(p) else p
+        return f"@{pct}% of {param.variable}"
+    if isinstance(param, PowerParam):
+        v = int(param.value) if param.value == int(param.value) else param.value
+        return f"@{v}W"
+    if isinstance(param, HeartRateParam):
+        return f"@{param.value}bpm"
     if isinstance(param, PaceParam):
         return f"@{param.pace}"
-    if isinstance(param, IntensityParam):
-        return f"@{param.name}"
+    if isinstance(param, WeightParam):
+        v = int(param.value) if param.value == int(param.value) else param.value
+        return f"@{v}{param.unit}"
+    if isinstance(param, BodyweightPlusParam):
+        v = int(param.added) if param.added == int(param.added) else param.added
+        return f"@bodyweight + {v}{param.unit}"
     if isinstance(param, RPEParam):
         v = int(param.value) if param.value == int(param.value) else param.value
         return f"@RPE {v}"
-    if isinstance(param, (PowerParam, WeightParam, HeartRateParam)):
-        if isinstance(param.value, str):
-            return f"@{param.value}"
-        return f"@{_format_expr(param.value)}"
+    if isinstance(param, RIRParam):
+        return f"@RIR {param.value}"
     return ""
-
-
-def _format_expr(expr: Any) -> str:
-    if isinstance(expr, Literal):
-        v = int(expr.value) if expr.value == int(expr.value) else expr.value
-        if expr.unit:
-            return f"{v}{expr.unit}"
-        return str(v)
-    if isinstance(expr, VarRef):
-        return expr.name
-    if isinstance(expr, Percentage):
-        pct = int(expr.percent) if expr.percent == int(expr.percent) else expr.percent
-        return f"{pct}% of {_format_expr(expr.of)}"
-    if isinstance(expr, BinOp):
-        return f"{_format_expr(expr.left)} {expr.op} {_format_expr(expr.right)}"
-    return str(expr)
 
 
 if __name__ == "__main__":
