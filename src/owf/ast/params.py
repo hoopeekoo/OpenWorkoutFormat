@@ -71,7 +71,7 @@ class BodyweightPlusParam:
 class RPEParam:
     """RPE parameter, e.g. @RPE 7."""
 
-    value: float
+    value: int
     span: SourceSpan | None = field(default=None, compare=False, repr=False)
 
 

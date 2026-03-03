@@ -70,11 +70,11 @@ def parse_params(
         if value.upper().startswith("RPE"):
             rpe_val = value[3:].strip()
             if rpe_val:
-                params.append(RPEParam(value=float(rpe_val), span=span))
+                params.append(RPEParam(value=int(rpe_val), span=span))
                 i += 1
                 continue
             if i + 1 < len(tokens) and _is_number(tokens[i + 1]):
-                params.append(RPEParam(value=float(tokens[i + 1]), span=span))
+                params.append(RPEParam(value=int(tokens[i + 1]), span=span))
                 i += 2
                 continue
             i += 1

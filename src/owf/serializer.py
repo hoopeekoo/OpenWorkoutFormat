@@ -67,8 +67,7 @@ def _heading_line(prefix: str, workout: Workout) -> str:
     if workout.date:
         parts.append(f" ({workout.date})")
     if workout.rpe is not None:
-        v = int(workout.rpe) if workout.rpe == int(workout.rpe) else workout.rpe
-        parts.append(f" @RPE {v}")
+        parts.append(f" @RPE {workout.rpe}")
     if workout.rir is not None:
         parts.append(f" @RIR {workout.rir}")
     return "".join(parts)
@@ -117,12 +116,7 @@ def _serialize_child_workout(workout: Workout) -> str:
         if workout.workout_type and workout.workout_type != "mixed":
             child_parts.append(f" [{workout.workout_type}]")
         if workout.rpe is not None:
-            v = (
-                int(workout.rpe)
-                if workout.rpe == int(workout.rpe)
-                else workout.rpe
-            )
-            child_parts.append(f" @RPE {v}")
+            child_parts.append(f" @RPE {workout.rpe}")
         if workout.rir is not None:
             child_parts.append(f" @RIR {workout.rir}")
         lines.append("".join(child_parts))
@@ -273,8 +267,7 @@ def _serialize_param(param: Param) -> str:
         return f"@bodyweight + {v}{param.unit}"
 
     if isinstance(param, RPEParam):
-        v = int(param.value) if param.value == int(param.value) else param.value
-        return f"@RPE {v}"
+        return f"@RPE {param.value}"
 
     if isinstance(param, RIRParam):
         return f"@RIR {param.value}"

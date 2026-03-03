@@ -288,7 +288,7 @@ def _build_workout(
     name = ""
     workout_type: str | None = None
     date: WorkoutDate | None = None
-    rpe: float | None = None
+    rpe: int | None = None
     rir: int | None = None
     span: SourceSpan | None = None
 
@@ -315,13 +315,13 @@ _DATE_RE = re.compile(
     r"\((\d{4}-\d{2}-\d{2})(?:\s+(\d{2}:\d{2})(?:-(\d{2}:\d{2}))?)?\)\s*$"
 )
 
-_RPE_TAIL_RE = re.compile(r"\s+@RPE\s+(\d+(?:\.\d+)?)\s*$")
+_RPE_TAIL_RE = re.compile(r"\s+@RPE\s+(\d+)\s*$")
 _RIR_TAIL_RE = re.compile(r"\s+@RIR\s+(\d+)\s*$")
 
 
 def _parse_heading(
     content: str,
-) -> tuple[str, str | None, WorkoutDate | None, float | None, int | None]:
+) -> tuple[str, str | None, WorkoutDate | None, int | None, int | None]:
     """Parse heading content like 'Name [type] (2025-02-27) @RPE 7 @RIR 2'.
 
     Returns (name, workout_type, date, rpe, rir).
@@ -329,7 +329,7 @@ def _parse_heading(
     text = content
 
     # Strip trailing @RPE / @RIR (EBNF: heading ends with { SP heading_param })
-    rpe: float | None = None
+    rpe: int | None = None
     rir: int | None = None
 
     for _ in range(2):
@@ -340,7 +340,7 @@ def _parse_heading(
             continue
         m = _RPE_TAIL_RE.search(text)
         if m:
-            rpe = float(m.group(1))
+            rpe = int(m.group(1))
             text = text[: m.start()]
             continue
         break

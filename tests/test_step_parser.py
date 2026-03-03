@@ -340,7 +340,7 @@ def test_heading_with_rpe():
     text = "## Run [endurance] @RPE 7\n\n- run 5km\n"
     doc = parse_document(text)
     w = doc.workouts[0]
-    assert w.rpe == 7.0
+    assert w.rpe == 7
     assert w.rir is None
 
 
@@ -356,7 +356,7 @@ def test_heading_with_both():
     text = "## Gym [strength] @RPE 8 @RIR 2\n\n- bench press 3x8rep @80kg\n"
     doc = parse_document(text)
     w = doc.workouts[0]
-    assert w.rpe == 8.0
+    assert w.rpe == 8
     assert w.rir == 2
 
 
@@ -366,7 +366,7 @@ def test_heading_with_date_and_params():
     w = doc.workouts[0]
     assert w.date is not None
     assert w.date.date == "2025-02-27"
-    assert w.rpe == 7.0
+    assert w.rpe == 7
     assert w.rir == 2
 
 

@@ -106,7 +106,7 @@ All parts except `##` and the name are optional:
 - **Name**: Free text identifying the session.
 - **Type** (optional): A bracket-enclosed tag classifying the session. Types: `endurance`, `strength`, `mixed`, `mobility`.
 - **Date** (optional): A parenthesized date or date-time range. See [Section 11: Dates](#11-dates).
-- **@RPE** (optional): Session-level Rate of Perceived Exertion (float, 1-10).
+- **@RPE** (optional): Session-level Rate of Perceived Exertion (integer, 1-10).
 - **@RIR** (optional): Default Reps In Reserve for strength exercises (integer). Individual exercises may override with their own `@RIR`.
 
 Examples:
@@ -403,10 +403,10 @@ Format: `[pace:]MM:SS/unit` where unit is `km`, `mi`, or `mile`.
 ### RPE (Rate of Perceived Exertion)
 
 ```
-@RPE 7    @RPE 8.5
+@RPE 7    @RPE 8
 ```
 
-Value is a float (typically 1-10 scale). Can also appear at the heading level to set session-wide RPE.
+Value is an integer (1-10 scale). Can also appear at the heading level to set session-wide RPE.
 
 ### RIR (Reps In Reserve)
 
@@ -582,7 +582,7 @@ session         = session_heading newline { blank } { step_or_note | child_worko
 session_heading = "## " name [ SP "[" type "]" ] [ SP "(" date_spec ")" ] { SP heading_param } ;
 child_workout   = child_heading newline { blank } { step_or_note } ;
 child_heading   = "# " name [ SP "[" type "]" ] { SP heading_param } ;
-heading_param   = "@RPE" SP number | "@RIR" SP integer ;
+heading_param   = "@RPE" SP integer | "@RIR" SP integer ;
 name            = { any_char - "[" - "(" - newline } ;
 type            = { word_char } ;
 date_spec       = date [ SP time_range ] ;
@@ -630,7 +630,7 @@ param           = "@" param_value ;
 param_value     = zone | rpe | rir | pace | percent_of
                 | bodyweight_plus | power | heart_rate | weight ;
 zone            = "Z" digit ;
-rpe             = "RPE" [ SP ] number ;
+rpe             = "RPE" [ SP ] integer ;
 rir             = "RIR" [ SP ] integer ;
 pace            = [ "pace:" ] digit digit ":" digit digit "/" pace_unit ;
 pace_unit       = "km" | "mi" | "mile" ;

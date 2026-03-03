@@ -61,7 +61,7 @@ Nine flat param types (no expression trees):
 | `PaceParam` | `@MM:SS/unit` | `@4:30/km`, `@7:00/mi` |
 | `WeightParam` | `@Nkg` / `@Nlb` | `@80kg`, `@175lb` |
 | `BodyweightPlusParam` | `@bodyweight + Nkg` | `@bodyweight + 20kg` |
-| `RPEParam` | `@RPE N` | `@RPE 7`, `@RPE 8.5` |
+| `RPEParam` | `@RPE N` | `@RPE 7`, `@RPE 8` |
 | `RIRParam` | `@RIR N` | `@RIR 2` |
 
 Removed syntax (parser rejects with error): `@easy`, `@hard`, `@moderate`, `@threshold`, `@tempo`, `@max`, standalone `@FTP`, `@FTP - 50W`.

@@ -49,7 +49,7 @@ def test_rpe():
     params, rest = parse_params(["@RPE", "7"])
     assert len(params) == 1
     assert isinstance(params[0], RPEParam)
-    assert params[0].value == 7.0
+    assert params[0].value == 7
 
 
 def test_power_watts():

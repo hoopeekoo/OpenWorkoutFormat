@@ -108,7 +108,7 @@ def test_serialize_workout_rpe():
     result = dumps(doc)
     assert "## Run [endurance] @RPE 7" in result
     doc2 = parse_document(result)
-    assert doc2.workouts[0].rpe == 7.0
+    assert doc2.workouts[0].rpe == 7
 
 
 def test_serialize_workout_rir():

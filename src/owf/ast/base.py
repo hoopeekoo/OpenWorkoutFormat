@@ -34,7 +34,7 @@ class Workout:
     name: str
     workout_type: str | None = None
     date: WorkoutDate | None = None
-    rpe: float | None = None  # workout-level perceived exertion (1-10)
+    rpe: int | None = None  # workout-level perceived exertion (1-10)
     rir: int | None = None  # default RIR for strength exercises
     steps: tuple[Any, ...] = ()  # tuple of Step | Block
     notes: tuple[str, ...] = ()
