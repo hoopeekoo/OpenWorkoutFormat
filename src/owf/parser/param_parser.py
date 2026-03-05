@@ -173,7 +173,7 @@ def parse_params(
         power_m = re.match(r"^(\d+(?:\.\d+)?)W$", value)
         if power_m:
             params.append(
-                PowerParam(value=float(power_m.group(1)), span=span)
+                PowerParam(value=int(round(float(power_m.group(1)))), span=span)
             )
             i += 1
             continue

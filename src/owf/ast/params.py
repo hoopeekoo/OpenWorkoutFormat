@@ -29,7 +29,7 @@ class PercentOfParam:
 class PowerParam:
     """Literal power in watts, e.g. @200W."""
 
-    value: float
+    value: int
     span: SourceSpan | None = field(default=None, compare=False, repr=False)
 
 

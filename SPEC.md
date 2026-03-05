@@ -637,7 +637,7 @@ pace_unit       = "km" | "mi" | "mile" ;
 percent_of      = number "%" SP "of" SP variable ;
 variable        = { any_char - "@" - newline } ;
 bodyweight_plus = "bodyweight" SP "+" SP number ( "kg" | "lb" | "lbs" ) ;
-power           = number "W" ;
+power           = integer "W" ;
 heart_rate      = integer "bpm" ;
 weight          = number ( "kg" | "lb" | "lbs" ) ;
 

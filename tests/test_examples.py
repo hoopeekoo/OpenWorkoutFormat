@@ -226,7 +226,7 @@ def test_triathlon_resolve():
     bike_step = children[2].steps[1]
     param = bike_step.params[0]
     assert isinstance(param, PowerParam)
-    assert param.value == 195.5
+    assert param.value == 196
 
 
 # --- pyramid.owf ---

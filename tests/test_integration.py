@@ -244,8 +244,8 @@ def test_resolve_session_example():
     assert isinstance(bike, EnduranceStep)
     param = bike.params[0]
     assert isinstance(param, PowerParam)
-    # 95% of 250W = 237.5W
-    assert param.value == 237.5
+    # 95% of 250W = 237.5W → rounds to 238
+    assert param.value == 238
 
 
 def test_serialize_full_example():

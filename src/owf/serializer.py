@@ -249,8 +249,7 @@ def _serialize_param(param: Param) -> str:
         return f"@{pct}% of {param.variable}"
 
     if isinstance(param, PowerParam):
-        v = int(param.value) if param.value == int(param.value) else param.value
-        return f"@{v}W"
+        return f"@{param.value}W"
 
     if isinstance(param, HeartRateParam):
         return f"@{param.value}bpm"
