@@ -89,6 +89,16 @@ Grit depends on OWF. Changes to these areas affect Grit — run **cross-project-
 
 See @SPEC.md for EBNF grammar and semantic rules.
 
+## Plan Execution
+
+When exiting plan mode to implement a plan, create a task list from the plan's steps using `TaskCreate`. Each task should be a concrete implementation unit (e.g. "Add ZoneParam to ast", "Update param_parser.py"). Then as you work:
+
+- Set each task to `in_progress` when you start it
+- Set each task to `completed` when done
+- If a task is blocked or needs changes, update its description
+
+This keeps large multi-file features trackable and makes it easy to resume if interrupted.
+
 ## Workflow Triggers
 
 - After changing `ast/`, `serializer.py`, or `__init__.py` → run **cross-project-checker**
