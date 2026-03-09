@@ -7,7 +7,7 @@ A human-readable workout description language with a Python parser. Supports end
 ## Example
 
 ```
-## Threshold Ride [endurance]
+## Threshold Ride [Cycling]
 
 - warmup 15min @60% of FTP
 - 5x:
@@ -17,18 +17,18 @@ A human-readable workout description language with a Python parser. Supports end
 
 > Felt strong through set 3, faded on 4-5.
 
-## Upper Body [strength]
+## Upper Body [Strength Training]
 
 - 3x superset:
-  - bench press 3x8rep @80% of 1RM bench press @rest 90s
-  - bent-over row 3x8rep @60kg @RIR 2 @rest 90s
+  - Bench Press 3x8rep @80% of 1RM bench press @rest 90s
+  - Bent-Over Row 3x8rep @60kg @RIR 2 @rest 90s
 
-## Metcon [mixed]
+## Metcon [HIIT]
 
 - amrap 12min:
-  - pull-up 5rep
-  - push-up 10rep
-  - air squat 15rep
+  - Pull-Up 5rep
+  - Push-Up 10rep
+  - Air Squat 15rep
 ```
 
 ## Installation
@@ -74,7 +74,7 @@ Every OWF document uses `##` session headings. Files with only `#` headings are 
 
 ## Saturday Training (2025-02-27)
 
-# Threshold Ride [endurance]
+# Threshold Ride [Cycling]
 
 - warmup 15min @Z1
 - 5x:
@@ -82,9 +82,9 @@ Every OWF document uses `##` session headings. Files with only `#` headings are 
   - recover 3min @50% of FTP
 - cooldown 10min @Z1
 
-# Upper Body [strength]
+# Upper Body [Strength Training]
 
-- bench press 3x8rep @80kg @rest 90s
+- Bench Press 3x8rep @80kg @rest 90s
 
 > Great session overall.
 ```
@@ -92,15 +92,15 @@ Every OWF document uses `##` session headings. Files with only `#` headings are 
 | Element | Syntax |
 |---------|--------|
 | Metadata | `@ key: value` lines before any heading (document-level) or after a heading |
-| Session | `## Name [type] (date)` — groups `#` workouts |
-| Workout | `# Name [type]` — child workout within a session |
+| Session | `## Name [sport type] (date)` — groups `#` workouts |
+| Workout | `# Name [sport type]` — child workout within a session |
 | Step | `- action [sets×reps] [duration/distance] [@params] [@rest dur]` |
 | Note | `> text` |
 | Date | `(YYYY-MM-DD)` or `(YYYY-MM-DD HH:MM-HH:MM)` — session level only |
 
 ### Workout Types
 
-Four modality-based types:
+Four modality-based types (auto-inferred from sport type or step content):
 
 | Type | Description |
 |------|-------------|
@@ -109,9 +109,22 @@ Four modality-based types:
 | `mixed` | Auto-inferred when a session has 2+ distinct child types |
 | `mobility` | Stretching, yoga, recovery work |
 
+### Sport Types
+
+Bracket tags on headings set the specific sport type. Legacy modality tags (`[endurance]`, `[strength]`, `[mobility]`) are still accepted, but specific sport types are preferred:
+
+```
+## Morning Run [Running]
+## Threshold Ride [Cycling]
+## Swim Intervals [Pool Swimming]
+## Full Gym Session [Strength Training]
+## Metcon [HIIT]
+## Yoga Flow [Yoga]
+```
+
 ### Endurance Steps
 
-27 known actions:
+27 known actions (always lowercase — these are language keywords):
 
 ```
 - run 5km @4:30/km
@@ -143,36 +156,36 @@ Four modality-based types:
 
 ### Strength Steps
 
-Sets × reps formats:
+Sets × reps formats (exercise names are free-form, Title Case by convention):
 
 ```
-- bench press 3x8rep @80kg @rest 90s
-- pull-up 100rep
-- face pull 3xmaxrep @15kg @rest 60s
-- plank 60s
+- Bench Press 3x8rep @80kg @rest 90s
+- Pull-Up 100rep
+- Face Pull 3xmaxrep @15kg @rest 60s
+- Plank 60s
 ```
 
 Weight parameters:
 
 ```
-- bench press 3x8rep @80% of 1RM bench press @rest 90s
-- dip 3x8rep @bodyweight + 20kg @rest 90s
+- Bench Press 3x8rep @80% of 1RM bench press @rest 90s
+- Dip 3x8rep @bodyweight + 20kg @rest 90s
 ```
 
 RIR (Reps In Reserve) — workout-level default with per-step override:
 
 ```
-## Full Gym Session [strength] @RIR 2
+## Full Gym Session [Strength Training] @RIR 2
 
-- back squat 5x5rep @rest 120s
-- romanian deadlift 3x10rep @60kg @rest 90s
-- face pull 3xmaxrep @15kg @RIR 3 @rest 60s
+- Back Squat 5x5rep @rest 120s
+- Romanian Deadlift 3x10rep @60kg @rest 90s
+- Face Pull 3xmaxrep @15kg @RIR 3 @rest 60s
 ```
 
 RPE (Rate of Perceived Exertion) — on session headings:
 
 ```
-## Morning Run [endurance] @RPE 7
+## Morning Run [Running] @RPE 7
 
 - warmup 15min @Z1
 - run 5km @4:30/km
@@ -193,51 +206,51 @@ RPE (Rate of Perceived Exertion) — on session headings:
 
 ```
 - 3x superset:
-  - bench press 3x8rep @80kg @rest 90s
-  - bent-over row 3x8rep @60kg @rest 90s
+  - Bench Press 3x8rep @80kg @rest 90s
+  - Bent-Over Row 3x8rep @60kg @rest 90s
 ```
 
 **Circuit:**
 
 ```
 - 3x circuit:
-  - kettlebell swing 10rep @24kg
-  - push-up 15rep
-  - air squat 20rep
-  - burpee 10rep
+  - Kettlebell Swing 10rep @24kg
+  - Push-Up 15rep
+  - Air Squat 20rep
+  - Burpee 10rep
 ```
 
 **EMOM:**
 
 ```
 - emom 10min:
-  - power clean 3rep @70kg
+  - Power Clean 3rep @70kg
 ```
 
 **Alternating EMOM:**
 
 ```
 - emom 12min alternating:
-  - deadlift 5rep @100kg
-  - strict press 7rep @40kg
-  - toes-to-bar 10rep
+  - Deadlift 5rep @100kg
+  - Strict Press 7rep @40kg
+  - Toes-To-Bar 10rep
 ```
 
 **Custom Interval:**
 
 ```
 - every 2min for 20min:
-  - wall ball 15rep @9kg
-  - box jump 10rep
+  - Wall Ball 15rep @9kg
+  - Box Jump 10rep
 ```
 
 **AMRAP:**
 
 ```
 - amrap 12min:
-  - pull-up 5rep
-  - push-up 10rep
-  - air squat 15rep
+  - Pull-Up 5rep
+  - Push-Up 10rep
+  - Air Squat 15rep
 ```
 
 **For-time:**
@@ -245,16 +258,16 @@ RPE (Rate of Perceived Exertion) — on session headings:
 ```
 - for-time:
   - run 1mile
-  - pull-up 100rep
-  - push-up 200rep
-  - air squat 300rep
+  - Pull-Up 100rep
+  - Push-Up 200rep
+  - Air Squat 300rep
   - run 1mile
 
 - for-time 20min:
   - 5x:
-    - deadlift 12rep @70kg
-    - hang clean 9rep @70kg
-    - push jerk 6rep @70kg
+    - Deadlift 12rep @70kg
+    - Hang Clean 9rep @70kg
+    - Push Jerk 6rep @70kg
 ```
 
 ### Parameters (`@` prefix)
@@ -294,7 +307,7 @@ resolved = owf.resolve(doc, {
 Step-level and workout-level notes:
 
 ```
-## Easy Run [endurance]
+## Easy Run [Running]
 
 - run 5km @4:30/km
 > Aim for negative splits.

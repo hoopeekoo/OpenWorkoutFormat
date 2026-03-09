@@ -19,10 +19,10 @@
     "type": "strength",
     "steps": [
       {"superset": 3, "steps": [
-        "bench press 3x8rep @80% of 1RM bench press @rest 90s",
-        "bent-over row 3x8rep @60kg @rest 90s"
+        "Bench Press 3x8rep @80% of 1RM bench press @rest 90s",
+        "Bent-Over Row 3x8rep @60kg @rest 90s"
       ]},
-      "bicep curl 3x12rep @15kg @rest 60s"
+      "Bicep Curl 3x12rep @15kg @rest 60s"
     ]
   },
 
@@ -31,7 +31,7 @@
     "type": "mixed",
     "steps": [
       {"emom": "10min", "steps": [
-        "power clean 3rep @70kg"
+        "Power Clean 3rep @70kg"
       ]}
     ]
   },
@@ -41,9 +41,9 @@
     "type": "mixed",
     "steps": [
       {"emom": "12min", "alternating": true, "steps": [
-        "deadlift 5rep @100kg",
-        "strict press 7rep @40kg",
-        "toes-to-bar 10rep"
+        "Deadlift 5rep @100kg",
+        "Strict Press 7rep @40kg",
+        "Toes-To-Bar 10rep"
       ]}
     ]
   },
@@ -53,8 +53,8 @@
     "type": "mixed",
     "steps": [
       {"every": "2min", "for": "20min", "steps": [
-        "wall ball 15rep @9kg",
-        "box jump 10rep"
+        "Wall Ball 15rep @9kg",
+        "Box Jump 10rep"
       ]}
     ]
   },
@@ -65,9 +65,9 @@
     "steps": [
       {"for-time": true, "steps": [
         "run 1mile",
-        "pull-up 100rep",
-        "push-up 200rep",
-        "air squat 300rep",
+        "Pull-Up 100rep",
+        "Push-Up 200rep",
+        "Air Squat 300rep",
         "run 1mile"
       ]}
     ]
@@ -78,9 +78,9 @@
     "type": "mixed",
     "steps": [
       {"amrap": "12min", "steps": [
-        "pull-up 5rep",
-        "push-up 10rep",
-        "air squat 15rep"
+        "Pull-Up 5rep",
+        "Push-Up 10rep",
+        "Air Squat 15rep"
       ]}
     ]
   },
@@ -119,8 +119,8 @@
         "name": "Upper Body",
         "type": "strength",
         "steps": [
-          "bench press 3x8rep @80kg @rest 90s",
-          "bent-over row 3x8rep @60kg @rest 90s"
+          "Bench Press 3x8rep @80kg @rest 90s",
+          "Bent-Over Row 3x8rep @60kg @rest 90s"
         ]
       }
     ],
@@ -150,10 +150,10 @@
         "type": "strength",
         "steps": [
           {"superset": 3, "steps": [
-            "bench press 3x8rep @80% of 1RM bench press @rest 90s",
-            "bent-over row 3x8rep @60kg @rest 90s"
+            "Bench Press 3x8rep @80% of 1RM bench press @rest 90s",
+            "Bent-Over Row 3x8rep @60kg @rest 90s"
           ]},
-          "bicep curl 3x12rep @15kg @rest 60s"
+          "Bicep Curl 3x12rep @15kg @rest 60s"
         ]
       }
     ]
@@ -212,14 +212,14 @@
     "type": "strength",
     "rir": 2,
     "steps": [
-      "pull-up 100rep",
-      "dip 3x8rep @bodyweight + 20kg @rest 90s",
-      "plank 60s",
-      "back squat 5x5rep @rest 120s",
-      "romanian deadlift 3x10rep @60kg @rest 90s",
-      "face pull 3xmaxrep @15kg @RIR 3 @rest 60s"
+      "Pull-Up 100rep",
+      "Dip 3x8rep @bodyweight + 20kg @rest 90s",
+      "Plank 60s",
+      "Back Squat 5x5rep @rest 120s",
+      "Romanian Deadlift 3x10rep @60kg @rest 90s",
+      "Face Pull 3xmaxrep @15kg @RIR 3 @rest 60s"
     ],
-    "notes": ["Workout-level @RIR 2 applies to all exercises unless overridden (face pull uses @RIR 3)."]
+    "notes": ["Workout-level @RIR 2 applies to all exercises unless overridden (Face Pull uses @RIR 3)."]
   },
 
   {
@@ -227,10 +227,10 @@
     "type": "strength",
     "steps": [
       {"circuit": 3, "steps": [
-        "kettlebell swing 10rep @24kg",
-        "push-up 15rep",
-        "air squat 20rep",
-        "burpee 10rep"
+        "Kettlebell Swing 10rep @24kg",
+        "Push-Up 15rep",
+        "Air Squat 20rep",
+        "Burpee 10rep"
       ]}
     ],
     "notes": ["Rest 60s between rounds."]
@@ -263,9 +263,9 @@
     "steps": [
       {"for-time": "20min", "steps": [
         {"repeat": 5, "steps": [
-          "deadlift 12rep @70kg",
-          "hang clean 9rep @70kg",
-          "push jerk 6rep @70kg"
+          "Deadlift 12rep @70kg",
+          "Hang Clean 9rep @70kg",
+          "Push Jerk 6rep @70kg"
         ]}
       ]}
     ]
@@ -276,9 +276,9 @@
     "type": "mixed",
     "steps": [
       {"emom": "30min", "steps": [
-        "thruster 5rep @60kg"
+        "Thruster 5rep @60kg"
       ]},
-      "burpee 100rep"
+      "Burpee 100rep"
     ],
     "notes": [
       "Every minute starts with 5 thrusters; fill remaining time with burpees.",
@@ -291,16 +291,16 @@
     "type": "mixed",
     "steps": [
       {"for-time": "35min", "steps": [
-        "box jump 50rep",
-        "pull-up 50rep",
-        "kettlebell swing 50rep @16kg",
-        "walking lunge 50rep",
-        "knees-to-elbow 50rep",
-        "push press 50rep @20kg",
-        "back extension 50rep",
-        "wall ball 50rep @9kg",
-        "burpee 50rep",
-        "double under 50rep"
+        "Box Jump 50rep",
+        "Pull-Up 50rep",
+        "Kettlebell Swing 50rep @16kg",
+        "Walking Lunge 50rep",
+        "Knees-To-Elbows 50rep",
+        "Push Press 50rep @20kg",
+        "Back Extension 50rep",
+        "Wall Ball 50rep @9kg",
+        "Burpee 50rep",
+        "Double Under 50rep"
       ]}
     ]
   },
@@ -326,14 +326,14 @@
         "steps": [
           {"for-time": "25min", "steps": [
             "run 400m",
-            "kettlebell swing 21rep @24kg",
-            "pull-up 15rep",
+            "Kettlebell Swing 21rep @24kg",
+            "Pull-Up 15rep",
             "run 400m",
-            "kettlebell swing 15rep @24kg",
-            "pull-up 12rep",
+            "Kettlebell Swing 15rep @24kg",
+            "Pull-Up 12rep",
             "run 400m",
-            "kettlebell swing 9rep @24kg",
-            "pull-up 9rep"
+            "Kettlebell Swing 9rep @24kg",
+            "Pull-Up 9rep"
           ]},
           "rest 3min"
         ]
@@ -356,45 +356,45 @@
     "rpe": 7,
     "children": [
       {
-        "name": "Warm-up 10min",
+        "name": "Warm-Up 10min",
         "steps": [
-          "Kettlebell swing 2x15rep @16kg",
-          "Dynamic stretch 10rep",
-          "Vertical jump 3x3rep"
+          "Kettlebell Swing 2x15rep @16kg",
+          "Dynamic Stretch 10rep",
+          "Vertical Jump 3x3rep"
         ]
       },
       {
         "name": "Power",
         "steps": [
           "Power Clean 5x3rep @rest 3min",
-          "Box jump 3x5rep @rest 3min"
+          "Box Jump 3x5rep @rest 3min"
         ]
       },
       {
         "name": "Strength",
         "steps": [
-          "Pull-up 3x6rep @rest 90s"
+          "Pull-Up 3x6rep @rest 90s"
         ]
       },
       {
         "name": "CrossFit WoD",
         "steps": [
           {"circuit": 3, "steps": [
-            "Goblet squat 12rep",
-            "Kettlebell swing 15rep",
-            "Push-up variation 10rep",
-            "Single-arm DB row 10rep",
-            "Box step-ups 10rep",
-            "Run 200m"
+            "Goblet Squat 12rep",
+            "Kettlebell Swing 15rep",
+            "Push-Up Variation 10rep",
+            "Single-Arm DB Row 10rep",
+            "Box Step-Up 10rep",
+            "run 200m"
           ]}
         ]
       },
       {
-        "name": "Core/skill work",
+        "name": "Core/Skill Work",
         "steps": [
-          "Turkish get-up 3x3rep @16kg",
-          "Pallof press 3x10rep @16kg",
-          "Farmer's carry 3rep @32kg"
+          "Turkish Get-Up 3x3rep @16kg",
+          "Pallof Press 3x10rep @16kg",
+          "Farmers Walk 3rep @32kg"
         ]
       }
     ]

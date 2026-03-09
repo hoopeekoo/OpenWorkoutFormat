@@ -1,6 +1,6 @@
 ## Triathlon Training
 
-# Swim Intervals [endurance]
+# Swim Intervals [Pool Swimming]
 
 - warmup 200m @Z1
 - 4x:
@@ -8,7 +8,7 @@
   - recover 50m @Z1
 - cooldown 200m @Z1
 
-# Rowing Warmup [endurance]
+# Rowing Warmup [Rowing]
 
 - row 500m @Z1
 - 3x:
@@ -16,13 +16,13 @@
   - recover 250m @Z1
 - row 100yd @Z2
 
-# Bike Tempo [endurance]
+# Bike Tempo [Cycling]
 
 - warmup 10min @Z1
 - bike 30min @85% of FTP
 - cooldown 10min @Z1
 
-# Brick Run [endurance]
+# Brick Run [Running]
 
 - run 3mi @7:00/mi
 - cooldown 1mi @Z1

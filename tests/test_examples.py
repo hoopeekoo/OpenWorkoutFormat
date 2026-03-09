@@ -30,7 +30,7 @@ def test_heart_rate_run():
 
     w = doc.workouts[0]
     assert w.name == "HR Zone Run"
-    assert w.workout_type == "endurance"
+    assert w.sport_type == "Running"
     assert len(w.steps) == 6
     assert all(isinstance(s, EnduranceStep) for s in w.steps)
 
@@ -90,20 +90,20 @@ def test_gym_session():
 
     w = doc.workouts[0]
     assert w.name == "Full Gym Session"
-    assert w.workout_type == "strength"
+    assert w.sport_type == "Strength Training"
     assert w.rir == 2
     assert len(w.steps) == 6
     assert all(isinstance(s, StrengthStep) for s in w.steps)
 
     # reps-only: pull-up 100rep
     s0 = w.steps[0]
-    assert s0.exercise == "pull-up"
+    assert s0.exercise == "Pull-Up"
     assert s0.reps == 100
     assert s0.sets is None
 
     # BodyweightPlus: dip 3x8rep @bodyweight + 20kg @rest 90s
     s1 = w.steps[1]
-    assert s1.exercise == "dip"
+    assert s1.exercise == "Dip"
     assert s1.sets == 3
     assert s1.reps == 8
     assert s1.rest.seconds == 90
@@ -113,14 +113,14 @@ def test_gym_session():
 
     # timed set: plank 60s
     s2 = w.steps[2]
-    assert s2.exercise == "plank"
+    assert s2.exercise == "Plank"
     assert s2.duration.seconds == 60
     assert s2.reps is None
     assert s2.sets is None
 
     # back squat 5x5rep @rest 120s (no per-step RIR, inherits workout-level)
     s3 = w.steps[3]
-    assert s3.exercise == "back squat"
+    assert s3.exercise == "Back Squat"
     assert s3.sets == 5
     assert s3.reps == 5
     assert s3.rest.seconds == 120
@@ -128,13 +128,13 @@ def test_gym_session():
 
     # romanian deadlift 3x10rep @60kg @rest 90s (no per-step RIR)
     s4 = w.steps[4]
-    assert s4.exercise == "romanian deadlift"
+    assert s4.exercise == "Romanian Deadlift"
     rir_params = [p for p in s4.params if isinstance(p, RIRParam)]
     assert len(rir_params) == 0
 
     # face pull 3xmaxrep @15kg @RIR 3 @rest 60s (per-step override)
     s5 = w.steps[5]
-    assert s5.exercise == "face pull"
+    assert s5.exercise == "Face Pull"
     assert s5.sets == 3
     assert s5.reps == "max"
     assert s5.rest.seconds == 60
@@ -175,7 +175,7 @@ def test_triathlon():
     # Swim Intervals
     swim = children[0]
     assert swim.name == "Swim Intervals"
-    assert swim.workout_type == "endurance"
+    assert swim.sport_type == "Pool Swimming"
     assert len(swim.steps) == 3
     assert isinstance(swim.steps[0], EnduranceStep)
     assert swim.steps[0].distance.value == 200
@@ -188,7 +188,7 @@ def test_triathlon():
     # Rowing Warmup
     row_w = children[1]
     assert row_w.name == "Rowing Warmup"
-    assert row_w.workout_type == "endurance"
+    assert row_w.sport_type == "Rowing"
     row_last = row_w.steps[2]
     assert isinstance(row_last, EnduranceStep)
     assert row_last.action == "row"
@@ -198,7 +198,7 @@ def test_triathlon():
     # Bike Tempo — @85% of FTP
     bike = children[2]
     assert bike.name == "Bike Tempo"
-    assert bike.workout_type == "endurance"
+    assert bike.sport_type == "Cycling"
     bike_step = bike.steps[1]
     assert isinstance(bike_step.params[0], PercentOfParam)
     assert bike_step.params[0].percent == 85
@@ -207,7 +207,7 @@ def test_triathlon():
     # Brick Run — 3mi @7:00/mi
     run_w = children[3]
     assert run_w.name == "Brick Run"
-    assert run_w.workout_type == "endurance"
+    assert run_w.sport_type == "Running"
     run_step = run_w.steps[0]
     assert run_step.distance.value == 3
     assert run_step.distance.unit == "mi"
@@ -239,7 +239,7 @@ def test_pyramid():
 
     w = doc.workouts[0]
     assert w.name == "Pyramid Intervals"
-    assert w.workout_type == "endurance"
+    assert w.sport_type == "Running"
 
     assert len(w.steps) == 3
     assert isinstance(w.steps[0], EnduranceStep)  # warmup
@@ -279,7 +279,7 @@ def test_pyramid():
 def test_hero_wod():
     doc = load(Path("examples/hero_wod.owf"))
     assert len(doc.workouts) == 3
-    assert all(w.workout_type == "mixed" for w in doc.workouts)
+    assert all(w.sport_type == "HIIT" for w in doc.workouts)
 
     # DT: for-time 20min containing 5x repeat
     dt = doc.workouts[0]
@@ -294,11 +294,11 @@ def test_hero_wod():
     assert repeat.count == 5
     assert len(repeat.steps) == 3
     assert all(isinstance(s, StrengthStep) for s in repeat.steps)
-    assert repeat.steps[0].exercise == "deadlift"
+    assert repeat.steps[0].exercise == "Deadlift"
     assert repeat.steps[0].reps == 12
-    assert repeat.steps[1].exercise == "hang clean"
+    assert repeat.steps[1].exercise == "Hang Clean"
     assert repeat.steps[1].reps == 9
-    assert repeat.steps[2].exercise == "push jerk"
+    assert repeat.steps[2].exercise == "Push Jerk"
     assert repeat.steps[2].reps == 6
 
     # Kalsu: emom 30min + burpee 100rep
@@ -309,10 +309,10 @@ def test_hero_wod():
     assert isinstance(emom, EMOM)
     assert emom.duration.seconds == 1800  # 30min
     assert len(emom.steps) == 1
-    assert emom.steps[0].exercise == "thruster"
+    assert emom.steps[0].exercise == "Thruster"
     burpee = kalsu.steps[1]
     assert isinstance(burpee, StrengthStep)
-    assert burpee.exercise == "burpee"
+    assert burpee.exercise == "Burpee"
     assert burpee.reps == 100
 
     # Filthy Fifty: for-time 35min with 10 movements
@@ -324,8 +324,8 @@ def test_hero_wod():
     assert ft2.time_cap.seconds == 2100  # 35min
     assert len(ft2.steps) == 10
     assert all(isinstance(s, StrengthStep) for s in ft2.steps)
-    assert ft2.steps[0].exercise == "box jump"
-    assert ft2.steps[-1].exercise == "double under"
+    assert ft2.steps[0].exercise == "Box Jump"
+    assert ft2.steps[-1].exercise == "Double Under"
 
 
 def test_hero_wod_notes():

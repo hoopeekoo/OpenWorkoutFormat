@@ -27,13 +27,13 @@ An OWF document consists of:
 ## Saturday Training (2025-02-27)
 @ location: Downtown Gym
 
-# Threshold Ride [endurance]
+# Threshold Ride [Cycling]
 
 - 5x:
   - Bike 5min @95% of FTP
   - Recover 3min @Z1
 
-# Upper Body [strength]
+# Upper Body [Strength Training]
 
 - Bench Press 3x8rep @80kg @rest 90s
 
@@ -47,7 +47,7 @@ Every document has at least one session (`##` heading). Files with only `#` head
 | Prefix | Meaning | Example |
 |--------|---------|---------|
 | `## ` | Session heading | `## Saturday Training` |
-| `# ` | Child workout heading | `# Threshold Ride [endurance]` |
+| `# ` | Child workout heading | `# Threshold Ride [Cycling]` |
 | `- ` | Step line | `- Run 5km @4:30/km` |
 | `> ` | Note | `> Felt strong today.` |
 | `@ ` | Metadata | `@ location: Downtown Gym` |
@@ -94,13 +94,13 @@ Metadata lines use the `@ key: value` syntax (at-sign, space, key, colon-space, 
 @ author: Coach Smith
 @ tags: cycling, intervals
 
-## Threshold Ride [endurance]
+## Threshold Ride [Cycling]
 ```
 
 ### Session/Workout-Level Metadata
 
 ```
-## Morning Run [endurance] (2025-02-27)
+## Morning Run [Running] (2025-02-27)
 @ source: Garmin Connect
 @ location: Riverside Trail
 
@@ -121,8 +121,8 @@ Metadata lines use the `@ key: value` syntax (at-sign, space, key, colon-space, 
 ```
 - 3x:
   @ rest_between_rounds: 2min
-  - Swing 15rep @24kg
-  - Pushup 15rep
+  - Kettlebell Swing 15rep @24kg
+  - Push-Up 15rep
 ```
 
 - Metadata is informational — it does not affect parsing of steps or expressions.
@@ -169,11 +169,11 @@ All parts except `##` and the name are optional:
 Examples:
 
 ```
-## Easy Run [endurance]
+## Easy Run [Running]
 ## Morning Run [Trail Running] (2025-02-27)
 ## Upper Body [Strength Training] (2025-02-27 15:00-16:00)
 ## Full Gym Session [Strength Training] @RIR 2
-## Morning Run [endurance] @RPE 7
+## Morning Run [Running] @RPE 7
 ## Sunday Ride [Gravel Cycling]
 ```
 
@@ -188,7 +188,7 @@ A `#` heading creates a child workout within a session. Child workouts **may not
 Examples:
 
 ```
-# Threshold Ride [endurance]
+# Threshold Ride [Cycling]
 # Upper Body [Strength Training] @RIR 2
 # Intervals [Indoor Cycling]
 ```
@@ -562,7 +562,7 @@ Notes are lines prefixed with `> `. They can appear:
 2. **After all steps in a workout** — attached to the workout:
 
 ```
-## Easy Run [endurance]
+## Easy Run [Running]
 
 - Warmup 10min @Z1
 - Run 5km @4:30/km
@@ -578,19 +578,19 @@ Session headings (`##`) may include an optional date or date-time range in paren
 ### Date Only
 
 ```
-## Morning Run [endurance] (2025-02-27)
+## Morning Run [Running] (2025-02-27)
 ```
 
 ### Date with Time Range
 
 ```
-## Morning Run [endurance] (2025-02-27 06:00-07:00)
+## Morning Run [Running] (2025-02-27 06:00-07:00)
 ```
 
 ### Date with Start Time Only
 
 ```
-## Morning Run [endurance] (2025-02-27 06:00)
+## Morning Run [Running] (2025-02-27 06:00)
 ```
 
 ### Format
@@ -608,13 +608,13 @@ Every OWF document uses `##` session headings. Sessions may contain steps direct
 
 - Warmup 10min @Z1
 
-# Threshold Ride [endurance]
+# Threshold Ride [Cycling]
 
 - 5x:
   - Bike 5min @95% of FTP
   - Recover 3min @Z1
 
-# Upper Body [strength]
+# Upper Body [Strength Training]
 
 - Bench Press 3x8rep @80kg @rest 90s
 - Bent-Over Row 3x8rep @60kg @rest 90s
