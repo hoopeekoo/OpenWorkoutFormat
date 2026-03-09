@@ -1,4 +1,4 @@
-"""Parameter parser — handles @-prefixed parameters and rest:duration."""
+"""Parameter parser — handles @-prefixed parameters."""
 
 from __future__ import annotations
 
@@ -24,9 +24,6 @@ _REMOVED_INTENSITIES = frozenset(
     {"easy", "moderate", "hard", "max", "threshold", "tempo"}
 )
 
-# Regex for rest:duration (captures everything after "rest:")
-REST_PATTERN = re.compile(r"rest:(.+)")
-
 # Regex for bodyweight + Nkg/Nlb
 _BW_PLUS_RE = re.compile(
     r"^bodyweight\s*\+\s*(\d+(?:\.\d+)?)\s*(kg|lb|lbs)$"
@@ -47,20 +44,27 @@ def parse_params(
     while i < len(tokens):
         token = tokens[i]
 
-        # rest:duration
-        rest_m = REST_PATTERN.match(token)
-        if rest_m:
-            rest_duration = Duration.parse(rest_m.group(1))
-            i += 1
-            continue
-
         if not token.startswith("@"):
             i += 1
             continue
 
         value = token[1:]  # strip @
 
-        # 1. Zone: @Z1, @Z2, etc.
+        # 1. Rest: @rest or @rest90s — next token is duration
+        if value.lower().startswith("rest"):
+            rest_val = value[4:].strip()
+            if rest_val:
+                rest_duration = Duration.parse(rest_val)
+                i += 1
+                continue
+            if i + 1 < len(tokens) and not tokens[i + 1].startswith("@"):
+                rest_duration = Duration.parse(tokens[i + 1])
+                i += 2
+                continue
+            i += 1
+            continue
+
+        # 2. Zone: @Z1, @Z2, etc.
         if re.match(r"^Z\d$", value):
             params.append(ZoneParam(zone=value, span=span))
             i += 1
@@ -125,7 +129,7 @@ def parse_params(
                 j = i + 2
                 while j < len(tokens):
                     next_tok = tokens[j]
-                    if next_tok.startswith("@") or REST_PATTERN.match(next_tok):
+                    if next_tok.startswith("@"):
                         break
                     var_tokens.append(next_tok)
                     j += 1
@@ -149,7 +153,7 @@ def parse_params(
             j = i + 1
             while j < len(tokens):
                 next_tok = tokens[j]
-                if next_tok.startswith("@") or REST_PATTERN.match(next_tok):
+                if next_tok.startswith("@"):
                     break
                 bw_tokens.append(next_tok)
                 j += 1
@@ -230,7 +234,7 @@ def _is_number(s: str) -> bool:
 def tokenize_step_tail(tail: str) -> list[str]:
     """Split the tail portion of a step line into tokens.
 
-    Respects @-prefixed params, rest:duration, and groups
+    Respects @-prefixed params and groups
     'X% of VarName' expressions together.
     """
     raw_tokens = tail.split()

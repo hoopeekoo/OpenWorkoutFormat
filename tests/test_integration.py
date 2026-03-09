@@ -9,7 +9,7 @@ from owf.ast.blocks import (
     ForTime,
     Superset,
 )
-from owf.ast.params import PercentOfParam, PowerParam
+from owf.ast.params import PowerParam
 from owf.ast.steps import EnduranceStep, RepeatStep, StrengthStep
 from owf.parser.step_parser import parse_document
 from owf.resolver import resolve
@@ -29,9 +29,9 @@ FULL_EXAMPLE = """\
 ## Upper Body [strength]
 
 - 3x superset:
-  - bench press 3x8rep @80% of 1RM bench press rest:90s
-  - bent-over row 3x8rep @60kg rest:90s
-- bicep curl 3x12rep @15kg rest:60s
+  - bench press 3x8rep @80% of 1RM bench press @rest 90s
+  - bent-over row 3x8rep @60kg @rest 90s
+- bicep curl 3x12rep @15kg @rest 60s
 
 ## Power Clean EMOM [mixed]
 
@@ -81,7 +81,7 @@ SESSION_EXAMPLE = """\
 
 # Upper Body [strength]
 
-- bench press 3x8rep @80kg rest:90s
+- bench press 3x8rep @80kg @rest 90s
 
 > Great session overall.
 """
@@ -274,7 +274,7 @@ def test_serialize_session_example():
     assert "## Saturday Training" in serialized
     assert "# Threshold Ride [endurance]" in serialized
     assert "# Upper Body [strength]" in serialized
-    assert "- warmup 10min @Z1" in serialized
+    assert "- Warmup 10min @Z1" in serialized
     assert "> Great session overall." in serialized
 
 

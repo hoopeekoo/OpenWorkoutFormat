@@ -33,10 +33,12 @@ class Workout:
 
     name: str
     workout_type: str | None = None
+    sport_type: str | None = None
     date: WorkoutDate | None = None
     rpe: int | None = None  # workout-level perceived exertion (1-10)
     rir: int | None = None  # default RIR for strength exercises
     steps: tuple[Any, ...] = ()  # tuple of Step | Block
+    metadata: dict[str, str] = field(default_factory=dict)
     notes: tuple[str, ...] = ()
     span: SourceSpan | None = field(default=None, compare=False, repr=False)
 

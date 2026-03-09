@@ -12,7 +12,7 @@ from owf.ast.blocks import (
     ForTime,
     Superset,
 )
-from owf.ast.params import PercentOfParam, PowerParam, RIRParam, WeightParam
+from owf.ast.params import PercentOfParam, PowerParam, RIRParam
 from owf.ast.steps import EnduranceStep, RepeatStep, RestStep, StrengthStep
 from owf.errors import ParseError
 from owf.parser.step_parser import parse_document
@@ -85,7 +85,7 @@ def test_repeat_block():
 def test_strength_step():
     text = (
         "# Strength [strength]\n\n"
-        "- bench press 3x8rep @80kg rest:90s"
+        "- bench press 3x8rep @80kg @rest 90s"
     )
     doc = parse_document(text)
     step = doc.workouts[0].steps[0].steps[0]
@@ -100,8 +100,8 @@ def test_strength_step():
 def test_superset():
     text = (
         "# Strength\n\n- 3x superset:\n"
-        "  - bench press 3x8rep @80kg rest:90s\n"
-        "  - bent-over row 3x8rep @60kg rest:90s"
+        "  - bench press 3x8rep @80kg @rest 90s\n"
+        "  - bent-over row 3x8rep @60kg @rest 90s"
     )
     doc = parse_document(text)
     step = doc.workouts[0].steps[0].steps[0]
@@ -215,9 +215,9 @@ def test_session_with_child_workouts():
     assert session.steps[2].workout_type == "strength"
 
 
-def test_frontmatter():
+def test_metadata():
     text = (
-        "---\nFTP: 250W\n1RM bench press: 100kg\n---\n\n"
+        "@ FTP: 250W\n@ 1RM bench press: 100kg\n\n"
         "## Ride [endurance]\n\n- bike 30min @80% of FTP"
     )
     doc = parse_document(text)
@@ -265,7 +265,7 @@ def test_endurance_with_power_param():
 def test_strength_with_rir():
     text = (
         "## Strength [strength]\n\n"
-        "- bench press 3x8rep @80kg @RIR 2 rest:90s"
+        "- bench press 3x8rep @80kg @RIR 2 @rest 90s"
     )
     doc = parse_document(text)
     step = doc.workouts[0].steps[0]
@@ -336,6 +336,107 @@ def test_session_mixed_roundtrip():
     assert doc2.workouts[0].workout_type == "mixed"
 
 
+def test_sport_type_parsed():
+    """Non-legacy tag values set sport_type instead of workout_type."""
+    text = "## Morning Run [Trail Running]\n\n- run 5km\n"
+    doc = parse_document(text)
+    w = doc.workouts[0]
+    assert w.sport_type == "Trail Running"
+    assert w.workout_type is None
+
+
+def test_sport_type_on_child():
+    """Child workouts can also have sport_type."""
+    text = (
+        "## Session\n\n"
+        "# Ride [Gravel Cycling]\n\n- bike 30min\n\n"
+        "# Gym [Strength Training]\n\n- deadlift 3x5rep @100kg"
+    )
+    doc = parse_document(text)
+    ride = doc.workouts[0].steps[0]
+    gym = doc.workouts[0].steps[1]
+    assert ride.sport_type == "Gravel Cycling"
+    assert ride.workout_type is None
+    assert gym.sport_type == "Strength Training"
+    assert gym.workout_type is None
+
+
+def test_legacy_type_no_sport_type():
+    """Legacy tags [endurance] etc. set workout_type, not sport_type."""
+    text = "## Run [endurance]\n\n- run 5km\n"
+    doc = parse_document(text)
+    w = doc.workouts[0]
+    assert w.workout_type == "endurance"
+    assert w.sport_type is None
+
+
+def test_sport_type_roundtrip():
+    """Sport type round-trips through serialize → parse."""
+    from owf.serializer import dumps
+
+    text = "## Morning Run [Trail Running]\n\n- run 5km\n"
+    doc1 = parse_document(text)
+    serialized = dumps(doc1)
+    assert "[Trail Running]" in serialized
+    doc2 = parse_document(serialized)
+    assert doc2.workouts[0].sport_type == "Trail Running"
+
+
+def test_sport_type_with_date():
+    """Sport type and date can coexist on a heading."""
+    text = "## Run [Trail Running] (2025-02-27)\n\n- run 5km\n"
+    doc = parse_document(text)
+    w = doc.workouts[0]
+    assert w.sport_type == "Trail Running"
+    assert w.date is not None
+    assert w.date.date == "2025-02-27"
+
+
+def test_sport_type_with_params():
+    """Sport type, date, RPE, and RIR all coexist."""
+    text = "## Gym [Strength Training] (2025-02-27) @RPE 8 @RIR 2\n\n- squat 3x5rep\n"
+    doc = parse_document(text)
+    w = doc.workouts[0]
+    assert w.sport_type == "Strength Training"
+    assert w.date.date == "2025-02-27"
+    assert w.rpe == 8
+    assert w.rir == 2
+
+
+def test_sport_type_unknown_accepted():
+    """Parser accepts any string in brackets, even unknown ones."""
+    text = "## Fun [Underwater Basket Weaving]\n\n- swim 30min\n"
+    doc = parse_document(text)
+    w = doc.workouts[0]
+    assert w.sport_type == "Underwater Basket Weaving"
+    assert w.workout_type is None
+
+
+def test_title_case_serialization():
+    """Serializer outputs Title Case for both actions and exercises."""
+    from owf.serializer import dumps
+
+    text = "## Workout\n\n- run 5km\n- bench press 3x8rep @80kg\n"
+    doc = parse_document(text)
+    result = dumps(doc)
+    assert "- Run 5km" in result
+    assert "- Bench Press 3x8rep @80kg" in result
+
+
+def test_title_case_roundtrip():
+    """Title Case output re-parses correctly."""
+    from owf.serializer import dumps
+
+    text = "## Workout\n\n- run 5km\n- bench press 3x8rep @80kg\n"
+    doc1 = parse_document(text)
+    serialized = dumps(doc1)
+    doc2 = parse_document(serialized)
+    # Endurance action is lowercase in AST
+    assert doc2.workouts[0].steps[0].action == "run"
+    # Strength exercise preserves Title Case
+    assert doc2.workouts[0].steps[1].exercise == "Bench Press"
+
+
 def test_heading_with_rpe():
     text = "## Run [endurance] @RPE 7\n\n- run 5km\n"
     doc = parse_document(text)
@@ -371,7 +472,7 @@ def test_heading_with_date_and_params():
 
 
 def test_heading_params_dont_affect_steps():
-    text = "## Gym [strength] @RIR 2\n\n- bench press 3x8rep @80kg rest:90s\n"
+    text = "## Gym [strength] @RIR 2\n\n- bench press 3x8rep @80kg @rest 90s\n"
     doc = parse_document(text)
     w = doc.workouts[0]
     assert w.rir == 2
@@ -384,7 +485,7 @@ def test_heading_params_dont_affect_steps():
 def test_strength_with_percentage_weight():
     text = (
         "## Strength\n\n"
-        "- bench press 3x8rep @80% of 1RM bench press rest:90s"
+        "- bench press 3x8rep @80% of 1RM bench press @rest 90s"
     )
     doc = parse_document(text)
     step = doc.workouts[0].steps[0]

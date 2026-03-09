@@ -12,16 +12,15 @@ def test_serialize_simple_endurance():
     doc = parse_document(text)
     result = dumps(doc)
     assert "## Easy Run [endurance]" in result
-    assert "- warmup 15min @Z1" in result
-    assert "- run 5km @4:30/km" in result
+    assert "- Warmup 15min @Z1" in result
+    assert "- Run 5km @4:30/km" in result
 
 
-def test_serialize_with_frontmatter():
-    text = "---\nFTP: 250W\n---\n\n## Ride [endurance]\n\n- bike 30min @200W\n"
+def test_serialize_with_metadata():
+    text = "@ FTP: 250W\n\n## Ride [endurance]\n\n- bike 30min @200W\n"
     doc = parse_document(text)
     result = dumps(doc)
-    assert "---" in result
-    assert "FTP: 250W" in result
+    assert "@ FTP: 250W" in result
     assert "## Ride [endurance]" in result
 
 
@@ -33,15 +32,15 @@ def test_serialize_repeat_block():
     doc = parse_document(text)
     result = dumps(doc)
     assert "- 5x:" in result
-    assert "  - bike 5min @200W" in result
-    assert "  - recover 3min @Z1" in result
+    assert "  - Bike 5min @200W" in result
+    assert "  - Recover 3min @Z1" in result
 
 
 def test_serialize_strength():
-    text = "## Strength [strength]\n\n- bench press 3x8rep @80kg rest:90s\n"
+    text = "## Strength [strength]\n\n- bench press 3x8rep @80kg @rest 90s\n"
     doc = parse_document(text)
     result = dumps(doc)
-    assert "- bench press 3x8rep @80kg rest:1min30s" in result
+    assert "- Bench Press 3x8rep @80kg @rest 1min30s" in result
 
 
 def test_serialize_emom():
@@ -49,7 +48,7 @@ def test_serialize_emom():
     doc = parse_document(text)
     result = dumps(doc)
     assert "- emom 10min:" in result
-    assert "  - power clean 3rep @70kg" in result
+    assert "  - Power Clean 3rep @70kg" in result
 
 
 def test_serialize_amrap():
@@ -67,7 +66,7 @@ def test_serialize_for_time():
     doc = parse_document(text)
     result = dumps(doc)
     assert "- for-time:" in result
-    assert "  - run 1mile" in result
+    assert "  - Run 1mile" in result
 
 
 def test_serialize_session():
@@ -80,12 +79,12 @@ def test_serialize_session():
     result = dumps(doc)
     assert "## Session" in result
     assert "# Ride [endurance]" in result
-    assert "- warmup 10min @Z1" in result
-    assert "- cooldown 10min @Z1" in result
+    assert "- Warmup 10min @Z1" in result
+    assert "- Cooldown 10min @Z1" in result
 
 
 def test_serialize_rir():
-    text = "## Strength [strength]\n\n- bench press 3x8rep @RIR 2 rest:90s\n"
+    text = "## Strength [strength]\n\n- bench press 3x8rep @RIR 2 @rest 90s\n"
     doc = parse_document(text)
     result = dumps(doc)
     assert "@RIR 2" in result
@@ -94,8 +93,8 @@ def test_serialize_rir():
 def test_serialize_superset():
     text = (
         "## Strength\n\n- 3x superset:\n"
-        "  - bench press 3x8rep @80kg rest:90s\n"
-        "  - bent-over row 3x8rep @60kg rest:90s\n"
+        "  - bench press 3x8rep @80kg @rest 90s\n"
+        "  - bent-over row 3x8rep @60kg @rest 90s\n"
     )
     doc = parse_document(text)
     result = dumps(doc)
@@ -130,7 +129,7 @@ def test_serialize_circuit():
     doc = parse_document(text)
     result = dumps(doc)
     assert "- 3x circuit:" in result
-    assert "  - kettlebell swing 10rep @24kg" in result
+    assert "  - Kettlebell Swing 10rep @24kg" in result
 
 
 def test_serialize_flat_headings_become_sessions():

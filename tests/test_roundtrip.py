@@ -1,6 +1,5 @@
 """Round-trip tests: parse -> serialize -> parse should produce equivalent AST."""
 
-from owf.ast.base import Workout
 from owf.parser.step_parser import parse_document
 from owf.serializer import dumps
 
@@ -31,8 +30,8 @@ def test_roundtrip_endurance():
 def test_roundtrip_strength():
     _roundtrip(
         "## Strength [strength]\n\n"
-        "- bench press 3x8rep @80kg rest:90s\n"
-        "- bicep curl 3x12rep @15kg rest:60s"
+        "- bench press 3x8rep @80kg @rest 90s\n"
+        "- bicep curl 3x12rep @15kg @rest 60s"
     )
 
 
@@ -66,9 +65,9 @@ def test_roundtrip_for_time():
     )
 
 
-def test_roundtrip_frontmatter():
+def test_roundtrip_metadata():
     _roundtrip(
-        "---\nFTP: 250W\n---\n\n"
+        "@ FTP: 250W\n\n"
         "## Ride [bike]\n\n- bike 30min @200W"
     )
 
@@ -84,8 +83,8 @@ def test_roundtrip_session():
 def test_roundtrip_superset():
     _roundtrip(
         "## Strength\n\n- 3x superset:\n"
-        "  - bench press 3x8rep @80kg rest:90s\n"
-        "  - bent-over row 3x8rep @60kg rest:90s"
+        "  - bench press 3x8rep @80kg @rest 90s\n"
+        "  - bent-over row 3x8rep @60kg @rest 90s"
     )
 
 
@@ -103,7 +102,7 @@ def test_roundtrip_percent_of():
 
 
 def test_roundtrip_bodyweight_plus():
-    _roundtrip("## Gym\n\n- dip 3x8rep @bodyweight + 20kg rest:90s")
+    _roundtrip("## Gym\n\n- dip 3x8rep @bodyweight + 20kg @rest 90s")
 
 
 def test_roundtrip_zone():

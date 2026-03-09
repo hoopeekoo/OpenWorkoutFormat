@@ -23,10 +23,12 @@ from owf.ast.steps import (
 )
 from owf.errors import ParseError, SourceSpan
 from owf.parser.block_builder import RawBlock, build_blocks_for_workout
-from owf.parser.frontmatter import parse_frontmatter
 from owf.parser.param_parser import parse_params
 from owf.parser.scanner import LineType, LogicalLine, scan
 from owf.units import Distance, Duration
+
+# Legacy workout type values (broad categories)
+_LEGACY_TYPES = frozenset({"endurance", "strength", "mobility", "mixed"})
 
 # Known endurance actions
 ENDURANCE_ACTIONS = frozenset(
@@ -67,11 +69,20 @@ SETS_REPS_PATTERN = re.compile(
 
 def parse_document(text: str) -> Document:
     """Parse a full OWF document from text."""
-    # Extract frontmatter
-    metadata, remaining = parse_frontmatter(text)
+    lines = scan(text)
 
-    # Scan remaining text
-    lines = scan(remaining)
+    # Extract document-level metadata: @ lines before any heading
+    metadata: dict[str, str] = {}
+    for ln in lines:
+        if ln.line_type == LineType.METADATA and ln.indent == 0:
+            key, _, value = ln.content.partition(": ")
+            metadata[key] = value
+        elif ln.line_type in (
+            LineType.SESSION_HEADING,
+            LineType.HEADING,
+            LineType.STEP,
+        ):
+            break
 
     # Split lines into workout sections
     workouts = _split_into_workouts(lines)
@@ -115,10 +126,12 @@ def _wrap_flat_in_session(lines: list[LogicalLine]) -> list[Workout]:
         children[0] = Workout(
             name=children[0].name,
             workout_type=children[0].workout_type,
+            sport_type=children[0].sport_type,
             date=None,
             rpe=children[0].rpe,
             rir=children[0].rir,
             steps=children[0].steps,
+            metadata=children[0].metadata,
             notes=children[0].notes,
             span=children[0].span,
         )
@@ -159,6 +172,9 @@ def _split_flat_children(lines: list[LogicalLine]) -> list[Workout]:
             current_lines = []
         elif ln.line_type == LineType.FRONTMATTER_FENCE:
             continue
+        elif ln.line_type == LineType.METADATA and ln.indent == 0:
+            # Heading-level metadata — pass through to _build_workout
+            current_lines.append(ln)
         else:
             current_lines.append(ln)
 
@@ -186,6 +202,9 @@ def _split_two_level(lines: list[LogicalLine]) -> list[Workout]:
             seen_session = True
         elif ln.line_type == LineType.FRONTMATTER_FENCE:
             continue
+        elif ln.line_type == LineType.METADATA and ln.indent == 0:
+            # Session/heading-level metadata — pass through
+            current_lines.append(ln)
         else:
             current_lines.append(ln)
 
@@ -213,9 +232,21 @@ def _build_session_workout(
     session_heading: LogicalLine, body_lines: list[LogicalLine]
 ) -> Workout:
     """Build a session-level workout from a ``##`` heading and its body."""
-    name, workout_type, date, rpe, rir = _parse_heading(
+    name, workout_type, sport_type, date, rpe, rir = _parse_heading(
         session_heading.content,
     )
+
+    # Extract session-level metadata (indent 0 metadata before any child)
+    session_metadata: dict[str, str] = {}
+    for ln in body_lines:
+        if ln.line_type == LineType.METADATA and ln.indent == 0:
+            key, _, value = ln.content.partition(": ")
+            session_metadata[key] = value
+        elif ln.line_type in (
+            LineType.HEADING,
+            LineType.STEP,
+        ):
+            break
 
     segments: list[tuple[LogicalLine | None, list[LogicalLine]]] = []
     current_child_heading: LogicalLine | None = None
@@ -232,6 +263,9 @@ def _build_session_workout(
             current_child_heading = ln
             current_child_lines = []
             in_child = True
+        elif ln.line_type == LineType.METADATA and not in_child:
+            # Session-level metadata already extracted above
+            continue
         else:
             current_child_lines.append(ln)
 
@@ -272,10 +306,12 @@ def _build_session_workout(
     return Workout(
         name=name,
         workout_type=workout_type,
+        sport_type=sport_type,
         date=date,
         rpe=rpe,
         rir=rir,
         steps=tuple(all_steps),
+        metadata=session_metadata,
         notes=tuple(trailing_notes),
         span=session_heading.span,
     )
@@ -287,25 +323,45 @@ def _build_workout(
     """Build a Workout node from a heading and its body lines."""
     name = ""
     workout_type: str | None = None
+    sport_type: str | None = None
     date: WorkoutDate | None = None
     rpe: int | None = None
     rir: int | None = None
     span: SourceSpan | None = None
 
     if heading is not None:
-        name, workout_type, date, rpe, rir = _parse_heading(heading.content)
+        name, workout_type, sport_type, date, rpe, rir = _parse_heading(heading.content)
         span = heading.span
 
-    blocks, trailing_notes = build_blocks_for_workout(lines)
+    # Extract workout-level metadata (indent 0 before any steps)
+    workout_metadata: dict[str, str] = {}
+    remaining_lines: list[LogicalLine] = []
+    past_metadata = False
+    for ln in lines:
+        if (
+            not past_metadata
+            and ln.line_type == LineType.METADATA
+            and ln.indent == 0
+        ):
+            key, _, value = ln.content.partition(": ")
+            workout_metadata[key] = value
+        else:
+            if ln.line_type in (LineType.STEP, LineType.NOTE):
+                past_metadata = True
+            remaining_lines.append(ln)
+
+    blocks, trailing_notes = build_blocks_for_workout(remaining_lines)
     steps = tuple(_parse_block(b) for b in blocks)
 
     return Workout(
         name=name,
         workout_type=workout_type,
+        sport_type=sport_type,
         date=date,
         rpe=rpe,
         rir=rir,
         steps=steps,
+        metadata=workout_metadata,
         notes=tuple(trailing_notes),
         span=span,
     )
@@ -321,10 +377,13 @@ _RIR_TAIL_RE = re.compile(r"\s+@RIR\s+(\d+)\s*$")
 
 def _parse_heading(
     content: str,
-) -> tuple[str, str | None, WorkoutDate | None, int | None, int | None]:
+) -> tuple[str, str | None, str | None, WorkoutDate | None, int | None, int | None]:
     """Parse heading content like 'Name [type] (2025-02-27) @RPE 7 @RIR 2'.
 
-    Returns (name, workout_type, date, rpe, rir).
+    Returns (name, workout_type, sport_type, date, rpe, rir).
+
+    Legacy tags ([endurance], [strength], [mobility], [mixed]) set workout_type.
+    Other tags ([Trail Running], [Strength Training]) set sport_type.
     """
     text = content
 
@@ -356,11 +415,15 @@ def _parse_heading(
         )
         text = text[: dm.start()].rstrip()
 
-    # Extract [type]
-    tm = re.match(r"^(.+?)\s*\[(\w+)\]\s*$", text)
+    # Extract [tag] — accepts any string inside brackets
+    tm = re.match(r"^(.+?)\s*\[([^\]]+)\]\s*$", text)
     if tm:
-        return tm.group(1).strip(), tm.group(2).strip(), date, rpe, rir
-    return text.strip(), None, date, rpe, rir
+        name = tm.group(1).strip()
+        tag = tm.group(2).strip()
+        if tag.lower() in _LEGACY_TYPES:
+            return name, tag.lower(), None, date, rpe, rir
+        return name, None, tag, date, rpe, rir
+    return text.strip(), None, None, date, rpe, rir
 
 
 def _parse_block(block: RawBlock) -> Any:
@@ -374,7 +437,10 @@ def _parse_block(block: RawBlock) -> Any:
         try:
             dur = Duration.parse(rest_m.group(1))
             return RestStep(
-                duration=dur, notes=tuple(block.notes), span=span
+                duration=dur,
+                metadata=block.metadata,
+                notes=tuple(block.notes),
+                span=span,
             )
         except ValueError:
             pass
@@ -391,6 +457,7 @@ def _parse_block(block: RawBlock) -> Any:
             return Superset(
                 count=count,
                 steps=children,
+                metadata=block.metadata,
                 notes=tuple(block.notes),
                 span=span,
             )
@@ -399,6 +466,7 @@ def _parse_block(block: RawBlock) -> Any:
             return Circuit(
                 count=count,
                 steps=children,
+                metadata=block.metadata,
                 notes=tuple(block.notes),
                 span=span,
             )
@@ -406,6 +474,7 @@ def _parse_block(block: RawBlock) -> Any:
         return RepeatStep(
             count=count,
             steps=children,
+            metadata=block.metadata,
             notes=tuple(block.notes),
             span=span,
         )
@@ -427,12 +496,14 @@ def _parse_block(block: RawBlock) -> Any:
             return AlternatingEMOM(
                 duration=dur,
                 steps=children,
+                metadata=block.metadata,
                 notes=tuple(block.notes),
                 span=span,
             )
         return EMOM(
             duration=dur,
             steps=children,
+            metadata=block.metadata,
             notes=tuple(block.notes),
             span=span,
         )
@@ -456,6 +527,7 @@ def _parse_block(block: RawBlock) -> Any:
             interval=interval,
             duration=dur,
             steps=children,
+            metadata=block.metadata,
             notes=tuple(block.notes),
             span=span,
         )
@@ -474,6 +546,7 @@ def _parse_block(block: RawBlock) -> Any:
         return AMRAP(
             duration=dur,
             steps=children,
+            metadata=block.metadata,
             notes=tuple(block.notes),
             span=span,
         )
@@ -494,6 +567,7 @@ def _parse_block(block: RawBlock) -> Any:
         return ForTime(
             time_cap=time_cap,
             steps=children,
+            metadata=block.metadata,
             notes=tuple(block.notes),
             span=span,
         )
@@ -522,12 +596,6 @@ def _parse_step_line(content: str, block: RawBlock, span: SourceSpan) -> Any:
             continue
 
         if tok.startswith("@"):
-            found_boundary = True
-            rest_tokens.append(tok)
-            i += 1
-            continue
-
-        if tok.startswith("rest:"):
             found_boundary = True
             rest_tokens.append(tok)
             i += 1
@@ -565,7 +633,8 @@ def _parse_step_line(content: str, block: RawBlock, span: SourceSpan) -> Any:
     first_word = action_tokens[0].lower() if action_tokens else ""
 
     if first_word in ENDURANCE_ACTIONS:
-        return _build_endurance_step(action, rest_tokens, block, span)
+        # Normalize endurance action to lowercase (it's a keyword)
+        return _build_endurance_step(action.lower(), rest_tokens, block, span)
     else:
         return _build_strength_step(action, rest_tokens, block, span)
 
@@ -582,7 +651,7 @@ def _build_endurance_step(
     param_tokens: list[str] = []
 
     for tok in metric_tokens:
-        if tok.startswith("@") or tok.startswith("rest:"):
+        if tok.startswith("@"):
             param_tokens.append(tok)
             continue
 
@@ -614,6 +683,7 @@ def _build_endurance_step(
         duration=duration,
         distance=distance,
         params=tuple(params),
+        metadata=block.metadata,
         notes=tuple(block.notes),
         span=span,
     )
@@ -632,7 +702,7 @@ def _build_strength_step(
     param_tokens: list[str] = []
 
     for tok in metric_tokens:
-        if tok.startswith("@") or tok.startswith("rest:"):
+        if tok.startswith("@"):
             param_tokens.append(tok)
             continue
 
@@ -669,6 +739,7 @@ def _build_strength_step(
         duration=duration,
         params=tuple(params),
         rest=rest_duration,
+        metadata=block.metadata,
         notes=tuple(block.notes),
         span=span,
     )

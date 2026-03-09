@@ -101,7 +101,7 @@ def test_gym_session():
     assert s0.reps == 100
     assert s0.sets is None
 
-    # BodyweightPlus: dip 3x8rep @bodyweight + 20kg rest:90s
+    # BodyweightPlus: dip 3x8rep @bodyweight + 20kg @rest 90s
     s1 = w.steps[1]
     assert s1.exercise == "dip"
     assert s1.sets == 3
@@ -118,7 +118,7 @@ def test_gym_session():
     assert s2.reps is None
     assert s2.sets is None
 
-    # back squat 5x5rep rest:120s (no per-step RIR, inherits workout-level)
+    # back squat 5x5rep @rest 120s (no per-step RIR, inherits workout-level)
     s3 = w.steps[3]
     assert s3.exercise == "back squat"
     assert s3.sets == 5
@@ -126,13 +126,13 @@ def test_gym_session():
     assert s3.rest.seconds == 120
     assert len(s3.params) == 0
 
-    # romanian deadlift 3x10rep @60kg rest:90s (no per-step RIR)
+    # romanian deadlift 3x10rep @60kg @rest 90s (no per-step RIR)
     s4 = w.steps[4]
     assert s4.exercise == "romanian deadlift"
     rir_params = [p for p in s4.params if isinstance(p, RIRParam)]
     assert len(rir_params) == 0
 
-    # face pull 3xmaxrep @15kg @RIR 3 rest:60s (per-step override)
+    # face pull 3xmaxrep @15kg @RIR 3 @rest 60s (per-step override)
     s5 = w.steps[5]
     assert s5.exercise == "face pull"
     assert s5.sets == 3

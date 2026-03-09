@@ -15,6 +15,7 @@ class LineType(enum.Enum):
     HEADING = "heading"
     STEP = "step"
     NOTE = "note"
+    METADATA = "metadata"
 
 
 @dataclass(frozen=True, slots=True)
@@ -98,6 +99,19 @@ def scan(text: str) -> list[LogicalLine]:
         # Count leading spaces for indentation
         indent = len(raw) - len(raw.lstrip(" "))
         inner = stripped.lstrip()
+
+        # Metadata line: @ key: value (with space after @, colon in body)
+        if inner.startswith("@ ") and ": " in inner[2:]:
+            lines.append(
+                LogicalLine(
+                    line_type=LineType.METADATA,
+                    text=raw,
+                    indent=indent,
+                    content=inner[2:],  # "key: value"
+                    span=SourceSpan(line=lineno, col=indent + 1),
+                )
+            )
+            continue
 
         if inner.startswith("- ") or inner == "-":
             content = inner[2:] if inner.startswith("- ") else ""

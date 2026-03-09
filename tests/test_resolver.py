@@ -3,9 +3,7 @@
 import pytest
 
 from owf.ast.params import (
-    BodyweightPlusParam,
     HeartRateParam,
-    PercentOfParam,
     PowerParam,
     WeightParam,
 )

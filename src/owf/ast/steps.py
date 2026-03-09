@@ -21,6 +21,7 @@ class EnduranceStep:
     duration: Duration | None = None
     distance: Distance | None = None
     params: tuple[Param, ...] = ()
+    metadata: dict[str, str] = field(default_factory=dict)
     notes: tuple[str, ...] = ()
     span: SourceSpan | None = field(default=None, compare=False, repr=False)
 
@@ -38,6 +39,7 @@ class StrengthStep:
     duration: Duration | None = None  # for timed sets
     params: tuple[Param, ...] = ()
     rest: Duration | None = None
+    metadata: dict[str, str] = field(default_factory=dict)
     notes: tuple[str, ...] = ()
     span: SourceSpan | None = field(default=None, compare=False, repr=False)
 
@@ -47,6 +49,7 @@ class RestStep:
     """A rest step: rest 5min."""
 
     duration: Duration
+    metadata: dict[str, str] = field(default_factory=dict)
     notes: tuple[str, ...] = ()
     span: SourceSpan | None = field(default=None, compare=False, repr=False)
 
@@ -57,6 +60,7 @@ class RepeatStep:
 
     count: int
     steps: tuple[Any, ...] = ()  # Step | Block
+    metadata: dict[str, str] = field(default_factory=dict)
     notes: tuple[str, ...] = ()
     span: SourceSpan | None = field(default=None, compare=False, repr=False)
 

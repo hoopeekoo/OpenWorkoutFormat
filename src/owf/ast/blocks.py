@@ -15,6 +15,7 @@ class Superset:
 
     count: int
     steps: tuple[Any, ...] = ()
+    metadata: dict[str, str] = field(default_factory=dict)
     notes: tuple[str, ...] = ()
     span: SourceSpan | None = field(default=None, compare=False, repr=False)
 
@@ -25,6 +26,7 @@ class Circuit:
 
     count: int
     steps: tuple[Any, ...] = ()
+    metadata: dict[str, str] = field(default_factory=dict)
     notes: tuple[str, ...] = ()
     span: SourceSpan | None = field(default=None, compare=False, repr=False)
 
@@ -35,6 +37,7 @@ class EMOM:
 
     duration: Duration
     steps: tuple[Any, ...] = ()
+    metadata: dict[str, str] = field(default_factory=dict)
     notes: tuple[str, ...] = ()
     span: SourceSpan | None = field(default=None, compare=False, repr=False)
 
@@ -45,6 +48,7 @@ class AlternatingEMOM:
 
     duration: Duration
     steps: tuple[Any, ...] = ()
+    metadata: dict[str, str] = field(default_factory=dict)
     notes: tuple[str, ...] = ()
     span: SourceSpan | None = field(default=None, compare=False, repr=False)
 
@@ -56,6 +60,7 @@ class CustomInterval:
     interval: Duration
     duration: Duration
     steps: tuple[Any, ...] = ()
+    metadata: dict[str, str] = field(default_factory=dict)
     notes: tuple[str, ...] = ()
     span: SourceSpan | None = field(default=None, compare=False, repr=False)
 
@@ -66,6 +71,7 @@ class AMRAP:
 
     duration: Duration
     steps: tuple[Any, ...] = ()
+    metadata: dict[str, str] = field(default_factory=dict)
     notes: tuple[str, ...] = ()
     span: SourceSpan | None = field(default=None, compare=False, repr=False)
 
@@ -76,5 +82,6 @@ class ForTime:
 
     time_cap: Duration | None = None
     steps: tuple[Any, ...] = ()
+    metadata: dict[str, str] = field(default_factory=dict)
     notes: tuple[str, ...] = ()
     span: SourceSpan | None = field(default=None, compare=False, repr=False)

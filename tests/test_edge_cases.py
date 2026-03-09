@@ -116,8 +116,8 @@ def test_pace_invalid():
 # --- Parser edge cases ---
 
 
-def test_only_frontmatter():
-    text = "---\nFTP: 250W\n---"
+def test_only_metadata():
+    text = "@ FTP: 250W"
     doc = parse_document(text)
     assert doc.metadata == {"FTP": "250W"}
     assert len(doc.workouts) == 0
@@ -187,19 +187,13 @@ def test_whitespace_handling():
 
 def test_roundtrip_preserves_variables():
     text = (
-        "---\nFTP: 250W\nbodyweight: 80kg\n---\n\n"
+        "@ FTP: 250W\n@ bodyweight: 80kg\n\n"
         "## Ride [bike]\n\n- bike 30min @200W\n"
     )
     doc = parse_document(text)
     result = dumps(doc)
     doc2 = parse_document(result)
     assert doc2.metadata == doc.metadata
-
-
-def test_unclosed_frontmatter():
-    text = "---\nFTP: 250W\n\n# Ride"
-    with pytest.raises(ParseError, match="Unclosed frontmatter"):
-        parse_document(text)
 
 
 def test_empty_string():

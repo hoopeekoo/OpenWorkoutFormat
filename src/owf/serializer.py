@@ -38,12 +38,10 @@ def dumps(doc: Document) -> str:
     """Serialize a Document AST back to .owf text."""
     parts: list[str] = []
 
-    # Frontmatter
+    # Document-level metadata
     if doc.metadata:
-        parts.append("---")
         for key, value in doc.metadata.items():
-            parts.append(f"{key}: {value}")
-        parts.append("---")
+            parts.append(f"@ {key}: {value}")
         parts.append("")
 
     # Workouts — always serialized as ## sessions
@@ -59,10 +57,20 @@ def dumps(doc: Document) -> str:
     return result
 
 
+def _normalize_name(name: str) -> str:
+    """Title-case a step name, preserving hyphenation."""
+    return "-".join(
+        " ".join(w.capitalize() for w in part.split())
+        for part in name.split("-")
+    )
+
+
 def _heading_line(prefix: str, workout: Workout) -> str:
     """Build a heading line like ``## Name [type] (date) @RPE N @RIR N``."""
     parts = [f"{prefix} {workout.name}"]
-    if workout.workout_type and workout.workout_type != "mixed":
+    if workout.sport_type:
+        parts.append(f" [{workout.sport_type}]")
+    elif workout.workout_type and workout.workout_type != "mixed":
         parts.append(f" [{workout.workout_type}]")
     if workout.date:
         parts.append(f" ({workout.date})")
@@ -73,6 +81,13 @@ def _heading_line(prefix: str, workout: Workout) -> str:
     return "".join(parts)
 
 
+def _metadata_lines(
+    metadata: dict[str, str], prefix: str = ""
+) -> list[str]:
+    """Serialize metadata as ``@ key: value`` lines."""
+    return [f"{prefix}@ {k}: {v}" for k, v in metadata.items()]
+
+
 def _serialize_workout(workout: Workout) -> str:
     """Serialize a top-level workout as a ## session."""
     is_session = any(isinstance(s, Workout) for s in workout.steps)
@@ -81,6 +96,8 @@ def _serialize_workout(workout: Workout) -> str:
     if is_session:
         # Session with child workouts — always ##
         lines.append(_heading_line("##", workout))
+        if workout.metadata:
+            lines.extend(_metadata_lines(workout.metadata))
         lines.append("")
 
         for step in workout.steps:
@@ -92,6 +109,8 @@ def _serialize_workout(workout: Workout) -> str:
     else:
         # No child workouts — wrap as ## session
         lines.append(_heading_line("##", workout))
+        if workout.metadata:
+            lines.extend(_metadata_lines(workout.metadata))
         lines.append("")
 
         for step in workout.steps:
@@ -113,13 +132,17 @@ def _serialize_child_workout(workout: Workout) -> str:
     if workout.name:
         # Child workouts never get dates (dates are session-level only)
         child_parts = [f"# {workout.name}"]
-        if workout.workout_type and workout.workout_type != "mixed":
+        if workout.sport_type:
+            child_parts.append(f" [{workout.sport_type}]")
+        elif workout.workout_type and workout.workout_type != "mixed":
             child_parts.append(f" [{workout.workout_type}]")
         if workout.rpe is not None:
             child_parts.append(f" @RPE {workout.rpe}")
         if workout.rir is not None:
             child_parts.append(f" @RIR {workout.rir}")
         lines.append("".join(child_parts))
+        if workout.metadata:
+            lines.extend(_metadata_lines(workout.metadata))
         lines.append("")
 
     for step in workout.steps:
@@ -134,14 +157,16 @@ def _serialize_child_workout(workout: Workout) -> str:
     return "\n".join(lines)
 
 
-
 def _serialize_node(node: Any, indent: int) -> list[str]:
     """Serialize an AST node to lines at the given indentation."""
     prefix = "  " * indent
     lines: list[str] = []
 
+    child_prefix = "  " * (indent + 1)
+    meta = _metadata_lines(node.metadata, child_prefix) if node.metadata else []
+
     if isinstance(node, EnduranceStep):
-        parts = [node.action]
+        parts = [_normalize_name(node.action)]
         if node.duration:
             parts.append(str(node.duration))
         if node.distance:
@@ -149,11 +174,12 @@ def _serialize_node(node: Any, indent: int) -> list[str]:
         for p in node.params:
             parts.append(_serialize_param(p))
         lines.append(f"{prefix}- {' '.join(parts)}")
+        lines.extend(meta)
         for note in node.notes:
             lines.append(f"{prefix}> {note}")
 
     elif isinstance(node, StrengthStep):
-        parts = [node.exercise]
+        parts = [_normalize_name(node.exercise)]
         if node.sets is not None and node.reps is not None:
             parts.append(f"{node.sets}x{node.reps}rep")
         elif node.reps is not None:
@@ -163,18 +189,21 @@ def _serialize_node(node: Any, indent: int) -> list[str]:
         for p in node.params:
             parts.append(_serialize_param(p))
         if node.rest:
-            parts.append(f"rest:{node.rest}")
+            parts.append(f"@rest {node.rest}")
         lines.append(f"{prefix}- {' '.join(parts)}")
+        lines.extend(meta)
         for note in node.notes:
             lines.append(f"{prefix}> {note}")
 
     elif isinstance(node, RestStep):
         lines.append(f"{prefix}- rest {node.duration}")
+        lines.extend(meta)
         for note in node.notes:
             lines.append(f"{prefix}> {note}")
 
     elif isinstance(node, RepeatStep):
         lines.append(f"{prefix}- {node.count}x:")
+        lines.extend(meta)
         for child in node.steps:
             lines.extend(_serialize_node(child, indent + 1))
         for note in node.notes:
@@ -182,6 +211,7 @@ def _serialize_node(node: Any, indent: int) -> list[str]:
 
     elif isinstance(node, Superset):
         lines.append(f"{prefix}- {node.count}x superset:")
+        lines.extend(meta)
         for child in node.steps:
             lines.extend(_serialize_node(child, indent + 1))
         for note in node.notes:
@@ -189,6 +219,7 @@ def _serialize_node(node: Any, indent: int) -> list[str]:
 
     elif isinstance(node, Circuit):
         lines.append(f"{prefix}- {node.count}x circuit:")
+        lines.extend(meta)
         for child in node.steps:
             lines.extend(_serialize_node(child, indent + 1))
         for note in node.notes:
@@ -196,6 +227,7 @@ def _serialize_node(node: Any, indent: int) -> list[str]:
 
     elif isinstance(node, EMOM):
         lines.append(f"{prefix}- emom {node.duration}:")
+        lines.extend(meta)
         for child in node.steps:
             lines.extend(_serialize_node(child, indent + 1))
         for note in node.notes:
@@ -203,6 +235,7 @@ def _serialize_node(node: Any, indent: int) -> list[str]:
 
     elif isinstance(node, AlternatingEMOM):
         lines.append(f"{prefix}- emom {node.duration} alternating:")
+        lines.extend(meta)
         for child in node.steps:
             lines.extend(_serialize_node(child, indent + 1))
         for note in node.notes:
@@ -210,6 +243,7 @@ def _serialize_node(node: Any, indent: int) -> list[str]:
 
     elif isinstance(node, CustomInterval):
         lines.append(f"{prefix}- every {node.interval} for {node.duration}:")
+        lines.extend(meta)
         for child in node.steps:
             lines.extend(_serialize_node(child, indent + 1))
         for note in node.notes:
@@ -217,6 +251,7 @@ def _serialize_node(node: Any, indent: int) -> list[str]:
 
     elif isinstance(node, AMRAP):
         lines.append(f"{prefix}- amrap {node.duration}:")
+        lines.extend(meta)
         for child in node.steps:
             lines.extend(_serialize_node(child, indent + 1))
         for note in node.notes:
@@ -227,6 +262,7 @@ def _serialize_node(node: Any, indent: int) -> list[str]:
             lines.append(f"{prefix}- for-time {node.time_cap}:")
         else:
             lines.append(f"{prefix}- for-time:")
+        lines.extend(meta)
         for child in node.steps:
             lines.extend(_serialize_node(child, indent + 1))
         for note in node.notes:

@@ -10,33 +10,32 @@ OWF is a human-readable text format for describing workouts. It supports enduran
 
 - **Human-first**: Files are readable and writable without special tools
 - **Zero ambiguity**: Every line has exactly one interpretation
-- **Minimal syntax**: Four prefixes (`#`, `-`, `>`, `---`) cover all constructs
+- **Minimal syntax**: Three prefixes (`#`, `-`, `>`) plus `@` for metadata cover all constructs
 - **Application-agnostic**: Training variables (FTP, 1RM, etc.) are provided at resolve time, not stored in the file
 
 ## 2. Document Structure
 
 An OWF document consists of:
 
-1. Optional **metadata** block (frontmatter)
+1. Optional **document-level metadata** (`@ key: value` lines)
 2. One or more **sessions**, each containing steps and/or child workouts
 
 ```
----
-description: Saturday training block
-author: Coach Smith
----
+@ description: Saturday training block
+@ author: Coach Smith
 
 ## Saturday Training (2025-02-27)
+@ location: Downtown Gym
 
 # Threshold Ride [endurance]
 
 - 5x:
-  - bike 5min @95% of FTP
-  - recover 3min @Z1
+  - Bike 5min @95% of FTP
+  - Recover 3min @Z1
 
 # Upper Body [strength]
 
-- bench press 3x8rep @80kg rest:90s
+- Bench Press 3x8rep @80kg @rest 90s
 
 > Great session overall.
 ```
@@ -47,39 +46,85 @@ Every document has at least one session (`##` heading). Files with only `#` head
 
 | Prefix | Meaning | Example |
 |--------|---------|---------|
-| `---` | Metadata fence (open/close) | `---` |
 | `## ` | Session heading | `## Saturday Training` |
 | `# ` | Child workout heading | `# Threshold Ride [endurance]` |
-| `- ` | Step line | `- run 5km @4:30/km` |
+| `- ` | Step line | `- Run 5km @4:30/km` |
 | `> ` | Note | `> Felt strong today.` |
+| `@ ` | Metadata | `@ location: Downtown Gym` |
 | *(blank)* | Section separator | |
 
 ### Indentation
 
 - Steps use **2-space indentation** to denote nesting within container blocks.
-- Only step lines (`- `) participate in indentation; headings, notes, and metadata are always at column 0.
+- Step lines (`- `) and metadata lines (`@ `) participate in indentation; headings and notes are always at column 0.
 
 ```
 - 5x:
-  - bike 5min @200W
-  - recover 3min @Z1
+  - Bike 5min @200W
+  - Recover 3min @Z1
 ```
 
-## 3. Metadata (Frontmatter)
+## 3. Metadata
 
-A `---` fenced block at the top of the document contains key-value pairs for document metadata.
+Metadata lines use the `@ key: value` syntax (at-sign, space, key, colon-space, value). They can attach to documents, sessions, child workouts, containers, and steps.
+
+### Syntax
 
 ```
----
-description: Threshold development session
-author: Coach Smith
-tags: cycling, intervals
----
+@ key: value
 ```
 
-- Keys and values are separated by `: ` (colon-space).
-- Keys may contain spaces and special characters.
-- Values are strings.
+- `@ ` prefix (at-sign followed by a space) starts a metadata line
+- Key and value separated by `: ` (colon-space)
+- Values are strings
+- One key-value pair per line
+- Keys must not contain spaces (use underscores)
+
+### Attachment Rules
+
+1. `@ key: value` at the top of the document (before any heading) → **document-level** metadata
+2. `@ key: value` at indent 0 after a `##` or `#` heading → attaches to that heading
+3. `@ key: value` indented under a step or container → attaches to that step/container
+4. Metadata lines appear immediately after the element they describe, before any child steps or notes
+
+### Document-Level Metadata
+
+```
+@ description: Threshold development session
+@ author: Coach Smith
+@ tags: cycling, intervals
+
+## Threshold Ride [endurance]
+```
+
+### Session/Workout-Level Metadata
+
+```
+## Morning Run [endurance] (2025-02-27)
+@ source: Garmin Connect
+@ location: Riverside Trail
+
+- Warmup 10min @Z1
+```
+
+### Step-Level Metadata
+
+```
+- Deadlift 1x1rep @95% of 1RM
+  @ tempo: 20X1
+  @ equipment: barbell, belt
+  > Use chalk.
+```
+
+### Container-Level Metadata
+
+```
+- 3x:
+  @ rest_between_rounds: 2min
+  - Swing 15rep @24kg
+  - Pushup 15rep
+```
+
 - Metadata is informational — it does not affect parsing of steps or expressions.
 - Training reference variables (FTP, 1RM, bodyweight, max HR) are **not** stored in metadata. They are provided by the consuming application at resolve time via the `resolve()` API.
 
@@ -87,11 +132,20 @@ tags: cycling, intervals
 
 The following keys have conventional meaning:
 
-| Key | Description |
-|-----|-------------|
-| `description` | Free-text description of the workout |
-| `author` | Workout author name |
-| `tags` | Comma-separated tags |
+| Level | Key | Description |
+|-------|-----|-------------|
+| Document | `description` | Free-text description of the workout |
+| Document | `author` | Workout author name |
+| Document | `tags` | Comma-separated tags |
+| Document | `source` | Origin URL or reference |
+| Document | `equipment` | Required gear (comma-separated) |
+| Session | `location` | Where the session takes place |
+| Session | `source` | Data origin (device, platform) |
+| Session | `focus` | Training focus or intent |
+| Container | `rest_between_rounds` | Rest injected between rounds |
+| Step | `tempo` | Lifting tempo (eccentric-pause-concentric-pause) |
+| Step | `unilateral` | Reps/weight apply per side |
+| Step | `equipment` | Specific gear for this movement |
 
 ## 4. Headings
 
@@ -104,7 +158,10 @@ The following keys have conventional meaning:
 All parts except `##` and the name are optional:
 
 - **Name**: Free text identifying the session.
-- **Type** (optional): A bracket-enclosed tag classifying the session. Types: `endurance`, `strength`, `mixed`, `mobility`.
+- **Type** (optional): A bracket-enclosed tag classifying the session. Can be either:
+  - A **sport type** from the FIT SDK display name table (e.g., `Trail Running`, `Strength Training`, `Gravel Cycling`). See Appendix C.
+  - A **legacy broad category**: `endurance`, `strength`, `mixed`, `mobility`.
+  - Any other free-text string — parsers MUST accept any value in brackets.
 - **Date** (optional): A parenthesized date or date-time range. See [Section 11: Dates](#11-dates).
 - **@RPE** (optional): Session-level Rate of Perceived Exertion (integer, 1-10).
 - **@RIR** (optional): Default Reps In Reserve for strength exercises (integer). Individual exercises may override with their own `@RIR`.
@@ -113,10 +170,11 @@ Examples:
 
 ```
 ## Easy Run [endurance]
-## Morning Run [endurance] (2025-02-27)
-## Upper Body [strength] (2025-02-27 15:00-16:00)
-## Full Gym Session [strength] @RIR 2
+## Morning Run [Trail Running] (2025-02-27)
+## Upper Body [Strength Training] (2025-02-27 15:00-16:00)
+## Full Gym Session [Strength Training] @RIR 2
 ## Morning Run [endurance] @RPE 7
+## Sunday Ride [Gravel Cycling]
 ```
 
 ### Child Workout Heading
@@ -131,7 +189,8 @@ Examples:
 
 ```
 # Threshold Ride [endurance]
-# Upper Body [strength] @RIR 2
+# Upper Body [Strength Training] @RIR 2
+# Intervals [Indoor Cycling]
 ```
 
 ### Implicit Sessions
@@ -142,37 +201,41 @@ Files with only `#` headings (no `##` headings) are auto-wrapped in an implicit 
 
 Every step line begins with `- ` followed by the step content.
 
+### Title Case Convention
+
+All step names — both endurance actions and strength exercises — are written in **Title Case** in canonical OWF output. Parsers MUST accept any casing on input. Hyphenated words capitalize each segment: `Pull-Up`, `Skate-Ski`, `Clean-And-Jerk`.
+
 ### EnduranceStep
 
-An endurance step starts with one of the known actions:
+An endurance step starts with one of the known actions (case-insensitive on parse, Title Case on output):
 
 | Action | Description |
 |--------|-------------|
-| `run` | Running |
-| `bike` | Cycling |
-| `swim` | Swimming |
-| `row` | Rowing |
-| `ski` | Skiing / ski erg |
-| `walk` | Walking |
-| `hike` | Hiking |
-| `skate-ski` | XC skate skiing |
-| `classic-ski` | XC classic skiing |
-| `alpine-ski` | Downhill skiing |
-| `snowboard` | Snowboarding |
-| `snowshoe` | Snowshoeing |
-| `skate` | Inline / ice skating |
-| `paddle` | SUP / kayak / canoe |
-| `kayak` | Kayaking |
-| `surf` | Surfing / windsurfing / kite |
-| `climb` | Mountaineering |
-| `elliptical` | Elliptical trainer |
-| `stairs` | Stair climber |
-| `jumprope` | Jump rope |
-| `ebike` | E-bike riding |
-| `other` | Other / uncategorized activity |
-| `warmup` | Warm-up (any modality) |
-| `cooldown` | Cool-down (any modality) |
-| `recover` | Recovery interval |
+| `Run` | Running |
+| `Bike` | Cycling |
+| `Swim` | Swimming |
+| `Row` | Rowing |
+| `Ski` | Skiing / ski erg |
+| `Walk` | Walking |
+| `Hike` | Hiking |
+| `Skate-Ski` | XC skate skiing |
+| `Classic-Ski` | XC classic skiing |
+| `Alpine-Ski` | Downhill skiing |
+| `Snowboard` | Snowboarding |
+| `Snowshoe` | Snowshoeing |
+| `Skate` | Inline / ice skating |
+| `Paddle` | SUP / kayak / canoe |
+| `Kayak` | Kayaking |
+| `Surf` | Surfing / windsurfing / kite |
+| `Climb` | Mountaineering |
+| `Elliptical` | Elliptical trainer |
+| `Stairs` | Stair climber |
+| `Jumprope` | Jump rope |
+| `Ebike` | E-bike riding |
+| `Other` | Other / uncategorized activity |
+| `Warmup` | Warm-up (any modality) |
+| `Cooldown` | Cool-down (any modality) |
+| `Recover` | Recovery interval |
 
 **Syntax:**
 
@@ -183,11 +246,11 @@ An endurance step starts with one of the known actions:
 Examples:
 
 ```
-- run 5km @4:30/km
-- bike 30min @200W
-- warmup 15min @Z1
-- swim 200m @Z2
-- recover 3min @Z1
+- Run 5km @4:30/km
+- Bike 30min @200W
+- Warmup 15min @Z1
+- Swim 200m @Z2
+- Recover 3min @Z1
 ```
 
 ### StrengthStep
@@ -197,38 +260,38 @@ Any step whose first word is **not** a known endurance action is classified as a
 **Syntax:**
 
 ```
-- exercise [sets×reps] [duration] [params...] [rest:duration]
+- exercise [sets×reps] [duration] [params...] [@rest duration]
 ```
 
 **Sets × Reps formats:**
 
 | Format | Meaning | Example |
 |--------|---------|---------|
-| `3x8rep` | 3 sets of 8 reps | `- bench press 3x8rep @80kg` |
-| `3x8` | 3 sets of 8 reps (shorthand) | `- bench press 3x8 @80kg` |
-| `100rep` | 100 reps (no set count) | `- pull-up 100rep` |
-| `3xmaxrep` | 3 sets to failure | `- face pull 3xmaxrep @15kg` |
+| `3x8rep` | 3 sets of 8 reps | `- Bench Press 3x8rep @80kg` |
+| `3x8` | 3 sets of 8 reps (shorthand) | `- Bench Press 3x8 @80kg` |
+| `100rep` | 100 reps (no set count) | `- Pull-Up 100rep` |
+| `3xmaxrep` | 3 sets to failure | `- Face Pull 3xmaxrep @15kg` |
 
 **Timed sets:**
 
 ```
-- plank 60s
+- Plank 60s
 ```
 
 **Rest between sets:**
 
 ```
-- bench press 3x8rep @80kg rest:90s
+- Bench Press 3x8rep @80kg @rest 90s
 ```
 
 Examples:
 
 ```
-- bench press 3x8rep @80kg rest:90s
-- pull-up 100rep
-- plank 60s
-- dip 3x8rep @bodyweight + 20kg rest:90s
-- back squat 5x5rep @RIR 3 rest:120s
+- Bench Press 3x8rep @80kg @rest 90s
+- Pull-Up 100rep
+- Plank 60s
+- Dip 3x8rep @bodyweight + 20kg @rest 90s
+- Back Squat 5x5rep @RIR 3 @rest 120s
 ```
 
 ### RestStep
@@ -331,10 +394,10 @@ Container blocks may be nested:
 ```
 - 3x:
   - 2x:
-    - run 30s @Z4
-    - recover 30s @Z1
-  - run 1min @Z4
-  - recover 1min @Z1
+    - Run 30s @Z4
+    - Recover 30s @Z1
+  - Run 1min @Z4
+  - Recover 1min @Z1
 ```
 
 ## 7. Parameters
@@ -419,10 +482,10 @@ Value is an integer indicating how many reps could have been performed before fa
 ### Rest (Strength Steps)
 
 ```
-rest:90s    rest:2min    rest:120s
+@rest 90s    @rest 2min    @rest 120s
 ```
 
-Appears at the end of a strength step line. Specifies rest between sets.
+Appears at the end of a strength step line. Specifies rest between sets. Follows the same `@keyword value` pattern as `@RPE` and `@RIR`.
 
 ## 8. Variable Resolution
 
@@ -492,7 +555,7 @@ Notes are lines prefixed with `> `. They can appear:
 1. **After a step** — attached to that step:
 
 ```
-- run 5km @4:30/km
+- Run 5km @4:30/km
 > Aim for negative splits.
 ```
 
@@ -501,9 +564,9 @@ Notes are lines prefixed with `> `. They can appear:
 ```
 ## Easy Run [endurance]
 
-- warmup 10min @Z1
-- run 5km @4:30/km
-- cooldown 10min @Z1
+- Warmup 10min @Z1
+- Run 5km @4:30/km
+- Cooldown 10min @Z1
 
 > Great session for building aerobic base.
 ```
@@ -543,18 +606,18 @@ Every OWF document uses `##` session headings. Sessions may contain steps direct
 ```
 ## Saturday Training (2025-02-27)
 
-- warmup 10min @Z1
+- Warmup 10min @Z1
 
 # Threshold Ride [endurance]
 
 - 5x:
-  - bike 5min @95% of FTP
-  - recover 3min @Z1
+  - Bike 5min @95% of FTP
+  - Recover 3min @Z1
 
 # Upper Body [strength]
 
-- bench press 3x8rep @80kg rest:90s
-- bent-over row 3x8rep @60kg rest:90s
+- Bench Press 3x8rep @80kg @rest 90s
+- Bent-Over Row 3x8rep @60kg @rest 90s
 
 > Great session overall.
 ```
@@ -572,26 +635,29 @@ Every OWF document uses `##` session headings. Sessions may contain steps direct
 ## Appendix A: EBNF Grammar
 
 ```ebnf
-document        = [ frontmatter ] { session } ;
-frontmatter     = "---" newline { kv_pair newline } "---" newline ;
-kv_pair         = key ":" SP value ;
-key             = { any_char - ":" - newline } ;
+document        = { metadata_line } { session } ;
+metadata_line   = "@ " key ": " value newline ;
+key             = { any_char - ":" - newline - SP } ;
 value           = { any_char - newline } ;
 
-session         = session_heading newline { blank } { step_or_note | child_workout } ;
-session_heading = "## " name [ SP "[" type "]" ] [ SP "(" date_spec ")" ] { SP heading_param } ;
-child_workout   = child_heading newline { blank } { step_or_note } ;
+session         = session_heading newline { metadata_line } { blank }
+                  { step_or_note | child_workout } ;
+session_heading = "## " name [ SP "[" type "]" ] [ SP "(" date_spec ")" ]
+                  { SP heading_param } ;
+child_workout   = child_heading newline { metadata_line } { blank }
+                  { step_or_note } ;
 child_heading   = "# " name [ SP "[" type "]" ] { SP heading_param } ;
 heading_param   = "@RPE" SP integer | "@RIR" SP integer ;
 name            = { any_char - "[" - "(" - newline } ;
-type            = { word_char } ;
+type            = { any_char - "]" - newline } ;
 date_spec       = date [ SP time_range ] ;
 date            = digit digit digit digit "-" digit digit "-" digit digit ;
 time_range      = time [ "-" time ] ;
 time            = digit digit ":" digit digit ;
 
-step_or_note    = step | note | blank ;
+step_or_note    = step { step_metadata } | note | blank ;
 step            = indent "- " step_content newline ;
+step_metadata   = indent "  " metadata_line ;
 indent          = { "  " } ;
 
 step_content    = rest_step
@@ -613,7 +679,8 @@ amrap           = "amrap" SP duration ":" ;
 for_time        = "for-time" [ SP duration ] ":" ;
 
 endurance_step  = action [ SP duration ] [ SP distance ] { SP param } ;
-strength_step   = exercise [ SP sets_reps ] [ SP duration ] { SP param } [ SP rest_param ] ;
+strength_step   = exercise [ SP sets_reps ] [ SP duration ] { SP param }
+                  [ SP rest_param ] ;
 
 action          = "run" | "bike" | "swim" | "row" | "ski"
                 | "walk" | "hike" | "skate-ski" | "classic-ski"
@@ -624,14 +691,15 @@ action          = "run" | "bike" | "swim" | "row" | "ski"
 exercise        = word { SP word } ;
 
 sets_reps       = [ count "x" ] ( count | "max" ) [ "rep" | "reps" ] ;
-rest_param      = "rest:" duration ;
+rest_param      = "@rest" SP duration ;
 
 param           = "@" param_value ;
-param_value     = zone | rpe | rir | pace | percent_of
+param_value     = zone | rpe | rir | rest_inline | pace | percent_of
                 | bodyweight_plus | power | heart_rate | weight ;
 zone            = "Z" digit ;
 rpe             = "RPE" [ SP ] integer ;
 rir             = "RIR" [ SP ] integer ;
+rest_inline     = "rest" SP duration ;
 pace            = [ "pace:" ] digit digit ":" digit digit "/" pace_unit ;
 pace_unit       = "km" | "mi" | "mile" ;
 percent_of      = number "%" SP "of" SP variable ;
@@ -668,7 +736,7 @@ blank           = newline ;
 
 ### Parameter Prefixes
 
-`@RPE`, `@RIR`, `@Z`, `rest:`
+`@RPE`, `@RIR`, `@Z`, `@rest`
 
 ### Units
 
@@ -678,3 +746,25 @@ blank           = newline ;
 - **Power:** `W`
 - **Heart Rate:** `bpm`
 - **Pace:** `/km`, `/mi`, `/mile`
+
+## Appendix C: Sport Types
+
+The `[type]` tag on headings accepts any string. The following sport type names are derived from the FIT SDK sport/sub_sport enum table and serve as the canonical list. Applications SHOULD use these names for interoperability.
+
+### Legacy Broad Categories
+
+These single-word values are retained for backward compatibility and simplicity:
+
+`endurance`, `strength`, `mobility`, `mixed`
+
+### FIT SDK Sport Types (canonical)
+
+Applications map these to broad categories for type inference. The parser accepts them all without validation.
+
+**Endurance:** Running, Treadmill Running, Street Running, Trail Running, Track Running, Indoor Running, Ultra Running, Virtual Running, Cycling, Road Cycling, Mountain Biking, Downhill Mountain Biking, Cyclocross, Track Cycling, Gravel Cycling, Mixed Surface Cycling, Bike Commuting, Virtual Cycling, Indoor Cycling, Spin, Recumbent Cycling, Hand Cycling, BMX, Swimming, Pool Swimming, Open Water Swimming, Walking, Indoor Walking, Casual Walking, Speed Walking, Hiking, Rowing, Indoor Rowing, Cross Country Skiing, Skate Skiing, Backcountry XC Skiing, Alpine Skiing, Backcountry Skiing, Resort Skiing, Snowboarding, Backcountry Snowboarding, Resort Snowboarding, Snowshoeing, Mountaineering, Paddling, Kayaking, Whitewater Kayaking, Stand Up Paddleboarding, Surfing, Sailing, Sail Racing, Inline Skating, Ice Skating, E-Biking, E-Bike Fitness, E-Mountain Biking, Elliptical, Stair Climber, Multisport
+
+**Strength:** Strength Training, Cardio Training
+
+**Mobility:** Yoga, Pilates, Flexibility Training
+
+**Other:** Boxing, MMA, Racket Sport, Pickleball, Padel, HIIT, AMRAP, EMOM, Tabata, Rock Climbing, Indoor Climbing, Bouldering, Skydiving, Golf, Disc Golf, Tactical, Breathwork, Floor Climbing, Diving, Wakeboarding, Water Skiing, Wakesurfing, Flying, Wingsuit Flying

@@ -14,6 +14,7 @@ class RawBlock:
 
     line: LogicalLine
     children: list[RawBlock] = field(default_factory=list)
+    metadata: dict[str, str] = field(default_factory=dict)
     notes: list[str] = field(default_factory=list)
 
     @property
@@ -56,7 +57,7 @@ def build_blocks_for_workout(
             # Attach any pending notes to... we'll handle after tree build
             step_lines.append(ln)
             note_lines = []
-        elif ln.line_type == LineType.BLANK:
+        elif ln.line_type in (LineType.BLANK, LineType.METADATA):
             continue
 
     if not step_lines:
@@ -88,8 +89,9 @@ def build_blocks_for_workout(
 
     blocks = _build_tree(step_lines, 0, len(step_lines), _min_indent(step_lines))
 
-    # Attach step-level notes only (up to the trailing boundary)
+    # Attach step-level notes and metadata (up to the trailing boundary)
     _attach_notes(blocks, lines[:attach_boundary])
+    _attach_metadata(blocks, lines[:attach_boundary])
 
     return blocks, trailing_notes
 
@@ -150,3 +152,27 @@ def _attach_notes(blocks: list[RawBlock], all_lines: list[LogicalLine]) -> None:
             last_block = block_by_line.get(ln.span.line)
         elif ln.line_type == LineType.NOTE and last_block is not None:
             last_block.notes.append(ln.content)
+
+
+def _attach_metadata(
+    blocks: list[RawBlock], all_lines: list[LogicalLine]
+) -> None:
+    """Attach metadata lines to the preceding step block."""
+    block_by_line: dict[int, RawBlock] = {}
+
+    def _register(b: RawBlock) -> None:
+        block_by_line[b.line.span.line] = b
+        for child in b.children:
+            _register(child)
+
+    for b in blocks:
+        _register(b)
+
+    last_block: RawBlock | None = None
+    for ln in all_lines:
+        if ln.line_type == LineType.STEP:
+            last_block = block_by_line.get(ln.span.line)
+        elif ln.line_type == LineType.METADATA and last_block is not None:
+            # content is "key: value"
+            key, _, value = ln.content.partition(": ")
+            last_block.metadata[key] = value

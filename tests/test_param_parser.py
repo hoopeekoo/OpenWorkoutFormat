@@ -108,7 +108,7 @@ def test_bodyweight_plus():
 
 
 def test_rest_duration():
-    params, rest = parse_params(["rest:90s"])
+    params, rest = parse_params(["@rest", "90s"])
     assert len(params) == 0
     assert rest is not None
     assert rest.seconds == 90
@@ -143,7 +143,7 @@ def test_rir_zero():
 
 
 def test_multiple_params():
-    params, rest = parse_params(["@80kg", "rest:60s"])
+    params, rest = parse_params(["@80kg", "@rest", "60s"])
     assert len(params) == 1
     assert isinstance(params[0], WeightParam)
     assert rest is not None
@@ -151,7 +151,7 @@ def test_multiple_params():
 
 
 def test_multiple_step_params():
-    params, rest = parse_params(["@15kg", "@RIR", "3", "rest:60s"])
+    params, rest = parse_params(["@15kg", "@RIR", "3", "@rest", "60s"])
     assert len(params) == 2
     assert isinstance(params[0], WeightParam)
     assert isinstance(params[1], RIRParam)
@@ -188,8 +188,8 @@ def test_percent_of_stops_at_next_param():
 
 
 def test_percent_of_stops_at_rest():
-    """Variable name collection stops at rest: token."""
-    params, rest = parse_params(["@80%", "of", "1RM", "bench", "press", "rest:90s"])
+    """Variable name collection stops at @rest token."""
+    params, rest = parse_params(["@80%", "of", "1RM", "bench", "press", "@rest", "90s"])
     assert len(params) == 1
     assert isinstance(params[0], PercentOfParam)
     assert params[0].variable == "1RM bench press"

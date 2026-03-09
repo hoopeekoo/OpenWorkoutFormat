@@ -6,7 +6,7 @@ Human-readable workout format (`.owf`) with a Python parser. Zero runtime depend
 
 ```bash
 source .venv/bin/activate
-pytest tests/ -v          # 224 tests
+pytest tests/ -v          # 223 tests
 mypy src/                 # strict mode
 ruff check src/           # linting
 ```
@@ -28,7 +28,7 @@ Four-phase parser pipeline:
 Raw text → Scanner → Block Builder → Step Parser → Resolver → resolved AST
 ```
 
-- **Scanner** (`parser/scanner.py`): Classifies lines by prefix (`#`, `##`, `-`, `>`, `---`, blank)
+- **Scanner** (`parser/scanner.py`): Classifies lines by prefix (`#`, `##`, `-`, `>`, `@`, blank)
 - **Block Builder** (`parser/block_builder.py`): Indentation → tree of `RawBlock` nodes
 - **Step Parser** (`parser/step_parser.py`): Recursive descent → typed AST nodes
 - **Param Parser** (`parser/param_parser.py`): `@Z2`, `@80kg`, `@RPE 8`, `@80% of FTP`
@@ -40,11 +40,19 @@ Raw text → Scanner → Block Builder → Step Parser → Resolver → resolved
 - **No class inheritance** for AST nodes — use Union types: `Step = EnduranceStep | StrengthStep | ...`
 - AST nodes are **frozen dataclasses** with `slots=True` (Python 3.14 compat)
 - `SourceSpan` on every AST node for error reporting (1-based line/col)
-- Workout types are **modalities only**: `endurance`, `strength`, `mixed`, `mobility`
+- `Workout.sport_type` = FIT SDK sport type name (e.g. `"Trail Running"`, `"Strength Training"`), set from `[Tag]` in heading
+- `Workout.workout_type` = broad category (`endurance`, `strength`, `mixed`, `mobility`), set from legacy `[endurance]` tags
+- Legacy tags `[endurance]`/`[strength]`/`[mobility]`/`[mixed]` → `workout_type` set, `sport_type=None`; other tags → `sport_type` set, `workout_type=None`
+- Parser accepts **any string** in `[brackets]` — no validation; apps do sport_type → category mapping
 - `mixed` is auto-inferred for sessions with 2+ distinct child types, **never serialized** (re-inferred on parse)
+- Serializer outputs **Title Case** for all step names: `Run`, `Bike`, `Bench Press`, `Pull-Up`
+- Parser stores endurance actions **lowercase** in AST (case-insensitive on parse); strength exercise names preserve input casing
 - Duration supports compound formats: `1h30min`, `5min30s`, `1h28min2s` (both parse and `__str__`)
-- `Document.metadata` = frontmatter key-value pairs for doc metadata, NOT training variables
-- `resolve(doc, variables)` only uses caller-supplied variables (does not merge frontmatter)
+- `Document.metadata` = `@ key: value` document-level metadata, NOT training variables
+- `Workout.metadata` = session/child workout metadata attached via `@ key: value` after headings
+- All step/block AST nodes have a `metadata: dict[str, str]` field for step-level metadata
+- `resolve(doc, variables)` only uses caller-supplied variables (does not merge metadata)
+- `rest:` syntax replaced by `@rest duration` (e.g. `@rest 90s`)
 - **Sessions are mandatory**: every document has `##` session headings; `#`-only files auto-wrapped in unnamed session
 - **Dates only on `##` headings** — dates on `#` child headings raise `ParseError`
 
