@@ -16,7 +16,7 @@ def test_date_on_session():
     doc = parse_document(text)
     w = doc.workouts[0]
     assert w.name == "Morning Run"
-    assert w.workout_type == "endurance"
+    assert w.sport_type == "endurance"
     assert w.date == WorkoutDate(date="2025-02-27")
 
 
@@ -41,7 +41,7 @@ def test_date_without_type():
     doc = parse_document(text)
     w = doc.workouts[0]
     assert w.name == "Morning Run"
-    assert w.workout_type is None
+    assert w.sport_type is None
     assert w.date == WorkoutDate(date="2025-02-27")
 
 
@@ -115,7 +115,7 @@ def test_roundtrip_with_date():
     doc2 = parse_document(serialized)
 
     assert doc1.workouts[0].name == doc2.workouts[0].name
-    assert doc1.workouts[0].workout_type == doc2.workouts[0].workout_type
+    assert doc1.workouts[0].sport_type == doc2.workouts[0].sport_type
     assert doc1.workouts[0].date == doc2.workouts[0].date
 
 

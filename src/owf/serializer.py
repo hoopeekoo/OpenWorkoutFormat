@@ -70,8 +70,6 @@ def _heading_line(prefix: str, workout: Workout) -> str:
     parts = [f"{prefix} {workout.name}"]
     if workout.sport_type:
         parts.append(f" [{workout.sport_type}]")
-    elif workout.workout_type and workout.workout_type != "mixed":
-        parts.append(f" [{workout.workout_type}]")
     if workout.date:
         parts.append(f" ({workout.date})")
     if workout.rpe is not None:
@@ -134,8 +132,6 @@ def _serialize_child_workout(workout: Workout) -> str:
         child_parts = [f"# {workout.name}"]
         if workout.sport_type:
             child_parts.append(f" [{workout.sport_type}]")
-        elif workout.workout_type and workout.workout_type != "mixed":
-            child_parts.append(f" [{workout.workout_type}]")
         if workout.rpe is not None:
             child_parts.append(f" @RPE {workout.rpe}")
         if workout.rir is not None:

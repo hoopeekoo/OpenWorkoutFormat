@@ -158,10 +158,11 @@ The following keys have conventional meaning:
 All parts except `##` and the name are optional:
 
 - **Name**: Free text identifying the session.
-- **Type** (optional): A bracket-enclosed tag classifying the session. Can be either:
+- **Type** (optional): A bracket-enclosed tag classifying the session. Sets `sport_type` on the AST. Can be:
   - A **sport type** from the FIT SDK display name table (e.g., `Trail Running`, `Strength Training`, `Gravel Cycling`). See Appendix C.
-  - A **legacy broad category**: `endurance`, `strength`, `mixed`, `mobility`.
+  - A **broad category**: `endurance`, `strength`, `mixed`, `mobility`.
   - Any other free-text string — parsers MUST accept any value in brackets.
+  - Consuming applications derive the broad category from the sport type (e.g., `Running` → `endurance`).
 - **Date** (optional): A parenthesized date or date-time range. See [Section 11: Dates](#11-dates).
 - **@RPE** (optional): Session-level Rate of Perceived Exertion (integer, 1-10).
 - **@RIR** (optional): Default Reps In Reserve for strength exercises (integer). Individual exercises may override with their own `@RIR`.
@@ -607,7 +608,7 @@ Every OWF document uses `##` session headings. Sessions may contain steps direct
 4. Notes after the last `#` section attach to the session.
 5. Dates are only allowed on `##` session headings. Dates on `#` child headings raise an error.
 6. **Implicit sessions**: Files with only `#` headings (no `##`) are auto-wrapped in an unnamed session by the parser. If such a file has a single `#` heading with a date, the date is lifted to the implicit session.
-7. **Mixed inference:** If a `##` session has no explicit `[type]` and contains child workouts with 2 or more distinct types, its type is automatically inferred as `mixed`. The `[mixed]` tag is never written to `.owf` files — it is re-inferred on each parse.
+7. **No mixed inference in parser**: The parser does not infer `mixed` type. Consuming applications derive broad categories (including `mixed`) from `sport_type` using their own mapping logic.
 
 ## Appendix A: EBNF Grammar
 
@@ -727,9 +728,9 @@ These are conventional lowercase action names. Any lowercase word is a valid end
 
 The `[type]` tag on headings accepts any string. The following sport type names are derived from the FIT SDK sport/sub_sport enum table and serve as the canonical list. Applications SHOULD use these names for interoperability.
 
-### Legacy Broad Categories
+### Broad Categories
 
-These single-word values are retained for backward compatibility and simplicity:
+These single-word values can be used directly as sport types for simplicity:
 
 `endurance`, `strength`, `mobility`, `mixed`
 

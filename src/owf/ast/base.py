@@ -32,7 +32,6 @@ class Workout:
     """A named workout section (# heading)."""
 
     name: str
-    workout_type: str | None = None
     sport_type: str | None = None
     date: WorkoutDate | None = None
     rpe: int | None = None  # workout-level perceived exertion (1-10)

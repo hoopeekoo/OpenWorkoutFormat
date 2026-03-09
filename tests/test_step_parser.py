@@ -40,7 +40,7 @@ def test_simple_endurance():
     w = session.steps[0]
     assert isinstance(w, Workout)
     assert w.name == "Easy Run"
-    assert w.workout_type == "endurance"
+    assert w.sport_type == "endurance"
     assert len(w.steps) == 3
     assert isinstance(w.steps[0], EnduranceStep)
     assert w.steps[0].action == "warmup"
@@ -209,10 +209,10 @@ def test_session_with_child_workouts():
     assert isinstance(session.steps[0], EnduranceStep)
     assert isinstance(session.steps[1], Workout)
     assert session.steps[1].name == "Ride"
-    assert session.steps[1].workout_type == "endurance"
+    assert session.steps[1].sport_type == "endurance"
     assert isinstance(session.steps[2], Workout)
     assert session.steps[2].name == "Strength"
-    assert session.steps[2].workout_type == "strength"
+    assert session.steps[2].sport_type == "strength"
 
 
 def test_metadata():
@@ -245,7 +245,7 @@ def test_multiple_workouts_auto_wrapped():
     assert len(doc.workouts) == 1
     session = doc.workouts[0]
     assert session.name == ""
-    assert session.workout_type == "mixed"  # inferred from children
+    assert session.sport_type is None  # no mixed inference in parser
     children = [s for s in session.steps if isinstance(s, Workout)]
     assert len(children) == 2
     assert children[0].name == "Ride"
@@ -275,74 +275,56 @@ def test_strength_with_rir():
     assert rir_params[0].value == 2
 
 
-def test_session_mixed_inferred():
-    """Session with 2+ distinct child workout types -> mixed."""
+def test_session_no_mixed_inference():
+    """Parser does not infer mixed — that's app-side logic."""
     text = (
         "## Training\n\n"
         "# Ride [endurance]\n\n- bike 30min\n\n"
         "# Strength [strength]\n\n- Bench Press 3x8rep @80kg"
     )
     doc = parse_document(text)
-    assert doc.workouts[0].workout_type == "mixed"
+    assert doc.workouts[0].sport_type is None  # no inference
 
 
-def test_session_single_child_type_no_combination():
-    """Session where all children have the same type -> None."""
+def test_session_single_child_type():
+    """Session where all children have the same type."""
     text = (
         "## Training\n\n"
         "# Ride A [endurance]\n\n- bike 30min\n\n"
         "# Ride B [endurance]\n\n- bike 20min"
     )
     doc = parse_document(text)
-    assert doc.workouts[0].workout_type is None
+    assert doc.workouts[0].sport_type is None
 
 
-def test_session_no_child_types_no_combination():
-    """Session with children that have no type -> None."""
+def test_session_no_child_types():
+    """Session with children that have no type."""
     text = (
         "## Training\n\n"
         "# Part A\n\n- bike 30min\n\n"
         "# Part B\n\n- Bench Press 3x8rep @80kg"
     )
     doc = parse_document(text)
-    assert doc.workouts[0].workout_type is None
+    assert doc.workouts[0].sport_type is None
 
 
 def test_session_explicit_type_kept():
-    """Session with explicit [type] keeps it, no combination override."""
+    """Session with explicit [type] keeps it as sport_type."""
     text = (
         "## Training [mixed]\n\n"
         "# Ride [endurance]\n\n- bike 30min\n\n"
         "# Strength [strength]\n\n- Bench Press 3x8rep @80kg"
     )
     doc = parse_document(text)
-    assert doc.workouts[0].workout_type == "mixed"
-
-
-def test_session_mixed_roundtrip():
-    """Mixed is not written to .owf but re-inferred on re-parse."""
-    from owf.serializer import dumps
-
-    text = (
-        "## Training\n\n"
-        "# Ride [endurance]\n\n- bike 30min\n\n"
-        "# Strength [strength]\n\n- Bench Press 3x8rep @80kg"
-    )
-    doc1 = parse_document(text)
-    assert doc1.workouts[0].workout_type == "mixed"
-    serialized = dumps(doc1)
-    assert "[mixed]" not in serialized
-    doc2 = parse_document(serialized)
-    assert doc2.workouts[0].workout_type == "mixed"
+    assert doc.workouts[0].sport_type == "mixed"
 
 
 def test_sport_type_parsed():
-    """Non-legacy tag values set sport_type instead of workout_type."""
+    """Bracket tags set sport_type."""
     text = "## Morning Run [Trail Running]\n\n- run 5km\n"
     doc = parse_document(text)
     w = doc.workouts[0]
     assert w.sport_type == "Trail Running"
-    assert w.workout_type is None
 
 
 def test_sport_type_on_child():
@@ -356,18 +338,15 @@ def test_sport_type_on_child():
     ride = doc.workouts[0].steps[0]
     gym = doc.workouts[0].steps[1]
     assert ride.sport_type == "Gravel Cycling"
-    assert ride.workout_type is None
     assert gym.sport_type == "Strength Training"
-    assert gym.workout_type is None
 
 
-def test_legacy_type_no_sport_type():
-    """Legacy tags [endurance] etc. set workout_type, not sport_type."""
+def test_legacy_tags_become_sport_type():
+    """Legacy tags [endurance] etc. now set sport_type like any other tag."""
     text = "## Run [endurance]\n\n- run 5km\n"
     doc = parse_document(text)
     w = doc.workouts[0]
-    assert w.workout_type == "endurance"
-    assert w.sport_type is None
+    assert w.sport_type == "endurance"
 
 
 def test_sport_type_roundtrip():
@@ -409,7 +388,6 @@ def test_sport_type_unknown_accepted():
     doc = parse_document(text)
     w = doc.workouts[0]
     assert w.sport_type == "Underwater Basket Weaving"
-    assert w.workout_type is None
 
 
 def test_casing_serialization():

@@ -103,8 +103,8 @@ def _to_dict(obj: Any) -> Any:
 
 def _print_workout(workout: Any) -> None:
     header = workout.name
-    if workout.workout_type:
-        header += f" [{workout.workout_type}]"
+    if workout.sport_type:
+        header += f" [{workout.sport_type}]"
     print(header)
     print("-" * len(header))
 

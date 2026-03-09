@@ -137,7 +137,7 @@ def test_only_heading():
 def test_heading_without_type():
     text = "## Recovery Day\n\n- rest 30min"
     doc = parse_document(text)
-    assert doc.workouts[0].workout_type is None
+    assert doc.workouts[0].sport_type is None
 
 
 def test_multiple_notes():

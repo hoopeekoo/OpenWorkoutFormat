@@ -40,11 +40,10 @@ Raw text → Scanner → Block Builder → Step Parser → Resolver → resolved
 - **No class inheritance** for AST nodes — use Union types: `Step = EnduranceStep | StrengthStep | ...`
 - AST nodes are **frozen dataclasses** with `slots=True` (Python 3.14 compat)
 - `SourceSpan` on every AST node for error reporting (1-based line/col)
-- `Workout.sport_type` = FIT SDK sport type name (e.g. `"Trail Running"`, `"Strength Training"`), set from `[Tag]` in heading
-- `Workout.workout_type` = broad category (`endurance`, `strength`, `mixed`, `mobility`), set from legacy `[endurance]` tags
-- Legacy tags `[endurance]`/`[strength]`/`[mobility]`/`[mixed]` → `workout_type` set, `sport_type=None`; other tags → `sport_type` set, `workout_type=None`
+- `Workout.sport_type` = bracket tag value (e.g. `"Trail Running"`, `"endurance"`, `"Strength Training"`), set from `[Tag]` in heading
+- No `workout_type` field on AST — broad category (`endurance`, `strength`, `mixed`, `mobility`) is derived by consuming apps
 - Parser accepts **any string** in `[brackets]` — no validation; apps do sport_type → category mapping
-- `mixed` is auto-inferred for sessions with 2+ distinct child types, **never serialized** (re-inferred on parse)
+- No `mixed` inference in parser — apps derive this from child sport types
 - **Step classification by casing**: lowercase first word = `EnduranceStep`, Title Case first word = `StrengthStep`
 - No hardcoded endurance action list — any lowercase word is a valid endurance action
 - Serializer preserves casing: endurance actions stay lowercase, strength exercises stay Title Case
@@ -92,7 +91,7 @@ Removed syntax (parser rejects with error): `@easy`, `@hard`, `@moderate`, `@thr
 Grit depends on OWF. Changes to these areas affect Grit — run **cross-project-checker** agent:
 - **AST class names**: stored as `node_type` strings in Grit DB (`EnduranceStep`, `StrengthStep`, `Workout`, etc.)
 - **AST field names**: used in Grit templates via `asdict()` (e.g. `data.exercise`, `data.action`)
-- **`workout_type` values**: drive CSS badge classes in Grit (`badge-endurance`, `badge-strength`, etc.)
+- **`sport_type` values**: Grit derives `workout_type` (broad category) from `sport_type` via `sport_types.py`; drives CSS badge classes (`badge-endurance`, `badge-strength`, etc.)
 - **Serializer output**: reconstructed in Grit detail pages via `owf.dumps()`
 
 ## Formal Specification

@@ -95,7 +95,7 @@ def test_parse_full_example():
 
 def test_workout_types():
     doc = parse_document(FULL_EXAMPLE)
-    types = [(w.name, w.workout_type) for w in doc.workouts]
+    types = [(w.name, w.sport_type) for w in doc.workouts]
     assert ("Threshold Ride", "endurance") in types
     assert ("Upper Body", "strength") in types
     assert ("Power Clean EMOM", "mixed") in types
@@ -193,7 +193,7 @@ def test_session_structure():
     assert len(doc.workouts) == 1
     session = doc.workouts[0]
     assert session.name == "Saturday Training"
-    assert session.workout_type == "mixed"
+    assert session.sport_type is None  # no mixed inference in parser
 
     # warmup (session-level), child Threshold Ride, child Upper Body
     assert len(session.steps) == 3
@@ -202,11 +202,11 @@ def test_session_structure():
 
     assert isinstance(session.steps[1], Workout)
     assert session.steps[1].name == "Threshold Ride"
-    assert session.steps[1].workout_type == "endurance"
+    assert session.steps[1].sport_type == "endurance"
 
     assert isinstance(session.steps[2], Workout)
     assert session.steps[2].name == "Upper Body"
-    assert session.steps[2].workout_type == "strength"
+    assert session.steps[2].sport_type == "strength"
     assert len(session.steps[2].steps) == 1  # bench press
 
 
@@ -252,13 +252,12 @@ def test_serialize_full_example():
     doc = parse_document(FULL_EXAMPLE)
     serialized = dumps(doc)
 
-    # Should contain all workout headings
+    # Should contain all workout headings with their sport_type tags
     assert "## Threshold Ride [endurance]" in serialized
     assert "## Upper Body [strength]" in serialized
-    # [mixed] is never written — it's re-inferred on parse
-    assert "## Power Clean EMOM\n" in serialized
-    assert "## Murph\n" in serialized
-    assert "## Metcon\n" in serialized
+    assert "## Power Clean EMOM [mixed]" in serialized
+    assert "## Murph [mixed]" in serialized
+    assert "## Metcon [mixed]" in serialized
 
     # Should contain key structural elements
     assert "- 5x:" in serialized
@@ -287,9 +286,7 @@ def test_roundtrip_full_example():
     assert len(doc1.workouts) == len(doc2.workouts)
     for w1, w2 in zip(doc1.workouts, doc2.workouts):
         assert w1.name == w2.name
-        # [mixed] is not serialized, so standalone mixed workouts lose their type
-        if w1.workout_type != "mixed":
-            assert w1.workout_type == w2.workout_type
+        assert w1.sport_type == w2.sport_type
         assert len(w1.steps) == len(w2.steps)
 
 
@@ -308,7 +305,7 @@ def test_roundtrip_session_example():
         if isinstance(s1, Workout):
             assert isinstance(s2, Workout)
             assert s1.name == s2.name
-            assert s1.workout_type == s2.workout_type
+            assert s1.sport_type == s2.sport_type
 
 
 def test_public_api():

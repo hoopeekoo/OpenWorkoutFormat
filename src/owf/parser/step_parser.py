@@ -27,9 +27,6 @@ from owf.parser.param_parser import parse_params
 from owf.parser.scanner import LineType, LogicalLine, scan
 from owf.units import Distance, Duration
 
-# Legacy workout type values (broad categories)
-_LEGACY_TYPES = frozenset({"endurance", "strength", "mobility", "mixed"})
-
 # Step classification by casing: lowercase = endurance, Title Case = strength.
 # No hardcoded action list — any lowercase word is a valid action.
 
@@ -97,7 +94,6 @@ def _wrap_flat_in_session(lines: list[LogicalLine]) -> list[Workout]:
         date = children[0].date
         children[0] = Workout(
             name=children[0].name,
-            workout_type=children[0].workout_type,
             sport_type=children[0].sport_type,
             date=None,
             rpe=children[0].rpe,
@@ -108,19 +104,8 @@ def _wrap_flat_in_session(lines: list[LogicalLine]) -> list[Workout]:
             span=children[0].span,
         )
 
-    # Infer mixed type
-    workout_type: str | None = None
-    child_types = {
-        c.workout_type
-        for c in children
-        if isinstance(c, Workout) and c.workout_type is not None
-    }
-    if len(child_types) >= 2:
-        workout_type = "mixed"
-
     session = Workout(
         name="",
-        workout_type=workout_type,
         date=date,
         steps=tuple(children),
         span=SourceSpan(line=1, col=1),
@@ -204,7 +189,7 @@ def _build_session_workout(
     session_heading: LogicalLine, body_lines: list[LogicalLine]
 ) -> Workout:
     """Build a session-level workout from a ``##`` heading and its body."""
-    name, workout_type, sport_type, date, rpe, rir = _parse_heading(
+    name, sport_type, date, rpe, rir = _parse_heading(
         session_heading.content,
     )
 
@@ -266,18 +251,8 @@ def _build_session_workout(
             all_steps.extend(_parse_block(b) for b in blocks)
             trailing_notes.extend(notes)
 
-    if workout_type is None:
-        child_types = {
-            s.workout_type
-            for s in all_steps
-            if isinstance(s, Workout) and s.workout_type is not None
-        }
-        if len(child_types) >= 2:
-            workout_type = "mixed"
-
     return Workout(
         name=name,
-        workout_type=workout_type,
         sport_type=sport_type,
         date=date,
         rpe=rpe,
@@ -294,7 +269,6 @@ def _build_workout(
 ) -> Workout:
     """Build a Workout node from a heading and its body lines."""
     name = ""
-    workout_type: str | None = None
     sport_type: str | None = None
     date: WorkoutDate | None = None
     rpe: int | None = None
@@ -302,7 +276,7 @@ def _build_workout(
     span: SourceSpan | None = None
 
     if heading is not None:
-        name, workout_type, sport_type, date, rpe, rir = _parse_heading(heading.content)
+        name, sport_type, date, rpe, rir = _parse_heading(heading.content)
         span = heading.span
 
     # Extract workout-level metadata (indent 0 before any steps)
@@ -327,7 +301,6 @@ def _build_workout(
 
     return Workout(
         name=name,
-        workout_type=workout_type,
         sport_type=sport_type,
         date=date,
         rpe=rpe,
@@ -349,13 +322,12 @@ _RIR_TAIL_RE = re.compile(r"\s+@RIR\s+(\d+)\s*$")
 
 def _parse_heading(
     content: str,
-) -> tuple[str, str | None, str | None, WorkoutDate | None, int | None, int | None]:
+) -> tuple[str, str | None, WorkoutDate | None, int | None, int | None]:
     """Parse heading content like 'Name [type] (2025-02-27) @RPE 7 @RIR 2'.
 
-    Returns (name, workout_type, sport_type, date, rpe, rir).
+    Returns (name, sport_type, date, rpe, rir).
 
-    Legacy tags ([endurance], [strength], [mobility], [mixed]) set workout_type.
-    Other tags ([Trail Running], [Strength Training]) set sport_type.
+    Any bracket tag sets sport_type (e.g. [Running], [endurance], [Strength Training]).
     """
     text = content
 
@@ -392,10 +364,8 @@ def _parse_heading(
     if tm:
         name = tm.group(1).strip()
         tag = tm.group(2).strip()
-        if tag.lower() in _LEGACY_TYPES:
-            return name, tag.lower(), None, date, rpe, rir
-        return name, None, tag, date, rpe, rir
-    return text.strip(), None, None, date, rpe, rir
+        return name, tag, date, rpe, rir
+    return text.strip(), None, date, rpe, rir
 
 
 def _parse_block(block: RawBlock) -> Any:

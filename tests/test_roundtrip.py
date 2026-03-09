@@ -14,9 +14,7 @@ def _roundtrip(text: str) -> None:
     assert len(doc1.workouts) == len(doc2.workouts)
     for w1, w2 in zip(doc1.workouts, doc2.workouts):
         assert w1.name == w2.name
-        # [mixed] is not serialized, so skip comparison for mixed
-        if w1.workout_type != "mixed":
-            assert w1.workout_type == w2.workout_type
+        assert w1.sport_type == w2.sport_type
         assert len(w1.steps) == len(w2.steps)
 
 
