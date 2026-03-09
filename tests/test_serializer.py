@@ -12,8 +12,8 @@ def test_serialize_simple_endurance():
     doc = parse_document(text)
     result = dumps(doc)
     assert "## Easy Run [endurance]" in result
-    assert "- Warmup 15min @Z1" in result
-    assert "- Run 5km @4:30/km" in result
+    assert "- warmup 15min @Z1" in result
+    assert "- run 5km @4:30/km" in result
 
 
 def test_serialize_with_metadata():
@@ -32,19 +32,19 @@ def test_serialize_repeat_block():
     doc = parse_document(text)
     result = dumps(doc)
     assert "- 5x:" in result
-    assert "  - Bike 5min @200W" in result
-    assert "  - Recover 3min @Z1" in result
+    assert "  - bike 5min @200W" in result
+    assert "  - recover 3min @Z1" in result
 
 
 def test_serialize_strength():
-    text = "## Strength [strength]\n\n- bench press 3x8rep @80kg @rest 90s\n"
+    text = "## Strength [strength]\n\n- Bench Press 3x8rep @80kg @rest 90s\n"
     doc = parse_document(text)
     result = dumps(doc)
     assert "- Bench Press 3x8rep @80kg @rest 1min30s" in result
 
 
 def test_serialize_emom():
-    text = "## WoD [mixed]\n\n- emom 10min:\n  - power clean 3rep @70kg\n"
+    text = "## WoD [mixed]\n\n- emom 10min:\n  - Power Clean 3rep @70kg\n"
     doc = parse_document(text)
     result = dumps(doc)
     assert "- emom 10min:" in result
@@ -54,7 +54,7 @@ def test_serialize_emom():
 def test_serialize_amrap():
     text = (
         "## Metcon [mixed]\n\n- amrap 12min:\n"
-        "  - pull-up 5rep\n  - push-up 10rep\n"
+        "  - Pull-Up 5rep\n  - Push-Up 10rep\n"
     )
     doc = parse_document(text)
     result = dumps(doc)
@@ -62,11 +62,11 @@ def test_serialize_amrap():
 
 
 def test_serialize_for_time():
-    text = "## Murph [mixed]\n\n- for-time:\n  - run 1mile\n  - pull-up 100rep\n"
+    text = "## Murph [mixed]\n\n- for-time:\n  - run 1mile\n  - Pull-Up 100rep\n"
     doc = parse_document(text)
     result = dumps(doc)
     assert "- for-time:" in result
-    assert "  - Run 1mile" in result
+    assert "  - run 1mile" in result
 
 
 def test_serialize_session():
@@ -79,12 +79,12 @@ def test_serialize_session():
     result = dumps(doc)
     assert "## Session" in result
     assert "# Ride [endurance]" in result
-    assert "- Warmup 10min @Z1" in result
-    assert "- Cooldown 10min @Z1" in result
+    assert "- warmup 10min @Z1" in result
+    assert "- cooldown 10min @Z1" in result
 
 
 def test_serialize_rir():
-    text = "## Strength [strength]\n\n- bench press 3x8rep @RIR 2 @rest 90s\n"
+    text = "## Strength [strength]\n\n- Bench Press 3x8rep @RIR 2 @rest 90s\n"
     doc = parse_document(text)
     result = dumps(doc)
     assert "@RIR 2" in result
@@ -93,8 +93,8 @@ def test_serialize_rir():
 def test_serialize_superset():
     text = (
         "## Strength\n\n- 3x superset:\n"
-        "  - bench press 3x8rep @80kg @rest 90s\n"
-        "  - bent-over row 3x8rep @60kg @rest 90s\n"
+        "  - Bench Press 3x8rep @80kg @rest 90s\n"
+        "  - Bent-Over Row 3x8rep @60kg @rest 90s\n"
     )
     doc = parse_document(text)
     result = dumps(doc)
@@ -111,7 +111,7 @@ def test_serialize_workout_rpe():
 
 
 def test_serialize_workout_rir():
-    text = "## Strength [strength] @RIR 2\n\n- bench press 3x8rep @80kg\n"
+    text = "## Strength [strength] @RIR 2\n\n- Bench Press 3x8rep @80kg\n"
     doc = parse_document(text)
     result = dumps(doc)
     assert "## Strength [strength] @RIR 2" in result
@@ -122,9 +122,9 @@ def test_serialize_workout_rir():
 def test_serialize_circuit():
     text = (
         "## Strength\n\n- 3x circuit:\n"
-        "  - kettlebell swing 10rep @24kg\n"
-        "  - push-up 15rep\n"
-        "  - air squat 20rep\n"
+        "  - Kettlebell Swing 10rep @24kg\n"
+        "  - Push-Up 15rep\n"
+        "  - Air Squat 20rep\n"
     )
     doc = parse_document(text)
     result = dumps(doc)
@@ -148,7 +148,7 @@ def test_serialize_percent_of():
 
 
 def test_serialize_bodyweight_plus():
-    text = "## Gym\n\n- dip 3x8rep @bodyweight + 20kg\n"
+    text = "## Gym\n\n- Dip 3x8rep @bodyweight + 20kg\n"
     doc = parse_document(text)
     result = dumps(doc)
     assert "@bodyweight + 20kg" in result

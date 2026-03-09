@@ -150,7 +150,7 @@ def test_multiple_notes():
 
 
 def test_strength_reps_only():
-    text = "## WoD\n\n- pull-up 100rep"
+    text = "## WoD\n\n- Pull-Up 100rep"
     doc = parse_document(text)
     step = doc.workouts[0].steps[0]
     assert isinstance(step, StrengthStep)
@@ -171,7 +171,7 @@ def test_for_time_with_distance():
 
 def test_emom_bare_minutes():
     """EMOM with bare number defaults to minutes."""
-    text = "## WoD\n\n- emom 10:\n  - burpee 5rep"
+    text = "## WoD\n\n- emom 10:\n  - Burpee 5rep"
     doc = parse_document(text)
     step = doc.workouts[0].steps[0]
     assert isinstance(step, EMOM)

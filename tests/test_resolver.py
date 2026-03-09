@@ -25,7 +25,7 @@ def test_resolve_percentage_of_ftp():
 
 
 def test_resolve_percentage_of_1rm():
-    text = "## Strength\n\n- bench press 3x8rep @80% of 1RM bench press"
+    text = "## Strength\n\n- Bench Press 3x8rep @80% of 1RM bench press"
     doc = parse_document(text)
     resolved = resolve(doc, {"1RM bench press": "100kg"})
     step = resolved.workouts[0].steps[0]
@@ -47,7 +47,7 @@ def test_resolve_percentage_of_max_hr():
 
 
 def test_resolve_bodyweight_plus():
-    text = "## Gym\n\n- dip 3x8rep @bodyweight + 20kg"
+    text = "## Gym\n\n- Dip 3x8rep @bodyweight + 20kg"
     doc = parse_document(text)
     resolved = resolve(doc, {"bodyweight": "80kg"})
     step = resolved.workouts[0].steps[0]

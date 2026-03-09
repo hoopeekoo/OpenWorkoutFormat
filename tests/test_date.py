@@ -71,7 +71,7 @@ def test_session_date_preserved():
     text = (
         "## Session (2025-02-27 14:00-16:00)\n\n"
         "# Ride [endurance]\n\n- bike 30min\n\n"
-        "# Strength [strength]\n\n- bench press 3x8rep @80kg"
+        "# Strength [strength]\n\n- Bench Press 3x8rep @80kg"
     )
     doc = parse_document(text)
     assert len(doc.workouts) == 1
@@ -88,7 +88,7 @@ def test_dates_on_child_headings_rejected():
         "# Ride [endurance] (2025-02-27 14:00-15:00)\n\n"
         "- bike 30min\n\n"
         "# Strength [strength] (2025-02-27 15:15-16:00)\n\n"
-        "- bench press 3x8rep @80kg"
+        "- Bench Press 3x8rep @80kg"
     )
     with pytest.raises(ParseError, match="Dates are only allowed on session"):
         parse_document(text)
@@ -123,7 +123,7 @@ def test_roundtrip_session_with_date():
     text = (
         "## Session (2025-02-27 14:00-16:00)\n\n"
         "# Ride [endurance]\n\n- bike 30min\n\n"
-        "# Strength [strength]\n\n- bench press 3x8rep @80kg"
+        "# Strength [strength]\n\n- Bench Press 3x8rep @80kg"
     )
     doc1 = parse_document(text)
     serialized = dumps(doc1)

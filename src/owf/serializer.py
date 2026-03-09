@@ -166,7 +166,7 @@ def _serialize_node(node: Any, indent: int) -> list[str]:
     meta = _metadata_lines(node.metadata, child_prefix) if node.metadata else []
 
     if isinstance(node, EnduranceStep):
-        parts = [_normalize_name(node.action)]
+        parts = [node.action]
         if node.duration:
             parts.append(str(node.duration))
         if node.distance:

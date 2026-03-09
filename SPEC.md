@@ -30,8 +30,8 @@ An OWF document consists of:
 # Threshold Ride [Cycling]
 
 - 5x:
-  - Bike 5min @95% of FTP
-  - Recover 3min @Z1
+  - bike 5min @95% of FTP
+  - recover 3min @Z1
 
 # Upper Body [Strength Training]
 
@@ -48,7 +48,7 @@ Every document has at least one session (`##` heading). Files with only `#` head
 |--------|---------|---------|
 | `## ` | Session heading | `## Saturday Training` |
 | `# ` | Child workout heading | `# Threshold Ride [Cycling]` |
-| `- ` | Step line | `- Run 5km @4:30/km` |
+| `- ` | Step line | `- run 5km @4:30/km` |
 | `> ` | Note | `> Felt strong today.` |
 | `@ ` | Metadata | `@ location: Downtown Gym` |
 | *(blank)* | Section separator | |
@@ -60,8 +60,8 @@ Every document has at least one session (`##` heading). Files with only `#` head
 
 ```
 - 5x:
-  - Bike 5min @200W
-  - Recover 3min @Z1
+  - bike 5min @200W
+  - recover 3min @Z1
 ```
 
 ## 3. Metadata
@@ -104,7 +104,7 @@ Metadata lines use the `@ key: value` syntax (at-sign, space, key, colon-space, 
 @ source: Garmin Connect
 @ location: Riverside Trail
 
-- Warmup 10min @Z1
+- warmup 10min @Z1
 ```
 
 ### Step-Level Metadata
@@ -201,41 +201,18 @@ Files with only `#` headings (no `##` headings) are auto-wrapped in an implicit 
 
 Every step line begins with `- ` followed by the step content.
 
-### Title Case Convention
+### Casing Convention — Step Classification
 
-All step names — both endurance actions and strength exercises — are written in **Title Case** in canonical OWF output. Parsers MUST accept any casing on input. Hyphenated words capitalize each segment: `Pull-Up`, `Skate-Ski`, `Clean-And-Jerk`.
+Steps are classified by the casing of their first word:
+
+- **Lowercase first word → EnduranceStep**: `run`, `bike`, `swim`, `warmup`, etc.
+- **Title Case first word → StrengthStep**: `Bench Press`, `Pull-Up`, `Deadlift`, etc.
+
+There is no hardcoded list of endurance actions. Any lowercase word is a valid endurance action, and any Title Case word starts a strength exercise. This makes the format extensible — users can invent new actions (`paddle-board`, `rollerblade`) or exercises (`Turkish Get-Up`) without parser changes.
+
+Common endurance actions include: `run`, `bike`, `swim`, `row`, `ski`, `walk`, `hike`, `skate-ski`, `classic-ski`, `alpine-ski`, `snowboard`, `snowshoe`, `skate`, `paddle`, `kayak`, `surf`, `climb`, `elliptical`, `stairs`, `jumprope`, `ebike`, `other`, `warmup`, `cooldown`, `recover`.
 
 ### EnduranceStep
-
-An endurance step starts with one of the known actions (case-insensitive on parse, Title Case on output):
-
-| Action | Description |
-|--------|-------------|
-| `Run` | Running |
-| `Bike` | Cycling |
-| `Swim` | Swimming |
-| `Row` | Rowing |
-| `Ski` | Skiing / ski erg |
-| `Walk` | Walking |
-| `Hike` | Hiking |
-| `Skate-Ski` | XC skate skiing |
-| `Classic-Ski` | XC classic skiing |
-| `Alpine-Ski` | Downhill skiing |
-| `Snowboard` | Snowboarding |
-| `Snowshoe` | Snowshoeing |
-| `Skate` | Inline / ice skating |
-| `Paddle` | SUP / kayak / canoe |
-| `Kayak` | Kayaking |
-| `Surf` | Surfing / windsurfing / kite |
-| `Climb` | Mountaineering |
-| `Elliptical` | Elliptical trainer |
-| `Stairs` | Stair climber |
-| `Jumprope` | Jump rope |
-| `Ebike` | E-bike riding |
-| `Other` | Other / uncategorized activity |
-| `Warmup` | Warm-up (any modality) |
-| `Cooldown` | Cool-down (any modality) |
-| `Recover` | Recovery interval |
 
 **Syntax:**
 
@@ -246,16 +223,16 @@ An endurance step starts with one of the known actions (case-insensitive on pars
 Examples:
 
 ```
-- Run 5km @4:30/km
-- Bike 30min @200W
-- Warmup 15min @Z1
-- Swim 200m @Z2
-- Recover 3min @Z1
+- run 5km @4:30/km
+- bike 30min @200W
+- warmup 15min @Z1
+- swim 200m @Z2
+- recover 3min @Z1
 ```
 
 ### StrengthStep
 
-Any step whose first word is **not** a known endurance action is classified as a strength step.
+Strength exercises start with a Title Case word.
 
 **Syntax:**
 
@@ -394,10 +371,10 @@ Container blocks may be nested:
 ```
 - 3x:
   - 2x:
-    - Run 30s @Z4
-    - Recover 30s @Z1
-  - Run 1min @Z4
-  - Recover 1min @Z1
+    - run 30s @Z4
+    - recover 30s @Z1
+  - run 1min @Z4
+  - recover 1min @Z1
 ```
 
 ## 7. Parameters
@@ -555,7 +532,7 @@ Notes are lines prefixed with `> `. They can appear:
 1. **After a step** — attached to that step:
 
 ```
-- Run 5km @4:30/km
+- run 5km @4:30/km
 > Aim for negative splits.
 ```
 
@@ -564,9 +541,9 @@ Notes are lines prefixed with `> `. They can appear:
 ```
 ## Easy Run [Running]
 
-- Warmup 10min @Z1
-- Run 5km @4:30/km
-- Cooldown 10min @Z1
+- warmup 10min @Z1
+- run 5km @4:30/km
+- cooldown 10min @Z1
 
 > Great session for building aerobic base.
 ```
@@ -606,13 +583,13 @@ Every OWF document uses `##` session headings. Sessions may contain steps direct
 ```
 ## Saturday Training (2025-02-27)
 
-- Warmup 10min @Z1
+- warmup 10min @Z1
 
 # Threshold Ride [Cycling]
 
 - 5x:
-  - Bike 5min @95% of FTP
-  - Recover 3min @Z1
+  - bike 5min @95% of FTP
+  - recover 3min @Z1
 
 # Upper Body [Strength Training]
 
@@ -682,13 +659,10 @@ endurance_step  = action [ SP duration ] [ SP distance ] { SP param } ;
 strength_step   = exercise [ SP sets_reps ] [ SP duration ] { SP param }
                   [ SP rest_param ] ;
 
-action          = "run" | "bike" | "swim" | "row" | "ski"
-                | "walk" | "hike" | "skate-ski" | "classic-ski"
-                | "alpine-ski" | "snowboard" | "snowshoe" | "skate"
-                | "paddle" | "kayak" | "surf" | "climb"
-                | "elliptical" | "stairs" | "jumprope" | "ebike"
-                | "other" | "warmup" | "cooldown" | "recover" ;
-exercise        = word { SP word } ;
+action          = lower_word { ( "-" | SP ) lower_word } ;
+exercise        = title_word { ( "-" | SP ) title_word } ;
+lower_word      = lower { letter | digit } ;
+title_word      = upper { letter | digit } ;
 
 sets_reps       = [ count "x" ] ( count | "max" ) [ "rep" | "reps" ] ;
 rest_param      = "@rest" SP duration ;
@@ -726,7 +700,9 @@ blank           = newline ;
 
 ## Appendix B: Reserved Words
 
-### Endurance Actions
+### Common Endurance Actions
+
+These are conventional lowercase action names. Any lowercase word is a valid endurance action — this list is not exhaustive:
 
 `run`, `bike`, `swim`, `row`, `ski`, `walk`, `hike`, `skate-ski`, `classic-ski`, `alpine-ski`, `snowboard`, `snowshoe`, `skate`, `paddle`, `kayak`, `surf`, `climb`, `elliptical`, `stairs`, `jumprope`, `ebike`, `other`, `warmup`, `cooldown`, `recover`
 

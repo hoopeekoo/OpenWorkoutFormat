@@ -30,36 +30,8 @@ from owf.units import Distance, Duration
 # Legacy workout type values (broad categories)
 _LEGACY_TYPES = frozenset({"endurance", "strength", "mobility", "mixed"})
 
-# Known endurance actions
-ENDURANCE_ACTIONS = frozenset(
-    {
-        "run",
-        "bike",
-        "swim",
-        "row",
-        "ski",
-        "walk",
-        "hike",
-        "warmup",
-        "cooldown",
-        "recover",
-        "skate-ski",
-        "classic-ski",
-        "alpine-ski",
-        "snowboard",
-        "snowshoe",
-        "skate",
-        "paddle",
-        "kayak",
-        "surf",
-        "climb",
-        "elliptical",
-        "stairs",
-        "jumprope",
-        "ebike",
-        "other",
-    }
-)
+# Step classification by casing: lowercase = endurance, Title Case = strength.
+# No hardcoded action list — any lowercase word is a valid action.
 
 # Regex for sets x reps: 3x8rep, 3x8, 100rep
 SETS_REPS_PATTERN = re.compile(
@@ -630,11 +602,11 @@ def _parse_step_line(content: str, block: RawBlock, span: SourceSpan) -> Any:
 
     action = " ".join(action_tokens)
 
-    first_word = action_tokens[0].lower() if action_tokens else ""
+    first_word = action_tokens[0] if action_tokens else ""
 
-    if first_word in ENDURANCE_ACTIONS:
-        # Normalize endurance action to lowercase (it's a keyword)
-        return _build_endurance_step(action.lower(), rest_tokens, block, span)
+    # Casing rule: lowercase first word = endurance, Title Case = strength
+    if first_word and first_word[0].islower():
+        return _build_endurance_step(action, rest_tokens, block, span)
     else:
         return _build_strength_step(action, rest_tokens, block, span)
 

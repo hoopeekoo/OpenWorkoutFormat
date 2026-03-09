@@ -122,41 +122,28 @@ Bracket tags on headings set the specific sport type. Legacy modality tags (`[en
 ## Yoga Flow [Yoga]
 ```
 
-### Endurance Steps
+### Step Classification by Casing
 
-27 known actions (always lowercase — these are language keywords):
+Steps are classified by the casing of their first word — no hardcoded keyword list:
+
+- **Lowercase → endurance**: `run`, `bike`, `swim`, `warmup`, `recover`, etc.
+- **Title Case → strength**: `Bench Press`, `Pull-Up`, `Deadlift`, etc.
+
+Any lowercase word is a valid endurance action. Users can invent new ones (`paddle-board`, `rollerblade`) without parser changes.
+
+### Endurance Steps
 
 ```
 - run 5km @4:30/km
 - bike 30min @200W
 - swim 200m @Z2
-- row 500m @Z4
-- ski 20min @Z2
-- walk 5min @Z1
-- hike 2h @Z1
-- skate-ski 30min @Z2
-- classic-ski 45min @Z1
-- alpine-ski 3h
-- snowboard 2h
-- snowshoe 60min @Z1
-- skate 30min @Z2
-- paddle 45min @Z1
-- kayak 60min @Z2
-- surf 90min
-- climb 4h
-- elliptical 30min @Z2
-- stairs 20min @Z4
-- jumprope 10min @Z2
-- ebike 60min @Z1
-- other 30min @Z2
 - warmup 15min @Z1
-- cooldown 10min @Z1
 - recover 3min @Z1
 ```
 
 ### Strength Steps
 
-Sets × reps formats (exercise names are free-form, Title Case by convention):
+Sets × reps formats:
 
 ```
 - Bench Press 3x8rep @80kg @rest 90s

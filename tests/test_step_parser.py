@@ -85,12 +85,12 @@ def test_repeat_block():
 def test_strength_step():
     text = (
         "# Strength [strength]\n\n"
-        "- bench press 3x8rep @80kg @rest 90s"
+        "- Bench Press 3x8rep @80kg @rest 90s"
     )
     doc = parse_document(text)
     step = doc.workouts[0].steps[0].steps[0]
     assert isinstance(step, StrengthStep)
-    assert step.exercise == "bench press"
+    assert step.exercise == "Bench Press"
     assert step.sets == 3
     assert step.reps == 8
     assert step.rest is not None
@@ -100,8 +100,8 @@ def test_strength_step():
 def test_superset():
     text = (
         "# Strength\n\n- 3x superset:\n"
-        "  - bench press 3x8rep @80kg @rest 90s\n"
-        "  - bent-over row 3x8rep @60kg @rest 90s"
+        "  - Bench Press 3x8rep @80kg @rest 90s\n"
+        "  - Bent-Over Row 3x8rep @60kg @rest 90s"
     )
     doc = parse_document(text)
     step = doc.workouts[0].steps[0].steps[0]
@@ -113,9 +113,9 @@ def test_superset():
 def test_circuit():
     text = (
         "# Strength\n\n- 3x circuit:\n"
-        "  - kettlebell swing 10rep @24kg\n"
-        "  - push-up 15rep\n"
-        "  - air squat 20rep"
+        "  - Kettlebell Swing 10rep @24kg\n"
+        "  - Push-Up 15rep\n"
+        "  - Air Squat 20rep"
     )
     doc = parse_document(text)
     step = doc.workouts[0].steps[0].steps[0]
@@ -125,7 +125,7 @@ def test_circuit():
 
 
 def test_emom():
-    text = "# WoD [mixed]\n\n- emom 10min:\n  - power clean 3rep @70kg"
+    text = "# WoD [mixed]\n\n- emom 10min:\n  - Power Clean 3rep @70kg"
     doc = parse_document(text)
     step = doc.workouts[0].steps[0].steps[0]
     assert isinstance(step, EMOM)
@@ -136,8 +136,8 @@ def test_emom():
 def test_emom_alternating():
     text = (
         "# WoD [mixed]\n\n- emom 12min alternating:\n"
-        "  - deadlift 5rep @100kg\n"
-        "  - strict press 7rep @40kg"
+        "  - Deadlift 5rep @100kg\n"
+        "  - Strict Press 7rep @40kg"
     )
     doc = parse_document(text)
     step = doc.workouts[0].steps[0].steps[0]
@@ -149,7 +149,7 @@ def test_emom_alternating():
 def test_custom_interval():
     text = (
         "# WoD [mixed]\n\n- every 2min for 20min:\n"
-        "  - wall ball 15rep @9kg"
+        "  - Wall Ball 15rep @9kg"
     )
     doc = parse_document(text)
     step = doc.workouts[0].steps[0].steps[0]
@@ -162,8 +162,8 @@ def test_custom_interval():
 def test_amrap():
     text = (
         "# Metcon [mixed]\n\n- amrap 12min:\n"
-        "  - pull-up 5rep\n  - push-up 10rep\n"
-        "  - air squat 15rep"
+        "  - Pull-Up 5rep\n  - Push-Up 10rep\n"
+        "  - Air Squat 15rep"
     )
     doc = parse_document(text)
     step = doc.workouts[0].steps[0].steps[0]
@@ -175,8 +175,8 @@ def test_amrap():
 def test_for_time():
     text = (
         "# Murph [mixed]\n\n- for-time:\n"
-        "  - run 1mile\n  - pull-up 100rep\n"
-        "  - push-up 200rep"
+        "  - run 1mile\n  - Pull-Up 100rep\n"
+        "  - Push-Up 200rep"
     )
     doc = parse_document(text)
     step = doc.workouts[0].steps[0].steps[0]
@@ -198,7 +198,7 @@ def test_session_with_child_workouts():
     text = (
         "## Session\n\n- warmup 10min @Z1\n\n"
         "# Ride [endurance]\n\n- bike 30min\n\n"
-        "# Strength [strength]\n\n- bench press 3x8rep @80kg"
+        "# Strength [strength]\n\n- Bench Press 3x8rep @80kg"
     )
     doc = parse_document(text)
     assert len(doc.workouts) == 1
@@ -238,7 +238,7 @@ def test_multiple_workouts_auto_wrapped():
     """Multiple flat # workouts are auto-wrapped in a single session."""
     text = (
         "# Ride [endurance]\n\n- bike 30min\n\n"
-        "# Strength [strength]\n\n- bench press 3x8rep @80kg"
+        "# Strength [strength]\n\n- Bench Press 3x8rep @80kg"
     )
     doc = parse_document(text)
     # Auto-wrapped in one implicit session
@@ -265,7 +265,7 @@ def test_endurance_with_power_param():
 def test_strength_with_rir():
     text = (
         "## Strength [strength]\n\n"
-        "- bench press 3x8rep @80kg @RIR 2 @rest 90s"
+        "- Bench Press 3x8rep @80kg @RIR 2 @rest 90s"
     )
     doc = parse_document(text)
     step = doc.workouts[0].steps[0]
@@ -280,7 +280,7 @@ def test_session_mixed_inferred():
     text = (
         "## Training\n\n"
         "# Ride [endurance]\n\n- bike 30min\n\n"
-        "# Strength [strength]\n\n- bench press 3x8rep @80kg"
+        "# Strength [strength]\n\n- Bench Press 3x8rep @80kg"
     )
     doc = parse_document(text)
     assert doc.workouts[0].workout_type == "mixed"
@@ -302,7 +302,7 @@ def test_session_no_child_types_no_combination():
     text = (
         "## Training\n\n"
         "# Part A\n\n- bike 30min\n\n"
-        "# Part B\n\n- bench press 3x8rep @80kg"
+        "# Part B\n\n- Bench Press 3x8rep @80kg"
     )
     doc = parse_document(text)
     assert doc.workouts[0].workout_type is None
@@ -313,7 +313,7 @@ def test_session_explicit_type_kept():
     text = (
         "## Training [mixed]\n\n"
         "# Ride [endurance]\n\n- bike 30min\n\n"
-        "# Strength [strength]\n\n- bench press 3x8rep @80kg"
+        "# Strength [strength]\n\n- Bench Press 3x8rep @80kg"
     )
     doc = parse_document(text)
     assert doc.workouts[0].workout_type == "mixed"
@@ -326,7 +326,7 @@ def test_session_mixed_roundtrip():
     text = (
         "## Training\n\n"
         "# Ride [endurance]\n\n- bike 30min\n\n"
-        "# Strength [strength]\n\n- bench press 3x8rep @80kg"
+        "# Strength [strength]\n\n- Bench Press 3x8rep @80kg"
     )
     doc1 = parse_document(text)
     assert doc1.workouts[0].workout_type == "mixed"
@@ -350,7 +350,7 @@ def test_sport_type_on_child():
     text = (
         "## Session\n\n"
         "# Ride [Gravel Cycling]\n\n- bike 30min\n\n"
-        "# Gym [Strength Training]\n\n- deadlift 3x5rep @100kg"
+        "# Gym [Strength Training]\n\n- Deadlift 3x5rep @100kg"
     )
     doc = parse_document(text)
     ride = doc.workouts[0].steps[0]
@@ -394,7 +394,7 @@ def test_sport_type_with_date():
 
 def test_sport_type_with_params():
     """Sport type, date, RPE, and RIR all coexist."""
-    text = "## Gym [Strength Training] (2025-02-27) @RPE 8 @RIR 2\n\n- squat 3x5rep\n"
+    text = "## Gym [Strength Training] (2025-02-27) @RPE 8 @RIR 2\n\n- Squat 3x5rep\n"
     doc = parse_document(text)
     w = doc.workouts[0]
     assert w.sport_type == "Strength Training"
@@ -412,28 +412,28 @@ def test_sport_type_unknown_accepted():
     assert w.workout_type is None
 
 
-def test_title_case_serialization():
-    """Serializer outputs Title Case for both actions and exercises."""
+def test_casing_serialization():
+    """Serializer preserves lowercase endurance actions and Title Case exercises."""
     from owf.serializer import dumps
 
-    text = "## Workout\n\n- run 5km\n- bench press 3x8rep @80kg\n"
+    text = "## Workout\n\n- run 5km\n- Bench Press 3x8rep @80kg\n"
     doc = parse_document(text)
     result = dumps(doc)
-    assert "- Run 5km" in result
+    assert "- run 5km" in result
     assert "- Bench Press 3x8rep @80kg" in result
 
 
-def test_title_case_roundtrip():
-    """Title Case output re-parses correctly."""
+def test_casing_roundtrip():
+    """Casing-based output re-parses correctly."""
     from owf.serializer import dumps
 
-    text = "## Workout\n\n- run 5km\n- bench press 3x8rep @80kg\n"
+    text = "## Workout\n\n- run 5km\n- Bench Press 3x8rep @80kg\n"
     doc1 = parse_document(text)
     serialized = dumps(doc1)
     doc2 = parse_document(serialized)
-    # Endurance action is lowercase in AST
+    # Endurance action stays lowercase
     assert doc2.workouts[0].steps[0].action == "run"
-    # Strength exercise preserves Title Case
+    # Strength exercise stays Title Case
     assert doc2.workouts[0].steps[1].exercise == "Bench Press"
 
 
@@ -446,7 +446,7 @@ def test_heading_with_rpe():
 
 
 def test_heading_with_rir():
-    text = "## Strength [strength] @RIR 2\n\n- bench press 3x8rep @80kg\n"
+    text = "## Strength [strength] @RIR 2\n\n- Bench Press 3x8rep @80kg\n"
     doc = parse_document(text)
     w = doc.workouts[0]
     assert w.rir == 2
@@ -454,7 +454,7 @@ def test_heading_with_rir():
 
 
 def test_heading_with_both():
-    text = "## Gym [strength] @RPE 8 @RIR 2\n\n- bench press 3x8rep @80kg\n"
+    text = "## Gym [strength] @RPE 8 @RIR 2\n\n- Bench Press 3x8rep @80kg\n"
     doc = parse_document(text)
     w = doc.workouts[0]
     assert w.rpe == 8
@@ -462,7 +462,7 @@ def test_heading_with_both():
 
 
 def test_heading_with_date_and_params():
-    text = "## Gym [strength] (2025-02-27) @RIR 2 @RPE 7\n\n- bench press 3x8rep\n"
+    text = "## Gym [strength] (2025-02-27) @RIR 2 @RPE 7\n\n- Bench Press 3x8rep\n"
     doc = parse_document(text)
     w = doc.workouts[0]
     assert w.date is not None
@@ -472,7 +472,7 @@ def test_heading_with_date_and_params():
 
 
 def test_heading_params_dont_affect_steps():
-    text = "## Gym [strength] @RIR 2\n\n- bench press 3x8rep @80kg @rest 90s\n"
+    text = "## Gym [strength] @RIR 2\n\n- Bench Press 3x8rep @80kg @rest 90s\n"
     doc = parse_document(text)
     w = doc.workouts[0]
     assert w.rir == 2
@@ -485,7 +485,7 @@ def test_heading_params_dont_affect_steps():
 def test_strength_with_percentage_weight():
     text = (
         "## Strength\n\n"
-        "- bench press 3x8rep @80% of 1RM bench press @rest 90s"
+        "- Bench Press 3x8rep @80% of 1RM bench press @rest 90s"
     )
     doc = parse_document(text)
     step = doc.workouts[0].steps[0]

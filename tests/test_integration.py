@@ -29,43 +29,43 @@ FULL_EXAMPLE = """\
 ## Upper Body [strength]
 
 - 3x superset:
-  - bench press 3x8rep @80% of 1RM bench press @rest 90s
-  - bent-over row 3x8rep @60kg @rest 90s
-- bicep curl 3x12rep @15kg @rest 60s
+  - Bench Press 3x8rep @80% of 1RM bench press @rest 90s
+  - Bent-Over Row 3x8rep @60kg @rest 90s
+- Bicep Curl 3x12rep @15kg @rest 60s
 
 ## Power Clean EMOM [mixed]
 
 - emom 10min:
-  - power clean 3rep @70kg
+  - Power Clean 3rep @70kg
 
 ## Alternating EMOM [mixed]
 
 - emom 12min alternating:
-  - deadlift 5rep @100kg
-  - strict press 7rep @40kg
-  - toes-to-bar 10rep
+  - Deadlift 5rep @100kg
+  - Strict Press 7rep @40kg
+  - Toes-To-Bar 10rep
 
 ## Mixed EMOM [mixed]
 
 - every 2min for 20min:
-  - wall ball 15rep @9kg
-  - box jump 10rep
+  - Wall Ball 15rep @9kg
+  - Box Jump 10rep
 
 ## Murph [mixed]
 
 - for-time:
   - run 1mile
-  - pull-up 100rep
-  - push-up 200rep
-  - air squat 300rep
+  - Pull-Up 100rep
+  - Push-Up 200rep
+  - Air Squat 300rep
   - run 1mile
 
 ## Metcon [mixed]
 
 - amrap 12min:
-  - pull-up 5rep
-  - push-up 10rep
-  - air squat 15rep
+  - Pull-Up 5rep
+  - Push-Up 10rep
+  - Air Squat 15rep
 """
 
 SESSION_EXAMPLE = """\
@@ -81,7 +81,7 @@ SESSION_EXAMPLE = """\
 
 # Upper Body [strength]
 
-- bench press 3x8rep @80kg @rest 90s
+- Bench Press 3x8rep @80kg @rest 90s
 
 > Great session overall.
 """
@@ -136,7 +136,7 @@ def test_upper_body_structure():
 
     curl = upper.steps[1]
     assert isinstance(curl, StrengthStep)
-    assert curl.exercise == "bicep curl"
+    assert curl.exercise == "Bicep Curl"
     assert curl.sets == 3
     assert curl.reps == 12
 
@@ -274,7 +274,7 @@ def test_serialize_session_example():
     assert "## Saturday Training" in serialized
     assert "# Threshold Ride [endurance]" in serialized
     assert "# Upper Body [strength]" in serialized
-    assert "- Warmup 10min @Z1" in serialized
+    assert "- warmup 10min @Z1" in serialized
     assert "> Great session overall." in serialized
 
 

@@ -30,8 +30,8 @@ def test_roundtrip_endurance():
 def test_roundtrip_strength():
     _roundtrip(
         "## Strength [strength]\n\n"
-        "- bench press 3x8rep @80kg @rest 90s\n"
-        "- bicep curl 3x12rep @15kg @rest 60s"
+        "- Bench Press 3x8rep @80kg @rest 90s\n"
+        "- Bicep Curl 3x12rep @15kg @rest 60s"
     )
 
 
@@ -45,23 +45,23 @@ def test_roundtrip_intervals():
 def test_roundtrip_emom():
     _roundtrip(
         "## WoD [wod]\n\n- emom 10min:\n"
-        "  - power clean 3rep @70kg"
+        "  - Power Clean 3rep @70kg"
     )
 
 
 def test_roundtrip_amrap():
     _roundtrip(
         "## Metcon [wod]\n\n- amrap 12min:\n"
-        "  - pull-up 5rep\n  - push-up 10rep\n"
-        "  - air squat 15rep"
+        "  - Pull-Up 5rep\n  - Push-Up 10rep\n"
+        "  - Air Squat 15rep"
     )
 
 
 def test_roundtrip_for_time():
     _roundtrip(
         "## Murph [wod]\n\n- for-time:\n"
-        "  - run 1mile\n  - pull-up 100rep\n"
-        "  - push-up 200rep"
+        "  - run 1mile\n  - Pull-Up 100rep\n"
+        "  - Push-Up 200rep"
     )
 
 
@@ -83,17 +83,17 @@ def test_roundtrip_session():
 def test_roundtrip_superset():
     _roundtrip(
         "## Strength\n\n- 3x superset:\n"
-        "  - bench press 3x8rep @80kg @rest 90s\n"
-        "  - bent-over row 3x8rep @60kg @rest 90s"
+        "  - Bench Press 3x8rep @80kg @rest 90s\n"
+        "  - Bent-Over Row 3x8rep @60kg @rest 90s"
     )
 
 
 def test_roundtrip_circuit():
     _roundtrip(
         "## Strength\n\n- 3x circuit:\n"
-        "  - kettlebell swing 10rep @24kg\n"
-        "  - push-up 15rep\n"
-        "  - air squat 20rep"
+        "  - Kettlebell Swing 10rep @24kg\n"
+        "  - Push-Up 15rep\n"
+        "  - Air Squat 20rep"
     )
 
 
@@ -102,7 +102,7 @@ def test_roundtrip_percent_of():
 
 
 def test_roundtrip_bodyweight_plus():
-    _roundtrip("## Gym\n\n- dip 3x8rep @bodyweight + 20kg @rest 90s")
+    _roundtrip("## Gym\n\n- Dip 3x8rep @bodyweight + 20kg @rest 90s")
 
 
 def test_roundtrip_zone():

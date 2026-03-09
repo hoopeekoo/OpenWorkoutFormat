@@ -45,8 +45,10 @@ Raw text → Scanner → Block Builder → Step Parser → Resolver → resolved
 - Legacy tags `[endurance]`/`[strength]`/`[mobility]`/`[mixed]` → `workout_type` set, `sport_type=None`; other tags → `sport_type` set, `workout_type=None`
 - Parser accepts **any string** in `[brackets]` — no validation; apps do sport_type → category mapping
 - `mixed` is auto-inferred for sessions with 2+ distinct child types, **never serialized** (re-inferred on parse)
-- Serializer outputs **Title Case** for all step names: `Run`, `Bike`, `Bench Press`, `Pull-Up`
-- Parser stores endurance actions **lowercase** in AST (case-insensitive on parse); strength exercise names preserve input casing
+- **Step classification by casing**: lowercase first word = `EnduranceStep`, Title Case first word = `StrengthStep`
+- No hardcoded endurance action list — any lowercase word is a valid endurance action
+- Serializer preserves casing: endurance actions stay lowercase, strength exercises stay Title Case
+- Common endurance actions: `run`, `bike`, `swim`, `row`, `ski`, `walk`, `hike`, `warmup`, `cooldown`, `recover`, etc.
 - Duration supports compound formats: `1h30min`, `5min30s`, `1h28min2s` (both parse and `__str__`)
 - `Document.metadata` = `@ key: value` document-level metadata, NOT training variables
 - `Workout.metadata` = session/child workout metadata attached via `@ key: value` after headings
