@@ -6,7 +6,7 @@ Human-readable workout format (`.owf`) with a Python parser. Zero runtime depend
 
 ```bash
 source .venv/bin/activate
-pytest tests/ -v          # 223 tests
+pytest tests/ -v          # 232 tests
 mypy src/                 # strict mode
 ruff check src/           # linting
 ```

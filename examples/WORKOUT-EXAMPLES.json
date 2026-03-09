@@ -1,0 +1,402 @@
+[
+  {
+    "name": "Threshold Ride",
+    "type": "endurance",
+    "rpe": 7,
+    "steps": [
+      "warmup 15min @60% of FTP",
+      {"repeat": 5, "steps": [
+        "bike 5min @95% of FTP",
+        "recover 3min @50% of FTP"
+      ]},
+      "cooldown 10min @Z1"
+    ],
+    "notes": ["Felt strong through set 3, faded on 4-5."]
+  },
+
+  {
+    "name": "Upper Body",
+    "type": "strength",
+    "steps": [
+      {"superset": 3, "steps": [
+        "bench press 3x8rep @80% of 1RM bench press @rest 90s",
+        "bent-over row 3x8rep @60kg @rest 90s"
+      ]},
+      "bicep curl 3x12rep @15kg @rest 60s"
+    ]
+  },
+
+  {
+    "name": "Power Clean EMOM",
+    "type": "mixed",
+    "steps": [
+      {"emom": "10min", "steps": [
+        "power clean 3rep @70kg"
+      ]}
+    ]
+  },
+
+  {
+    "name": "Alternating EMOM",
+    "type": "mixed",
+    "steps": [
+      {"emom": "12min", "alternating": true, "steps": [
+        "deadlift 5rep @100kg",
+        "strict press 7rep @40kg",
+        "toes-to-bar 10rep"
+      ]}
+    ]
+  },
+
+  {
+    "name": "Mixed EMOM",
+    "type": "mixed",
+    "steps": [
+      {"every": "2min", "for": "20min", "steps": [
+        "wall ball 15rep @9kg",
+        "box jump 10rep"
+      ]}
+    ]
+  },
+
+  {
+    "name": "Murph",
+    "type": "mixed",
+    "steps": [
+      {"for-time": true, "steps": [
+        "run 1mile",
+        "pull-up 100rep",
+        "push-up 200rep",
+        "air squat 300rep",
+        "run 1mile"
+      ]}
+    ]
+  },
+
+  {
+    "name": "Metcon",
+    "type": "mixed",
+    "steps": [
+      {"amrap": "12min", "steps": [
+        "pull-up 5rep",
+        "push-up 10rep",
+        "air squat 15rep"
+      ]}
+    ]
+  },
+
+  {
+    "name": "HR Zone Run",
+    "type": "endurance",
+    "steps": [
+      "warmup 10min @Z1",
+      "run 10min @140bpm",
+      "run 10min @70% of max HR",
+      "run 5min @Z3",
+      "run 5km @4:30/km",
+      "cooldown 10min @Z1"
+    ],
+    "notes": ["Great session for building aerobic base and pace awareness."]
+  },
+
+  {
+    "name": "Saturday Training",
+    "date": "2025-02-27 14:00-16:00",
+    "children": [
+      {
+        "name": "Threshold Ride",
+        "type": "endurance",
+        "steps": [
+          "warmup 15min @Z1",
+          {"repeat": 5, "steps": [
+            "bike 5min @200W",
+            "recover 3min @Z1"
+          ]},
+          "cooldown 10min @Z1"
+        ]
+      },
+      {
+        "name": "Upper Body",
+        "type": "strength",
+        "steps": [
+          "bench press 3x8rep @80kg @rest 90s",
+          "bent-over row 3x8rep @60kg @rest 90s"
+        ]
+      }
+    ],
+    "notes": ["Great session overall."]
+  },
+
+  {
+    "name": "Full Session",
+    "steps": [
+      "warmup 15min @60% of FTP"
+    ],
+    "children": [
+      {
+        "name": "Threshold Ride",
+        "type": "endurance",
+        "steps": [
+          {"repeat": 5, "steps": [
+            "bike 5min @95% of FTP",
+            "recover 3min @50% of FTP"
+          ]},
+          "cooldown 10min @Z1"
+        ],
+        "notes": ["Felt strong through set 3, faded on 4-5."]
+      },
+      {
+        "name": "Upper Body",
+        "type": "strength",
+        "steps": [
+          {"superset": 3, "steps": [
+            "bench press 3x8rep @80% of 1RM bench press @rest 90s",
+            "bent-over row 3x8rep @60kg @rest 90s"
+          ]},
+          "bicep curl 3x12rep @15kg @rest 60s"
+        ]
+      }
+    ]
+  },
+
+  {
+    "name": "Triathlon Training",
+    "children": [
+      {
+        "name": "Swim Intervals",
+        "type": "endurance",
+        "steps": [
+          "warmup 200m @Z1",
+          {"repeat": 4, "steps": [
+            "swim 100m @Z4",
+            "recover 50m @Z1"
+          ]},
+          "cooldown 200m @Z1"
+        ]
+      },
+      {
+        "name": "Rowing Warmup",
+        "type": "endurance",
+        "steps": [
+          "row 500m @Z1",
+          {"repeat": 3, "steps": [
+            "row 250m @Z4",
+            "recover 250m @Z1"
+          ]},
+          "row 100yd @Z2"
+        ]
+      },
+      {
+        "name": "Bike Tempo",
+        "type": "endurance",
+        "steps": [
+          "warmup 10min @Z1",
+          "bike 30min @85% of FTP",
+          "cooldown 10min @Z1"
+        ]
+      },
+      {
+        "name": "Brick Run",
+        "type": "endurance",
+        "steps": [
+          "run 3mi @7:00/mi",
+          "cooldown 1mi @Z1"
+        ]
+      }
+    ],
+    "notes": ["Transition quickly from bike to run — simulate race day."]
+  },
+
+  {
+    "name": "Full Gym Session",
+    "type": "strength",
+    "rir": 2,
+    "steps": [
+      "pull-up 100rep",
+      "dip 3x8rep @bodyweight + 20kg @rest 90s",
+      "plank 60s",
+      "back squat 5x5rep @rest 120s",
+      "romanian deadlift 3x10rep @60kg @rest 90s",
+      "face pull 3xmaxrep @15kg @RIR 3 @rest 60s"
+    ],
+    "notes": ["Workout-level @RIR 2 applies to all exercises unless overridden (face pull uses @RIR 3)."]
+  },
+
+  {
+    "name": "Full Body Circuit",
+    "type": "strength",
+    "steps": [
+      {"circuit": 3, "steps": [
+        "kettlebell swing 10rep @24kg",
+        "push-up 15rep",
+        "air squat 20rep",
+        "burpee 10rep"
+      ]}
+    ],
+    "notes": ["Rest 60s between rounds."]
+  },
+
+  {
+    "name": "Pyramid Intervals",
+    "type": "endurance",
+    "steps": [
+      "warmup 10min @Z1",
+      {"repeat": 3, "steps": [
+        {"repeat": 2, "steps": [
+          "run 30s @Z4",
+          "recover 30s @Z1"
+        ]},
+        "run 1:00 @Z4",
+        "recover 1:00 @Z1",
+        {"repeat": 2, "steps": [
+          "run 30s @Z4",
+          "recover 30s @Z1"
+        ]}
+      ]},
+      "cooldown 10min @Z1"
+    ]
+  },
+
+  {
+    "name": "DT",
+    "type": "mixed",
+    "steps": [
+      {"for-time": "20min", "steps": [
+        {"repeat": 5, "steps": [
+          "deadlift 12rep @70kg",
+          "hang clean 9rep @70kg",
+          "push jerk 6rep @70kg"
+        ]}
+      ]}
+    ]
+  },
+
+  {
+    "name": "Kalsu",
+    "type": "mixed",
+    "steps": [
+      {"emom": "30min", "steps": [
+        "thruster 5rep @60kg"
+      ]},
+      "burpee 100rep"
+    ],
+    "notes": [
+      "Every minute starts with 5 thrusters; fill remaining time with burpees.",
+      "Time cap is 30 minutes — aim to finish 100 thrusters total."
+    ]
+  },
+
+  {
+    "name": "Filthy Fifty",
+    "type": "mixed",
+    "steps": [
+      {"for-time": "35min", "steps": [
+        "box jump 50rep",
+        "pull-up 50rep",
+        "kettlebell swing 50rep @16kg",
+        "walking lunge 50rep",
+        "knees-to-elbow 50rep",
+        "push press 50rep @20kg",
+        "back extension 50rep",
+        "wall ball 50rep @9kg",
+        "burpee 50rep",
+        "double under 50rep"
+      ]}
+    ]
+  },
+
+  {
+    "name": "Saturday Session",
+    "children": [
+      {
+        "name": "Run Warmup",
+        "type": "endurance",
+        "steps": [
+          "warmup 10min @Z1",
+          {"repeat": 4, "steps": [
+            "run 1min @Z4",
+            "recover 1min @Z1"
+          ]},
+          "rest 2min"
+        ]
+      },
+      {
+        "name": "Chipper",
+        "type": "mixed",
+        "steps": [
+          {"for-time": "25min", "steps": [
+            "run 400m",
+            "kettlebell swing 21rep @24kg",
+            "pull-up 15rep",
+            "run 400m",
+            "kettlebell swing 15rep @24kg",
+            "pull-up 12rep",
+            "run 400m",
+            "kettlebell swing 9rep @24kg",
+            "pull-up 9rep"
+          ]},
+          "rest 3min"
+        ]
+      },
+      {
+        "name": "Cooldown",
+        "type": "endurance",
+        "steps": [
+          "cooldown 5min @Z1",
+          "walk 5min @Z1"
+        ]
+      }
+    ],
+    "notes": ["Focus on deep breathing and bringing HR below 120bpm."]
+  },
+
+  {
+    "name": "Full Body Power + Accessory + Skill Work",
+    "date": "2026-02-27",
+    "rpe": 7,
+    "children": [
+      {
+        "name": "Warm-up 10min",
+        "steps": [
+          "Kettlebell swing 2x15rep @16kg",
+          "Dynamic stretch 10rep",
+          "Vertical jump 3x3rep"
+        ]
+      },
+      {
+        "name": "Power",
+        "steps": [
+          "Power Clean 5x3rep @rest 3min",
+          "Box jump 3x5rep @rest 3min"
+        ]
+      },
+      {
+        "name": "Strength",
+        "steps": [
+          "Pull-up 3x6rep @rest 90s"
+        ]
+      },
+      {
+        "name": "CrossFit WoD",
+        "steps": [
+          {"circuit": 3, "steps": [
+            "Goblet squat 12rep",
+            "Kettlebell swing 15rep",
+            "Push-up variation 10rep",
+            "Single-arm DB row 10rep",
+            "Box step-ups 10rep",
+            "Run 200m"
+          ]}
+        ]
+      },
+      {
+        "name": "Core/skill work",
+        "steps": [
+          "Turkish get-up 3x3rep @16kg",
+          "Pallof press 3x10rep @16kg",
+          "Farmer's carry 3rep @32kg"
+        ]
+      }
+    ]
+  }
+]

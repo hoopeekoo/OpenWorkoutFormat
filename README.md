@@ -7,7 +7,7 @@ A human-readable workout description language with a Python parser. Supports end
 ## Example
 
 ```
-## Threshold Ride [bike]
+## Threshold Ride [endurance]
 
 - warmup 15min @60% of FTP
 - 5x:
@@ -20,10 +20,10 @@ A human-readable workout description language with a Python parser. Supports end
 ## Upper Body [strength]
 
 - 3x superset:
-  - bench press 3x8rep @80% of 1RM bench press rest:90s
-  - bent-over row 3x8rep @60kg @RIR 2 rest:90s
+  - bench press 3x8rep @80% of 1RM bench press @rest 90s
+  - bent-over row 3x8rep @60kg @RIR 2 @rest 90s
 
-## Metcon [wod]
+## Metcon [mixed]
 
 - amrap 12min:
   - pull-up 5rep
@@ -69,14 +69,12 @@ See [SPEC.md](SPEC.md) for the full formal specification.
 Every OWF document uses `##` session headings. Files with only `#` headings are auto-wrapped in an implicit session by the parser.
 
 ```
----
-description: Saturday training block
-author: Coach Smith
----
+@ description: Saturday training block
+@ author: Coach Smith
 
 ## Saturday Training (2025-02-27)
 
-# Threshold Ride [bike]
+# Threshold Ride [endurance]
 
 - warmup 15min @Z1
 - 5x:
@@ -86,23 +84,34 @@ author: Coach Smith
 
 # Upper Body [strength]
 
-- bench press 3x8rep @80kg rest:90s
+- bench press 3x8rep @80kg @rest 90s
 
 > Great session overall.
 ```
 
 | Element | Syntax |
 |---------|--------|
-| Metadata | `---` delimited key-value pairs (description, author, tags) |
+| Metadata | `@ key: value` lines before any heading (document-level) or after a heading |
 | Session | `## Name [type] (date)` — groups `#` workouts |
 | Workout | `# Name [type]` — child workout within a session |
-| Step | `- action [sets×reps] [duration/distance] [@params] [rest:dur]` |
+| Step | `- action [sets×reps] [duration/distance] [@params] [@rest dur]` |
 | Note | `> text` |
 | Date | `(YYYY-MM-DD)` or `(YYYY-MM-DD HH:MM-HH:MM)` — session level only |
 
+### Workout Types
+
+Four modality-based types:
+
+| Type | Description |
+|------|-------------|
+| `endurance` | Running, cycling, swimming, rowing, and all cardio activities |
+| `strength` | Weightlifting, bodyweight exercises |
+| `mixed` | Auto-inferred when a session has 2+ distinct child types |
+| `mobility` | Stretching, yoga, recovery work |
+
 ### Endurance Steps
 
-All 25 known actions:
+27 known actions:
 
 ```
 - run 5km @4:30/km
@@ -137,17 +146,17 @@ All 25 known actions:
 Sets × reps formats:
 
 ```
-- bench press 3x8rep @80kg rest:90s
+- bench press 3x8rep @80kg @rest 90s
 - pull-up 100rep
-- face pull 3xmaxrep @15kg rest:60s
+- face pull 3xmaxrep @15kg @rest 60s
 - plank 60s
 ```
 
 Weight parameters:
 
 ```
-- bench press 3x8rep @80% of 1RM bench press rest:90s
-- dip 3x8rep @bodyweight + 20kg rest:90s
+- bench press 3x8rep @80% of 1RM bench press @rest 90s
+- dip 3x8rep @bodyweight + 20kg @rest 90s
 ```
 
 RIR (Reps In Reserve) — workout-level default with per-step override:
@@ -155,15 +164,15 @@ RIR (Reps In Reserve) — workout-level default with per-step override:
 ```
 ## Full Gym Session [strength] @RIR 2
 
-- back squat 5x5rep rest:120s
-- romanian deadlift 3x10rep @60kg rest:90s
-- face pull 3xmaxrep @15kg @RIR 3 rest:60s
+- back squat 5x5rep @rest 120s
+- romanian deadlift 3x10rep @60kg @rest 90s
+- face pull 3xmaxrep @15kg @RIR 3 @rest 60s
 ```
 
 RPE (Rate of Perceived Exertion) — on session headings:
 
 ```
-## Morning Run [run] @RPE 7
+## Morning Run [endurance] @RPE 7
 
 - warmup 15min @Z1
 - run 5km @4:30/km
@@ -184,8 +193,8 @@ RPE (Rate of Perceived Exertion) — on session headings:
 
 ```
 - 3x superset:
-  - bench press 3x8rep @80kg rest:90s
-  - bent-over row 3x8rep @60kg rest:90s
+  - bench press 3x8rep @80kg @rest 90s
+  - bent-over row 3x8rep @60kg @rest 90s
 ```
 
 **Circuit:**
@@ -259,9 +268,9 @@ RPE (Rate of Perceived Exertion) — on session headings:
 | Pace | `@4:30/km`, `@7:00/mi`, `@pace:5:00/km` |
 | Weight | `@80kg`, `@175lb` |
 | BW + weight | `@bodyweight + 20kg` |
-| RPE | `@RPE 7`, `@RPE 8.5` |
+| RPE | `@RPE 7`, `@RPE 8` |
 | RIR | `@RIR 2`, `@RIR 0` |
-| Rest | `rest:90s`, `rest:2min` |
+| Rest | `@rest 90s`, `@rest 2min` |
 
 ### Variable Resolution
 
@@ -285,7 +294,7 @@ resolved = owf.resolve(doc, {
 Step-level and workout-level notes:
 
 ```
-## Easy Run [run]
+## Easy Run [endurance]
 
 - run 5km @4:30/km
 > Aim for negative splits.
