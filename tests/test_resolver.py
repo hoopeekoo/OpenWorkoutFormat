@@ -14,7 +14,7 @@ from owf.resolver import resolve
 
 
 def test_resolve_percentage_of_ftp():
-    text = "## Ride [bike]\n\n- bike 5min @80% of FTP"
+    text = "# Ride [bike]\n\n- bike 5min @80% of FTP"
     doc = parse_document(text)
     resolved = resolve(doc, {"FTP": "250W"})
     step = resolved.workouts[0].steps[0]
@@ -25,7 +25,7 @@ def test_resolve_percentage_of_ftp():
 
 
 def test_resolve_percentage_of_1rm():
-    text = "## Strength\n\n- Bench Press 3x8rep @80% of 1RM bench press"
+    text = "# Strength\n\n- Bench Press 3x8rep @80% of 1RM bench press"
     doc = parse_document(text)
     resolved = resolve(doc, {"1RM bench press": "100kg"})
     step = resolved.workouts[0].steps[0]
@@ -37,7 +37,7 @@ def test_resolve_percentage_of_1rm():
 
 
 def test_resolve_percentage_of_max_hr():
-    text = "## Run\n\n- run 10min @70% of max HR"
+    text = "# Run\n\n- run 10min @70% of max HR"
     doc = parse_document(text)
     resolved = resolve(doc, {"max HR": "185bpm"})
     step = resolved.workouts[0].steps[0]
@@ -47,7 +47,7 @@ def test_resolve_percentage_of_max_hr():
 
 
 def test_resolve_bodyweight_plus():
-    text = "## Gym\n\n- Dip 3x8rep @bodyweight + 20kg"
+    text = "# Gym\n\n- Dip 3x8rep @bodyweight + 20kg"
     doc = parse_document(text)
     resolved = resolve(doc, {"bodyweight": "80kg"})
     step = resolved.workouts[0].steps[0]
@@ -58,7 +58,7 @@ def test_resolve_bodyweight_plus():
 
 
 def test_resolve_with_different_ftp():
-    text = "## Ride [bike]\n\n- bike 5min @80% of FTP"
+    text = "# Ride [bike]\n\n- bike 5min @80% of FTP"
     doc = parse_document(text)
     resolved = resolve(doc, {"FTP": "300W"})
     step = resolved.workouts[0].steps[0]
@@ -68,14 +68,14 @@ def test_resolve_with_different_ftp():
 
 
 def test_resolve_undefined_variable():
-    text = "## Ride [bike]\n\n- bike 5min @80% of FTP"
+    text = "# Ride [bike]\n\n- bike 5min @80% of FTP"
     doc = parse_document(text)
     with pytest.raises(ResolveError, match="Undefined variable"):
         resolve(doc)
 
 
 def test_resolve_literal_unchanged():
-    text = "## Ride [bike]\n\n- bike 5min @200W"
+    text = "# Ride [bike]\n\n- bike 5min @200W"
     doc = parse_document(text)
     resolved = resolve(doc)
     step = resolved.workouts[0].steps[0]
@@ -85,7 +85,7 @@ def test_resolve_literal_unchanged():
 
 
 def test_resolve_zone_unchanged():
-    text = "## Run\n\n- run 10min @Z2"
+    text = "# Run\n\n- run 10min @Z2"
     doc = parse_document(text)
     resolved = resolve(doc)
     from owf.ast.params import ZoneParam

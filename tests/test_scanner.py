@@ -1,5 +1,8 @@
 """Tests for the line scanner."""
 
+import pytest
+
+from owf.errors import ParseError
 from owf.parser.scanner import LineType, scan
 
 
@@ -20,10 +23,10 @@ def test_heading():
     assert lines[0].content == "Threshold Ride [bike]"
 
 
-def test_session_heading():
-    lines = scan("## Saturday Training")
-    assert lines[0].line_type == LineType.SESSION_HEADING
-    assert lines[0].content == "Saturday Training"
+def test_double_hash_raises():
+    """## headings raise ParseError."""
+    with pytest.raises(ParseError, match="not allowed"):
+        scan("## Saturday Training")
 
 
 def test_step_line():

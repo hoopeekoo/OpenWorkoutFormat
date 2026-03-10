@@ -1,6 +1,5 @@
-"""Integration tests — parse the full example from the spec."""
+"""Integration tests -- parse the full example from the spec."""
 
-from owf.ast.base import Workout
 from owf.ast.blocks import (
     AMRAP,
     EMOM,
@@ -16,7 +15,7 @@ from owf.resolver import resolve
 from owf.serializer import dumps
 
 FULL_EXAMPLE = """\
-## Threshold Ride [endurance]
+# Threshold Ride [endurance]
 
 - warmup 15min @60% of FTP
 - 5x:
@@ -26,32 +25,32 @@ FULL_EXAMPLE = """\
 
 > Felt strong through set 3, faded on 4-5.
 
-## Upper Body [strength]
+# Upper Body [strength]
 
 - 3x superset:
   - Bench Press 3x8rep @80% of 1RM bench press @rest 90s
   - Bent-Over Row 3x8rep @60kg @rest 90s
 - Bicep Curl 3x12rep @15kg @rest 60s
 
-## Power Clean EMOM [mixed]
+# Power Clean EMOM [mixed]
 
 - emom 10min:
   - Power Clean 3rep @70kg
 
-## Alternating EMOM [mixed]
+# Alternating EMOM [mixed]
 
 - emom 12min alternating:
   - Deadlift 5rep @100kg
   - Strict Press 7rep @40kg
   - Toes-To-Bar 10rep
 
-## Mixed EMOM [mixed]
+# Mixed EMOM [mixed]
 
 - every 2min for 20min:
   - Wall Ball 15rep @9kg
   - Box Jump 10rep
 
-## Murph [mixed]
+# Murph [mixed]
 
 - for-time:
   - run 1mile
@@ -60,7 +59,7 @@ FULL_EXAMPLE = """\
   - Air Squat 300rep
   - run 1mile
 
-## Metcon [mixed]
+# Metcon [mixed]
 
 - amrap 12min:
   - Pull-Up 5rep
@@ -68,8 +67,8 @@ FULL_EXAMPLE = """\
   - Air Squat 15rep
 """
 
-SESSION_EXAMPLE = """\
-## Saturday Training
+MULTI_WORKOUT_EXAMPLE = """\
+# Saturday Warmup [endurance]
 
 - warmup 10min @Z1
 
@@ -187,27 +186,28 @@ def test_amrap_structure():
     assert len(step.steps) == 3
 
 
-def test_session_structure():
-    """## heading creates a session workout containing # child workouts."""
-    doc = parse_document(SESSION_EXAMPLE)
-    assert len(doc.workouts) == 1
-    session = doc.workouts[0]
-    assert session.name == "Saturday Training"
-    assert session.sport_type is None  # no mixed inference in parser
+def test_multi_workout_structure():
+    """Multiple # headings produce flat workouts."""
+    doc = parse_document(MULTI_WORKOUT_EXAMPLE)
+    assert len(doc.workouts) == 3
 
-    # warmup (session-level), child Threshold Ride, child Upper Body
-    assert len(session.steps) == 3
-    assert isinstance(session.steps[0], EnduranceStep)
-    assert session.steps[0].action == "warmup"
+    warmup_w = doc.workouts[0]
+    assert warmup_w.name == "Saturday Warmup"
+    assert warmup_w.sport_type == "endurance"
+    assert len(warmup_w.steps) == 1
+    assert isinstance(warmup_w.steps[0], EnduranceStep)
+    assert warmup_w.steps[0].action == "warmup"
 
-    assert isinstance(session.steps[1], Workout)
-    assert session.steps[1].name == "Threshold Ride"
-    assert session.steps[1].sport_type == "endurance"
+    ride = doc.workouts[1]
+    assert ride.name == "Threshold Ride"
+    assert ride.sport_type == "endurance"
+    assert len(ride.steps) == 1
+    assert isinstance(ride.steps[0], RepeatStep)
 
-    assert isinstance(session.steps[2], Workout)
-    assert session.steps[2].name == "Upper Body"
-    assert session.steps[2].sport_type == "strength"
-    assert len(session.steps[2].steps) == 1  # bench press
+    upper = doc.workouts[2]
+    assert upper.name == "Upper Body"
+    assert upper.sport_type == "strength"
+    assert len(upper.steps) == 1  # bench press
 
 
 def test_resolve_full_example():
@@ -229,22 +229,20 @@ def test_resolve_full_example():
     assert param.value == 150.0
 
 
-def test_resolve_session_example():
-    """Resolver should descend into child workouts."""
-    doc = parse_document(SESSION_EXAMPLE)
+def test_resolve_multi_workout_example():
+    """Resolver should resolve across all workouts."""
+    doc = parse_document(MULTI_WORKOUT_EXAMPLE)
     resolved = resolve(doc, {"FTP": "250W"})
-    session = resolved.workouts[0]
 
-    # The child Threshold Ride should have resolved FTP expressions
-    child_ride = session.steps[1]
-    assert isinstance(child_ride, Workout)
-    repeat = child_ride.steps[0]
+    # The Threshold Ride workout should have resolved FTP expressions
+    ride = resolved.workouts[1]
+    repeat = ride.steps[0]
     assert isinstance(repeat, RepeatStep)
     bike = repeat.steps[0]
     assert isinstance(bike, EnduranceStep)
     param = bike.params[0]
     assert isinstance(param, PowerParam)
-    # 95% of 250W = 237.5W → rounds to 238
+    # 95% of 250W = 237.5W -> rounds to 238
     assert param.value == 238
 
 
@@ -253,11 +251,11 @@ def test_serialize_full_example():
     serialized = dumps(doc)
 
     # Should contain all workout headings with their sport_type tags
-    assert "## Threshold Ride [endurance]" in serialized
-    assert "## Upper Body [strength]" in serialized
-    assert "## Power Clean EMOM [mixed]" in serialized
-    assert "## Murph [mixed]" in serialized
-    assert "## Metcon [mixed]" in serialized
+    assert "# Threshold Ride [endurance]" in serialized
+    assert "# Upper Body [strength]" in serialized
+    assert "# Power Clean EMOM [mixed]" in serialized
+    assert "# Murph [mixed]" in serialized
+    assert "# Metcon [mixed]" in serialized
 
     # Should contain key structural elements
     assert "- 5x:" in serialized
@@ -266,11 +264,11 @@ def test_serialize_full_example():
     assert "- for-time:" in serialized
 
 
-def test_serialize_session_example():
-    doc = parse_document(SESSION_EXAMPLE)
+def test_serialize_multi_workout_example():
+    doc = parse_document(MULTI_WORKOUT_EXAMPLE)
     serialized = dumps(doc)
 
-    assert "## Saturday Training" in serialized
+    assert "# Saturday Warmup [endurance]" in serialized
     assert "# Threshold Ride [endurance]" in serialized
     assert "# Upper Body [strength]" in serialized
     assert "- warmup 10min @Z1" in serialized
@@ -290,22 +288,17 @@ def test_roundtrip_full_example():
         assert len(w1.steps) == len(w2.steps)
 
 
-def test_roundtrip_session_example():
-    """parse -> dumps -> parse for session documents."""
-    doc1 = parse_document(SESSION_EXAMPLE)
+def test_roundtrip_multi_workout_example():
+    """parse -> dumps -> parse for multi-workout documents."""
+    doc1 = parse_document(MULTI_WORKOUT_EXAMPLE)
     serialized = dumps(doc1)
     doc2 = parse_document(serialized)
 
     assert len(doc1.workouts) == len(doc2.workouts)
-    session1 = doc1.workouts[0]
-    session2 = doc2.workouts[0]
-    assert session1.name == session2.name
-    assert len(session1.steps) == len(session2.steps)
-    for s1, s2 in zip(session1.steps, session2.steps):
-        if isinstance(s1, Workout):
-            assert isinstance(s2, Workout)
-            assert s1.name == s2.name
-            assert s1.sport_type == s2.sport_type
+    for w1, w2 in zip(doc1.workouts, doc2.workouts):
+        assert w1.name == w2.name
+        assert w1.sport_type == w2.sport_type
+        assert len(w1.steps) == len(w2.steps)
 
 
 def test_public_api():
@@ -324,4 +317,4 @@ def test_public_api():
     assert len(resolved.workouts) == 7
 
     text = owf.dumps(doc)
-    assert "## Threshold Ride [endurance]" in text
+    assert "# Threshold Ride [endurance]" in text

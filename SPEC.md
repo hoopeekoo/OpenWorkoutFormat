@@ -1,6 +1,6 @@
 # OpenWorkoutFormat (OWF) Specification
 
-**Version:** 1.1
+**Version:** 2.0
 
 ## 1. Overview
 
@@ -18,40 +18,37 @@ OWF is a human-readable text format for describing workouts. It supports enduran
 An OWF document consists of:
 
 1. Optional **document-level metadata** (`@ key: value` lines)
-2. One or more **sessions**, each containing steps and/or child workouts
+2. One or more **workouts**, each starting with a `#` heading
 
 ```
 @ description: Saturday training block
 @ author: Coach Smith
 
-## Saturday Training (2025-02-27)
-@ location: Downtown Gym
-
-# Threshold Ride [Cycling]
+# Threshold Ride [Cycling] (2025-02-27)
+@ location: Riverside Trail
 
 - 5x:
   - bike 5min @95% of FTP
   - recover 3min @Z1
 
-# Upper Body [Strength Training]
+# Upper Body [Strength Training] (2025-02-27)
 
 - Bench Press 3x8rep @80kg @rest 90s
 
-> Great session overall.
+> Great session.
 ```
-
-Every document has at least one session (`##` heading). Files with only `#` headings are auto-wrapped in an implicit unnamed session by the parser.
 
 ### Line Types
 
 | Prefix | Meaning | Example |
 |--------|---------|---------|
-| `## ` | Session heading | `## Saturday Training` |
-| `# ` | Child workout heading | `# Threshold Ride [Cycling]` |
+| `# ` | Workout heading | `# Threshold Ride [Cycling]` |
 | `- ` | Step line | `- run 5km @4:30/km` |
 | `> ` | Note | `> Felt strong today.` |
 | `@ ` | Metadata | `@ location: Downtown Gym` |
 | *(blank)* | Section separator | |
+
+`##` headings are **not allowed** and raise a parse error.
 
 ### Indentation
 
@@ -66,7 +63,7 @@ Every document has at least one session (`##` heading). Files with only `#` head
 
 ## 3. Metadata
 
-Metadata lines use the `@ key: value` syntax (at-sign, space, key, colon-space, value). They can attach to documents, sessions, child workouts, containers, and steps.
+Metadata lines use the `@ key: value` syntax (at-sign, space, key, colon-space, value). They can attach to documents, workouts, containers, and steps.
 
 ### Syntax
 
@@ -83,7 +80,7 @@ Metadata lines use the `@ key: value` syntax (at-sign, space, key, colon-space, 
 ### Attachment Rules
 
 1. `@ key: value` at the top of the document (before any heading) → **document-level** metadata
-2. `@ key: value` at indent 0 after a `##` or `#` heading → attaches to that heading
+2. `@ key: value` at indent 0 after a `#` heading → attaches to that workout
 3. `@ key: value` indented under a step or container → attaches to that step/container
 4. Metadata lines appear immediately after the element they describe, before any child steps or notes
 
@@ -94,13 +91,13 @@ Metadata lines use the `@ key: value` syntax (at-sign, space, key, colon-space, 
 @ author: Coach Smith
 @ tags: cycling, intervals
 
-## Threshold Ride [Cycling]
+# Threshold Ride [Cycling]
 ```
 
-### Session/Workout-Level Metadata
+### Workout-Level Metadata
 
 ```
-## Morning Run [Running] (2025-02-27)
+# Morning Run [Running] (2025-02-27)
 @ source: Garmin Connect
 @ location: Riverside Trail
 
@@ -139,9 +136,9 @@ The following keys have conventional meaning:
 | Document | `tags` | Comma-separated tags |
 | Document | `source` | Origin URL or reference |
 | Document | `equipment` | Required gear (comma-separated) |
-| Session | `location` | Where the session takes place |
-| Session | `source` | Data origin (device, platform) |
-| Session | `focus` | Training focus or intent |
+| Workout | `location` | Where the workout takes place |
+| Workout | `source` | Data origin (device, platform) |
+| Workout | `focus` | Training focus or intent |
 | Container | `rest_between_rounds` | Rest injected between rounds |
 | Step | `tempo` | Lifting tempo (eccentric-pause-concentric-pause) |
 | Step | `unilateral` | Reps/weight apply per side |
@@ -149,54 +146,34 @@ The following keys have conventional meaning:
 
 ## 4. Headings
 
-### Session Heading
+### Workout Heading
 
 ```
-## Name [type] (YYYY-MM-DD HH:MM-HH:MM) @RPE N @RIR N
+# Name [type] (YYYY-MM-DD HH:MM-HH:MM) @RPE N @RIR N
 ```
 
-All parts except `##` and the name are optional:
+All parts except `#` and the name are optional:
 
-- **Name**: Free text identifying the session.
-- **Type** (optional): A bracket-enclosed tag classifying the session. Sets `sport_type` on the AST. Can be:
+- **Name**: Free text identifying the workout.
+- **Type** (optional): A bracket-enclosed tag classifying the workout. Sets `sport_type` on the AST. Can be:
   - A **sport type** from the FIT SDK display name table (e.g., `Trail Running`, `Strength Training`, `Gravel Cycling`). See Appendix C.
   - A **broad category**: `endurance`, `strength`, `mixed`, `mobility`.
   - Any other free-text string — parsers MUST accept any value in brackets.
   - Consuming applications derive the broad category from the sport type (e.g., `Running` → `endurance`).
 - **Date** (optional): A parenthesized date or date-time range. See [Section 11: Dates](#11-dates).
-- **@RPE** (optional): Session-level Rate of Perceived Exertion (integer, 1-10).
+- **@RPE** (optional): Workout-level Rate of Perceived Exertion (integer, 1-10).
 - **@RIR** (optional): Default Reps In Reserve for strength exercises (integer). Individual exercises may override with their own `@RIR`.
 
 Examples:
 
 ```
-## Easy Run [Running]
-## Morning Run [Trail Running] (2025-02-27)
-## Upper Body [Strength Training] (2025-02-27 15:00-16:00)
-## Full Gym Session [Strength Training] @RIR 2
-## Morning Run [Running] @RPE 7
-## Sunday Ride [Gravel Cycling]
+# Easy Run [Running]
+# Morning Run [Trail Running] (2025-02-27)
+# Upper Body [Strength Training] (2025-02-27 15:00-16:00)
+# Full Gym Session [Strength Training] @RIR 2
+# Morning Run [Running] @RPE 7
+# Sunday Ride [Gravel Cycling]
 ```
-
-### Child Workout Heading
-
-```
-# Name [type] @RPE N @RIR N
-```
-
-A `#` heading creates a child workout within a session. Child workouts **may not** have dates — dates are only allowed on `##` session headings.
-
-Examples:
-
-```
-# Threshold Ride [Cycling]
-# Upper Body [Strength Training] @RIR 2
-# Intervals [Indoor Cycling]
-```
-
-### Implicit Sessions
-
-Files with only `#` headings (no `##` headings) are auto-wrapped in an implicit unnamed session by the parser for backward compatibility. If such a file has a single `#` heading with a date, the date is lifted to the implicit session.
 
 ## 5. Step Types
 
@@ -447,7 +424,7 @@ Format: `[pace:]MM:SS/unit` where unit is `km`, `mi`, or `mile`.
 @RPE 7    @RPE 8
 ```
 
-Value is an integer (1-10 scale). Can also appear at the heading level to set session-wide RPE.
+Value is an integer (1-10 scale). Can also appear at the heading level to set workout-wide RPE.
 
 ### RIR (Reps In Reserve)
 
@@ -540,7 +517,7 @@ Notes are lines prefixed with `> `. They can appear:
 2. **After all steps in a workout** — attached to the workout:
 
 ```
-## Easy Run [Running]
+# Easy Run [Running]
 
 - warmup 10min @Z1
 - run 5km @4:30/km
@@ -551,24 +528,24 @@ Notes are lines prefixed with `> `. They can appear:
 
 ## 11. Dates
 
-Session headings (`##`) may include an optional date or date-time range in parentheses, placed after the name and type. Dates are **only allowed on `##` session headings**, not on `#` child workout headings.
+Workout headings (`#`) may include an optional date or date-time range in parentheses, placed after the name and type.
 
 ### Date Only
 
 ```
-## Morning Run [Running] (2025-02-27)
+# Morning Run [Running] (2025-02-27)
 ```
 
 ### Date with Time Range
 
 ```
-## Morning Run [Running] (2025-02-27 06:00-07:00)
+# Morning Run [Running] (2025-02-27 06:00-07:00)
 ```
 
 ### Date with Start Time Only
 
 ```
-## Morning Run [Running] (2025-02-27 06:00)
+# Morning Run [Running] (2025-02-27 06:00)
 ```
 
 ### Format
@@ -577,54 +554,47 @@ Session headings (`##`) may include an optional date or date-time range in paren
 - Time: `HH:MM` (24-hour)
 - Range: `HH:MM-HH:MM`
 
-## 12. Session Hierarchy
+## 12. Multi-Workout Documents
 
-Every OWF document uses `##` session headings. Sessions may contain steps directly and/or `#` child workouts.
+An OWF document can contain multiple workouts, each starting with a `#` heading. Steps between headings belong to the preceding workout.
 
 ```
-## Saturday Training (2025-02-27)
+# Threshold Ride [Cycling] (2025-02-27)
 
 - warmup 10min @Z1
-
-# Threshold Ride [Cycling]
-
 - 5x:
   - bike 5min @95% of FTP
   - recover 3min @Z1
+- cooldown 10min @Z1
 
-# Upper Body [Strength Training]
+# Upper Body [Strength Training] (2025-02-27)
 
 - Bench Press 3x8rep @80kg @rest 90s
 - Bent-Over Row 3x8rep @60kg @rest 90s
 
-> Great session overall.
+> Great training day.
 ```
 
 ### Rules
 
-1. `##` headings define **sessions** — the top-level grouping in every document.
-2. `#` headings after a `##` become **child workouts** of that session.
-3. Steps between a `##` heading and the first `#` are **session-level steps** (e.g., a shared warmup).
-4. Notes after the last `#` section attach to the session.
-5. Dates are only allowed on `##` session headings. Dates on `#` child headings raise an error.
-6. **Implicit sessions**: Files with only `#` headings (no `##`) are auto-wrapped in an unnamed session by the parser. If such a file has a single `#` heading with a date, the date is lifted to the implicit session.
-7. **No mixed inference in parser**: The parser does not infer `mixed` type. Consuming applications derive broad categories (including `mixed`) from `sport_type` using their own mapping logic.
+1. `#` headings define **workouts** — the top-level grouping in every document.
+2. Steps between `#` headings belong to the preceding workout.
+3. Notes after the last step in a workout (preceded by a blank line) attach to the workout.
+4. `##` headings are **not allowed** and raise a parse error.
+5. **No mixed inference in parser**: The parser does not infer `mixed` type. Consuming applications derive broad categories (including `mixed`) from `sport_type` using their own mapping logic.
 
 ## Appendix A: EBNF Grammar
 
 ```ebnf
-document        = { metadata_line } { session } ;
+document        = { metadata_line } { workout } ;
 metadata_line   = "@ " key ": " value newline ;
 key             = { any_char - ":" - newline - SP } ;
 value           = { any_char - newline } ;
 
-session         = session_heading newline { metadata_line } { blank }
-                  { step_or_note | child_workout } ;
-session_heading = "## " name [ SP "[" type "]" ] [ SP "(" date_spec ")" ]
-                  { SP heading_param } ;
-child_workout   = child_heading newline { metadata_line } { blank }
+workout         = heading newline { metadata_line } { blank }
                   { step_or_note } ;
-child_heading   = "# " name [ SP "[" type "]" ] { SP heading_param } ;
+heading         = "# " name [ SP "[" type "]" ] [ SP "(" date_spec ")" ]
+                  { SP heading_param } ;
 heading_param   = "@RPE" SP integer | "@RIR" SP integer ;
 name            = { any_char - "[" - "(" - newline } ;
 type            = { any_char - "]" - newline } ;

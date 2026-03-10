@@ -163,17 +163,11 @@ def test_gym_session_resolve():
 def test_triathlon():
     doc = load(Path("examples/triathlon.owf"))
     assert doc.metadata == {}
-    assert len(doc.workouts) == 1
-
-    session = doc.workouts[0]
-    assert session.name == "Triathlon Training"
-    from owf.ast.base import Workout
-
-    children = [s for s in session.steps if isinstance(s, Workout)]
-    assert len(children) == 4
+    # triathlon.owf has 4 flat # workouts
+    assert len(doc.workouts) == 4
 
     # Swim Intervals
-    swim = children[0]
+    swim = doc.workouts[0]
     assert swim.name == "Swim Intervals"
     assert swim.sport_type == "Pool Swimming"
     assert len(swim.steps) == 3
@@ -186,7 +180,7 @@ def test_triathlon():
     assert swim.steps[1].steps[0].action == "swim"
 
     # Rowing Warmup
-    row_w = children[1]
+    row_w = doc.workouts[1]
     assert row_w.name == "Rowing Warmup"
     assert row_w.sport_type == "Rowing"
     row_last = row_w.steps[2]
@@ -195,8 +189,8 @@ def test_triathlon():
     assert row_last.distance.value == 100
     assert row_last.distance.unit == "yd"
 
-    # Bike Tempo — @85% of FTP
-    bike = children[2]
+    # Bike Tempo -- @85% of FTP
+    bike = doc.workouts[2]
     assert bike.name == "Bike Tempo"
     assert bike.sport_type == "Cycling"
     bike_step = bike.steps[1]
@@ -204,8 +198,8 @@ def test_triathlon():
     assert bike_step.params[0].percent == 85
     assert bike_step.params[0].variable == "FTP"
 
-    # Brick Run — 3mi @7:00/mi
-    run_w = children[3]
+    # Brick Run -- 3mi @7:00/mi
+    run_w = doc.workouts[3]
     assert run_w.name == "Brick Run"
     assert run_w.sport_type == "Running"
     run_step = run_w.steps[0]
@@ -219,11 +213,7 @@ def test_triathlon_resolve():
     doc = load(Path("examples/triathlon.owf"))
     resolved = resolve(doc, {"FTP": "230W"})
     # 85% of 230W = 195.5W
-    from owf.ast.base import Workout
-
-    session = resolved.workouts[0]
-    children = [s for s in session.steps if isinstance(s, Workout)]
-    bike_step = children[2].steps[1]
+    bike_step = resolved.workouts[2].steps[1]
     param = bike_step.params[0]
     assert isinstance(param, PowerParam)
     assert param.value == 196

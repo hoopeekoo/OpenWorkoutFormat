@@ -44,7 +44,7 @@ def dumps(doc: Document) -> str:
             parts.append(f"@ {key}: {value}")
         parts.append("")
 
-    # Workouts — always serialized as ## sessions
+    # Workouts — each serialized as # heading
     for i, workout in enumerate(doc.workouts):
         if i > 0 or doc.metadata:
             parts.append("")
@@ -65,9 +65,9 @@ def _normalize_name(name: str) -> str:
     )
 
 
-def _heading_line(prefix: str, workout: Workout) -> str:
-    """Build a heading line like ``## Name [type] (date) @RPE N @RIR N``."""
-    parts = [f"{prefix} {workout.name}"]
+def _heading_line(workout: Workout) -> str:
+    """Build a heading line like ``# Name [type] (date) @RPE N @RIR N``."""
+    parts = [f"# {workout.name}"]
     if workout.sport_type:
         parts.append(f" [{workout.sport_type}]")
     if workout.date:
@@ -87,59 +87,13 @@ def _metadata_lines(
 
 
 def _serialize_workout(workout: Workout) -> str:
-    """Serialize a top-level workout as a ## session."""
-    is_session = any(isinstance(s, Workout) for s in workout.steps)
+    """Serialize a top-level workout as a # heading."""
     lines: list[str] = []
 
-    if is_session:
-        # Session with child workouts — always ##
-        lines.append(_heading_line("##", workout))
-        if workout.metadata:
-            lines.extend(_metadata_lines(workout.metadata))
-        lines.append("")
-
-        for step in workout.steps:
-            if isinstance(step, Workout):
-                lines.append("")
-                lines.append(_serialize_child_workout(step))
-            else:
-                lines.extend(_serialize_node(step, indent=0))
-    else:
-        # No child workouts — wrap as ## session
-        lines.append(_heading_line("##", workout))
-        if workout.metadata:
-            lines.extend(_metadata_lines(workout.metadata))
-        lines.append("")
-
-        for step in workout.steps:
-            lines.extend(_serialize_node(step, indent=0))
-
-    # Workout-level notes (preceded by blank line)
-    if workout.notes:
-        lines.append("")
-        for note in workout.notes:
-            lines.append(f"> {note}")
-
-    return "\n".join(lines)
-
-
-def _serialize_child_workout(workout: Workout) -> str:
-    """Serialize a child workout (``#`` heading) within a session."""
-    lines: list[str] = []
-
-    if workout.name:
-        # Child workouts never get dates (dates are session-level only)
-        child_parts = [f"# {workout.name}"]
-        if workout.sport_type:
-            child_parts.append(f" [{workout.sport_type}]")
-        if workout.rpe is not None:
-            child_parts.append(f" @RPE {workout.rpe}")
-        if workout.rir is not None:
-            child_parts.append(f" @RIR {workout.rir}")
-        lines.append("".join(child_parts))
-        if workout.metadata:
-            lines.extend(_metadata_lines(workout.metadata))
-        lines.append("")
+    lines.append(_heading_line(workout))
+    if workout.metadata:
+        lines.extend(_metadata_lines(workout.metadata))
+    lines.append("")
 
     for step in workout.steps:
         lines.extend(_serialize_node(step, indent=0))

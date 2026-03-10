@@ -6,7 +6,7 @@ Human-readable workout format (`.owf`) with a Python parser. Zero runtime depend
 
 ```bash
 source .venv/bin/activate
-pytest tests/ -v          # 232 tests
+pytest tests/ -v          # 220 tests
 mypy src/                 # strict mode
 ruff check src/           # linting
 ```
@@ -28,7 +28,7 @@ Four-phase parser pipeline:
 Raw text → Scanner → Block Builder → Step Parser → Resolver → resolved AST
 ```
 
-- **Scanner** (`parser/scanner.py`): Classifies lines by prefix (`#`, `##`, `-`, `>`, `@`, blank)
+- **Scanner** (`parser/scanner.py`): Classifies lines by prefix (`#`, `-`, `>`, `@`, blank). `##` raises `ParseError`.
 - **Block Builder** (`parser/block_builder.py`): Indentation → tree of `RawBlock` nodes
 - **Step Parser** (`parser/step_parser.py`): Recursive descent → typed AST nodes
 - **Param Parser** (`parser/param_parser.py`): `@Z2`, `@80kg`, `@RPE 8`, `@80% of FTP`
@@ -50,12 +50,12 @@ Raw text → Scanner → Block Builder → Step Parser → Resolver → resolved
 - Common endurance actions: `run`, `bike`, `swim`, `row`, `ski`, `walk`, `hike`, `warmup`, `cooldown`, `recover`, etc.
 - Duration supports compound formats: `1h30min`, `5min30s`, `1h28min2s` (both parse and `__str__`)
 - `Document.metadata` = `@ key: value` document-level metadata, NOT training variables
-- `Workout.metadata` = session/child workout metadata attached via `@ key: value` after headings
+- `Workout.metadata` = workout metadata attached via `@ key: value` after headings
 - All step/block AST nodes have a `metadata: dict[str, str]` field for step-level metadata
 - `resolve(doc, variables)` only uses caller-supplied variables (does not merge metadata)
 - `rest:` syntax replaced by `@rest duration` (e.g. `@rest 90s`)
-- **Sessions are mandatory**: every document has `##` session headings; `#`-only files auto-wrapped in unnamed session
-- **Dates only on `##` headings** — dates on `#` child headings raise `ParseError`
+- **`#` is the only heading level** — `##` raises `ParseError`
+- Dates are allowed on `#` workout headings
 
 ## Parameter Types
 
@@ -80,10 +80,8 @@ Removed syntax (parser rejects with error): `@easy`, `@hard`, `@moderate`, `@thr
 - Empty workouts (no name, no steps, no notes) are **silently filtered** during parsing
 - `owf.load()` does NOT resolve includes — it's just read + parse
 - Notes boundary: no blank line before = step-level; blank line before = workout-level
-- `##` = session, `#` = child workout; steps between `#` headings belong to preceding child
-- `#`-only files are auto-wrapped in unnamed session — `doc.workouts[0]` is always a session
-- Single-child implicit session: date on `#` heading is lifted to session wrapper
-- Heading-level `@RIR` = default for strength exercises (per-step overrides); `@RPE` = session-wide
+- `#` = workout; `##` raises `ParseError`
+- Heading-level `@RIR` = default for strength exercises (per-step overrides); `@RPE` = workout-wide
 - Resolver only touches `PercentOfParam` and `BodyweightPlusParam`; all other params pass through
 
 ## Cross-Project Impact (Grit)

@@ -5,13 +5,12 @@ from __future__ import annotations
 import enum
 from dataclasses import dataclass
 
-from owf.errors import SourceSpan
+from owf.errors import ParseError, SourceSpan
 
 
 class LineType(enum.Enum):
     BLANK = "blank"
     FRONTMATTER_FENCE = "frontmatter_fence"
-    SESSION_HEADING = "session_heading"
     HEADING = "heading"
     STEP = "step"
     NOTE = "note"
@@ -60,16 +59,10 @@ def scan(text: str) -> list[LogicalLine]:
             continue
 
         if stripped.startswith("## "):
-            lines.append(
-                LogicalLine(
-                    line_type=LineType.SESSION_HEADING,
-                    text=raw,
-                    indent=0,
-                    content=stripped[3:],
-                    span=SourceSpan(line=lineno, col=1),
-                )
+            raise ParseError(
+                "'##' headings are not allowed; use '#' for workouts",
+                SourceSpan(line=lineno, col=1),
             )
-            continue
 
         if stripped.startswith("# "):
             lines.append(

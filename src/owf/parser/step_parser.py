@@ -47,14 +47,13 @@ def parse_document(text: str) -> Document:
             key, _, value = ln.content.partition(": ")
             metadata[key] = value
         elif ln.line_type in (
-            LineType.SESSION_HEADING,
             LineType.HEADING,
             LineType.STEP,
         ):
             break
 
     # Split lines into workout sections
-    workouts = _split_into_workouts(lines)
+    workouts = _split_workouts(lines)
 
     return Document(
         workouts=tuple(workouts),
@@ -63,58 +62,8 @@ def parse_document(text: str) -> Document:
     )
 
 
-def _split_into_workouts(lines: list[LogicalLine]) -> list[Workout]:
-    """Split scanned lines into Workout sections by heading.
-
-    Sessions (``##``) are mandatory. If no ``SESSION_HEADING`` lines exist,
-    all ``#`` workouts are auto-wrapped in an implicit unnamed session.
-    """
-    has_sessions = any(
-        ln.line_type == LineType.SESSION_HEADING for ln in lines
-    )
-
-    if not has_sessions:
-        return _wrap_flat_in_session(lines)
-
-    return _split_two_level(lines)
-
-
-def _wrap_flat_in_session(lines: list[LogicalLine]) -> list[Workout]:
-    """Wrap flat ``#``-only workouts in an implicit unnamed session.
-
-    If there is exactly one child workout, its date is lifted to the session.
-    """
-    children = _split_flat_children(lines)
-    if not children:
-        return []
-
-    # Lift date from single child to session
-    date: WorkoutDate | None = None
-    if len(children) == 1 and children[0].date is not None:
-        date = children[0].date
-        children[0] = Workout(
-            name=children[0].name,
-            sport_type=children[0].sport_type,
-            date=None,
-            rpe=children[0].rpe,
-            rir=children[0].rir,
-            steps=children[0].steps,
-            metadata=children[0].metadata,
-            notes=children[0].notes,
-            span=children[0].span,
-        )
-
-    session = Workout(
-        name="",
-        date=date,
-        steps=tuple(children),
-        span=SourceSpan(line=1, col=1),
-    )
-    return [session]
-
-
-def _split_flat_children(lines: list[LogicalLine]) -> list[Workout]:
-    """Split flat lines into child workouts (each ``#`` → child)."""
+def _split_workouts(lines: list[LogicalLine]) -> list[Workout]:
+    """Split scanned lines into top-level workouts (each ``#`` heading)."""
     workouts: list[Workout] = []
     current_heading: LogicalLine | None = None
     current_lines: list[LogicalLine] = []
@@ -130,7 +79,6 @@ def _split_flat_children(lines: list[LogicalLine]) -> list[Workout]:
         elif ln.line_type == LineType.FRONTMATTER_FENCE:
             continue
         elif ln.line_type == LineType.METADATA and ln.indent == 0:
-            # Heading-level metadata — pass through to _build_workout
             current_lines.append(ln)
         else:
             current_lines.append(ln)
@@ -139,129 +87,6 @@ def _split_flat_children(lines: list[LogicalLine]) -> list[Workout]:
         workouts.append(_build_workout(current_heading, current_lines))
 
     return [w for w in workouts if w.name or w.steps or w.notes]
-
-
-def _split_two_level(lines: list[LogicalLine]) -> list[Workout]:
-    """Two-level splitting: ``##`` sessions contain ``#`` child workouts."""
-    workouts: list[Workout] = []
-
-    chunks: list[tuple[LogicalLine | None, list[LogicalLine]]] = []
-    current_session: LogicalLine | None = None
-    current_lines: list[LogicalLine] = []
-    seen_session = False
-
-    for ln in lines:
-        if ln.line_type == LineType.SESSION_HEADING:
-            if seen_session or current_lines:
-                chunks.append((current_session, current_lines))
-            current_session = ln
-            current_lines = []
-            seen_session = True
-        elif ln.line_type == LineType.FRONTMATTER_FENCE:
-            continue
-        elif ln.line_type == LineType.METADATA and ln.indent == 0:
-            # Session/heading-level metadata — pass through
-            current_lines.append(ln)
-        else:
-            current_lines.append(ln)
-
-    if current_session is not None or current_lines:
-        chunks.append((current_session, current_lines))
-
-    for session_heading, body_lines in chunks:
-        if session_heading is None:
-            # Orphan lines before first ##: wrap in implicit session
-            children = _split_flat_children(body_lines)
-            if children:
-                session = Workout(
-                    name="",
-                    steps=tuple(children),
-                    span=SourceSpan(line=1, col=1),
-                )
-                workouts.append(session)
-        else:
-            workouts.append(_build_session_workout(session_heading, body_lines))
-
-    return [w for w in workouts if w.name or w.steps or w.notes]
-
-
-def _build_session_workout(
-    session_heading: LogicalLine, body_lines: list[LogicalLine]
-) -> Workout:
-    """Build a session-level workout from a ``##`` heading and its body."""
-    name, sport_type, date, rpe, rir = _parse_heading(
-        session_heading.content,
-    )
-
-    # Extract session-level metadata (indent 0 metadata before any child)
-    session_metadata: dict[str, str] = {}
-    for ln in body_lines:
-        if ln.line_type == LineType.METADATA and ln.indent == 0:
-            key, _, value = ln.content.partition(": ")
-            session_metadata[key] = value
-        elif ln.line_type in (
-            LineType.HEADING,
-            LineType.STEP,
-        ):
-            break
-
-    segments: list[tuple[LogicalLine | None, list[LogicalLine]]] = []
-    current_child_heading: LogicalLine | None = None
-    current_child_lines: list[LogicalLine] = []
-    in_child = False
-
-    for ln in body_lines:
-        if ln.line_type == LineType.HEADING:
-            # Flush previous segment
-            if in_child:
-                segments.append((current_child_heading, current_child_lines))
-            elif current_child_lines:
-                segments.append((None, current_child_lines))
-            current_child_heading = ln
-            current_child_lines = []
-            in_child = True
-        elif ln.line_type == LineType.METADATA and not in_child:
-            # Session-level metadata already extracted above
-            continue
-        else:
-            current_child_lines.append(ln)
-
-    # Flush final segment
-    if in_child:
-        segments.append((current_child_heading, current_child_lines))
-    elif current_child_lines:
-        segments.append((None, current_child_lines))
-
-    all_steps: list[Any] = []
-    trailing_notes: list[str] = []
-
-    for child_heading, child_lines in segments:
-        if child_heading is not None:
-            child_workout = _build_workout(child_heading, child_lines)
-            # Reject dates on child workouts inside sessions
-            if child_workout.date is not None:
-                raise ParseError(
-                    "Dates are only allowed on session (##) headings, "
-                    f"not on child workout '# {child_workout.name}'",
-                    child_heading.span,
-                )
-            all_steps.append(child_workout)
-        else:
-            blocks, notes = build_blocks_for_workout(child_lines)
-            all_steps.extend(_parse_block(b) for b in blocks)
-            trailing_notes.extend(notes)
-
-    return Workout(
-        name=name,
-        sport_type=sport_type,
-        date=date,
-        rpe=rpe,
-        rir=rir,
-        steps=tuple(all_steps),
-        metadata=session_metadata,
-        notes=tuple(trailing_notes),
-        span=session_heading.span,
-    )
 
 
 def _build_workout(
