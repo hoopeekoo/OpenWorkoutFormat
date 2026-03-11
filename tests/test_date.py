@@ -105,16 +105,21 @@ def test_roundtrip_with_date():
     assert doc1.workouts[0].date == doc2.workouts[0].date
 
 
-def test_dated_session_example():
-    """dated_session.owf has # workouts with dates."""
+def test_dated_example():
+    """triathlon_brick.owf has # workouts with dates."""
     from owf.loader import load
 
-    doc = load(Path("examples/dated_session.owf"))
-    # dated_session.owf has # Threshold Ride (with date) and # Upper Body
-    assert len(doc.workouts) == 2
-    assert doc.workouts[0].name == "Threshold Ride"
+    doc = load(Path("examples/triathlon_brick.owf"))
+    assert len(doc.workouts) == 3
+    assert doc.workouts[0].name == "Swim"
     assert doc.workouts[0].date == WorkoutDate(
-        date="2025-02-27", start_time="14:00", end_time="16:00"
+        date="2026-03-15", start_time="07:00", end_time=None,
     )
-    assert doc.workouts[1].name == "Upper Body"
-    assert doc.workouts[1].date is None
+    assert doc.workouts[1].name == "Bike"
+    assert doc.workouts[1].date == WorkoutDate(
+        date="2026-03-15", start_time="08:00", end_time="09:00",
+    )
+    assert doc.workouts[2].name == "Brick Run"
+    assert doc.workouts[2].date == WorkoutDate(
+        date="2026-03-15", start_time="09:00", end_time=None,
+    )

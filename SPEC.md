@@ -24,14 +24,14 @@ An OWF document consists of:
 @ description: Saturday training block
 @ author: Coach Smith
 
-# Threshold Ride [Cycling] (2025-02-27)
-@ location: Riverside Trail
+# Threshold Ride [Cycling] (2026-03-09)
+@ location: Indoor trainer
 
 - 5x:
-  - bike 5min @95% of FTP
-  - recover 3min @Z1
+  - Bike 5min @95% of FTP
+  - Recover 3min @Z1
 
-# Upper Body [Strength Training] (2025-02-27)
+# Upper Body [Strength Training] (2026-03-09)
 
 - Bench Press 3x8rep @80kg @rest 90s
 
@@ -43,7 +43,7 @@ An OWF document consists of:
 | Prefix | Meaning | Example |
 |--------|---------|---------|
 | `# ` | Workout heading | `# Threshold Ride [Cycling]` |
-| `- ` | Step line | `- run 5km @4:30/km` |
+| `- ` | Step line | `- Run 5km @4:30/km` |
 | `> ` | Note | `> Felt strong today.` |
 | `@ ` | Metadata | `@ location: Downtown Gym` |
 | *(blank)* | Section separator | |
@@ -57,8 +57,8 @@ An OWF document consists of:
 
 ```
 - 5x:
-  - bike 5min @200W
-  - recover 3min @Z1
+  - Bike 5min @200W
+  - Recover 3min @Z1
 ```
 
 ## 3. Metadata
@@ -97,17 +97,17 @@ Metadata lines use the `@ key: value` syntax (at-sign, space, key, colon-space, 
 ### Workout-Level Metadata
 
 ```
-# Morning Run [Running] (2025-02-27)
+# Morning Run [Running] (2026-03-08)
 @ source: Garmin Connect
 @ location: Riverside Trail
 
-- warmup 10min @Z1
+- Warmup 10min @Z1
 ```
 
 ### Step-Level Metadata
 
 ```
-- Deadlift 1x1rep @95% of 1RM
+- Deadlift 1x1rep @95% of 1RM deadlift
   @ tempo: 20X1
   @ equipment: barbell, belt
   > Use chalk.
@@ -157,12 +157,11 @@ All parts except `#` and the name are optional:
 - **Name**: Free text identifying the workout.
 - **Type** (optional): A bracket-enclosed tag classifying the workout. Sets `sport_type` on the AST. Can be:
   - A **sport type** from the FIT SDK display name table (e.g., `Trail Running`, `Strength Training`, `Gravel Cycling`). See Appendix C.
-  - A **broad category**: `endurance`, `strength`, `mixed`, `mobility`.
   - Any other free-text string — parsers MUST accept any value in brackets.
-  - Consuming applications derive the broad category from the sport type (e.g., `Running` → `endurance`).
+  - Consuming applications may derive broad categories from the sport type for grouping purposes.
 - **Date** (optional): A parenthesized date or date-time range. See [Section 11: Dates](#11-dates).
 - **@RPE** (optional): Workout-level Rate of Perceived Exertion (integer, 1-10).
-- **@RIR** (optional): Default Reps In Reserve for strength exercises (integer). Individual exercises may override with their own `@RIR`.
+- **@RIR** (optional): Default Reps In Reserve (integer). Individual steps may override with their own `@RIR`.
 
 Examples:
 
@@ -175,50 +174,50 @@ Examples:
 # Sunday Ride [Gravel Cycling]
 ```
 
-## 5. Step Types
+## 5. Steps
 
-Every step line begins with `- ` followed by the step content.
+Every step line begins with `- ` followed by the step content. All steps use the same unified syntax — any action can have any combination of sets, reps, duration, distance, and parameters.
 
-### Casing Convention — Step Classification
-
-Steps are classified by the casing of their first word:
-
-- **Lowercase first word → EnduranceStep**: `run`, `bike`, `swim`, `warmup`, etc.
-- **Title Case first word → StrengthStep**: `Bench Press`, `Pull-Up`, `Deadlift`, etc.
-
-There is no hardcoded list of endurance actions. Any lowercase word is a valid endurance action, and any Title Case word starts a strength exercise. This makes the format extensible — users can invent new actions (`paddle-board`, `rollerblade`) or exercises (`Turkish Get-Up`) without parser changes.
-
-Common endurance actions include: `run`, `bike`, `swim`, `row`, `ski`, `walk`, `hike`, `skate-ski`, `classic-ski`, `alpine-ski`, `snowboard`, `snowshoe`, `skate`, `paddle`, `kayak`, `surf`, `climb`, `elliptical`, `stairs`, `jumprope`, `ebike`, `other`, `warmup`, `cooldown`, `recover`.
-
-### EnduranceStep
-
-**Syntax:**
+### Syntax
 
 ```
-- action [duration] [distance] [params...]
+- Action [sets×reps] [duration] [distance] [params...] [@rest duration]
 ```
 
-Examples:
+Action names use Title Case (`Run`, `Bike`, `Bench Press`, `Pull-Up`). There is no hardcoded list of actions — any Title Case word or phrase is a valid action. This makes the format extensible: users can write `Paddle Board`, `Turkish Get-Up`, or any other movement without parser changes.
+
+The parser also accepts lowercase actions (`run`, `bike`, `warmup`) for backward compatibility.
+
+### Examples
+
+Endurance-style:
 
 ```
-- run 5km @4:30/km
-- bike 30min @200W
-- warmup 15min @Z1
-- swim 200m @Z2
-- recover 3min @Z1
+- Run 5km @4:30/km
+- Bike 30min @200W
+- Warmup 15min @Z1
+- Swim 200m @Z2
+- Recover 3min @Z1
 ```
 
-### StrengthStep
-
-Strength exercises start with a Title Case word.
-
-**Syntax:**
+Strength-style:
 
 ```
-- exercise [sets×reps] [duration] [params...] [@rest duration]
+- Bench Press 3x8rep @80kg @rest 90s
+- Pull-Up 3xmaxrep @bodyweight + 20kg @rest 90s
+- Plank 3x60s @rest 30s
+- Dip 3x8rep @bodyweight + 20kg @rest 90s
+- Back Squat 5x5rep @RIR 3 @rest 120s
 ```
 
-**Sets × Reps formats:**
+Mixed (any combination of fields is valid):
+
+```
+- Run 3x10min @Z3 @rest 2min
+- Sled Push 4x50m @100kg
+```
+
+### Sets x Reps Formats
 
 | Format | Meaning | Example |
 |--------|---------|---------|
@@ -227,35 +226,13 @@ Strength exercises start with a Title Case word.
 | `100rep` | 100 reps (no set count) | `- Pull-Up 100rep` |
 | `3xmaxrep` | 3 sets to failure | `- Face Pull 3xmaxrep @15kg` |
 
-**Timed sets:**
+### Rest Step
+
+A standalone rest period:
 
 ```
-- Plank 60s
-```
-
-**Rest between sets:**
-
-```
-- Bench Press 3x8rep @80kg @rest 90s
-```
-
-Examples:
-
-```
-- Bench Press 3x8rep @80kg @rest 90s
-- Pull-Up 100rep
-- Plank 60s
-- Dip 3x8rep @bodyweight + 20kg @rest 90s
-- Back Squat 5x5rep @RIR 3 @rest 120s
-```
-
-### RestStep
-
-A standalone rest period.
-
-```
-- rest 5min
-- rest 90s
+- Rest 5min
+- Rest 90s
 ```
 
 ## 6. Container Blocks
@@ -349,10 +326,10 @@ Container blocks may be nested:
 ```
 - 3x:
   - 2x:
-    - run 30s @Z4
-    - recover 30s @Z1
-  - run 1min @Z4
-  - recover 1min @Z1
+    - Run 30s @Z4
+    - Recover 30s @Z1
+  - Run 1min @Z4
+  - Recover 1min @Z1
 ```
 
 ## 7. Parameters
@@ -432,15 +409,15 @@ Value is an integer (1-10 scale). Can also appear at the heading level to set wo
 @RIR 2    @RIR 0
 ```
 
-Value is an integer indicating how many reps could have been performed before failure. Can also appear at the heading level to set a default RIR for all strength exercises; individual exercises may override with their own `@RIR`.
+Value is an integer indicating how many reps could have been performed before failure. Can also appear at the heading level to set a default RIR for all steps; individual steps may override with their own `@RIR`.
 
-### Rest (Strength Steps)
+### Rest (Between Sets)
 
 ```
 @rest 90s    @rest 2min    @rest 120s
 ```
 
-Appears at the end of a strength step line. Specifies rest between sets. Follows the same `@keyword value` pattern as `@RPE` and `@RIR`.
+Appears at the end of a step line. Specifies rest between sets. Follows the same `@keyword value` pattern as `@RPE` and `@RIR`.
 
 ## 8. Variable Resolution
 
@@ -510,7 +487,7 @@ Notes are lines prefixed with `> `. They can appear:
 1. **After a step** — attached to that step:
 
 ```
-- run 5km @4:30/km
+- Run 5km @4:30/km
 > Aim for negative splits.
 ```
 
@@ -519,9 +496,9 @@ Notes are lines prefixed with `> `. They can appear:
 ```
 # Easy Run [Running]
 
-- warmup 10min @Z1
-- run 5km @4:30/km
-- cooldown 10min @Z1
+- Warmup 10min @Z1
+- Run 5km @4:30/km
+- Cooldown 10min @Z1
 
 > Great session for building aerobic base.
 ```
@@ -559,18 +536,18 @@ Workout headings (`#`) may include an optional date or date-time range in parent
 An OWF document can contain multiple workouts, each starting with a `#` heading. Steps between headings belong to the preceding workout.
 
 ```
-# Threshold Ride [Cycling] (2025-02-27)
+# Threshold Ride [Cycling] (2026-03-09)
 
-- warmup 10min @Z1
+- Warmup 10min @Z1
 - 5x:
-  - bike 5min @95% of FTP
-  - recover 3min @Z1
-- cooldown 10min @Z1
+  - Bike 5min @95% of FTP
+  - Recover 3min @Z1
+- Cooldown 10min @Z1
 
-# Upper Body [Strength Training] (2025-02-27)
+# Upper Body [Strength Training] (2026-03-09)
 
 - Bench Press 3x8rep @80kg @rest 90s
-- Bent-Over Row 3x8rep @60kg @rest 90s
+- Dumbbell Row 3x8rep @32kg @rest 90s
 
 > Great training day.
 ```
@@ -608,12 +585,8 @@ step            = indent "- " step_content newline ;
 step_metadata   = indent "  " metadata_line ;
 indent          = { "  " } ;
 
-step_content    = rest_step
-                | container_block
-                | endurance_step
-                | strength_step ;
+step_content    = container_block | action_step ;
 
-rest_step       = "rest" SP duration ;
 container_block = repeat | superset | circuit | emom | alt_emom
                 | custom_interval | amrap | for_time ;
 
@@ -626,14 +599,11 @@ custom_interval = "every" SP duration SP "for" SP duration ":" ;
 amrap           = "amrap" SP duration ":" ;
 for_time        = "for-time" [ SP duration ] ":" ;
 
-endurance_step  = action [ SP duration ] [ SP distance ] { SP param } ;
-strength_step   = exercise [ SP sets_reps ] [ SP duration ] { SP param }
-                  [ SP rest_param ] ;
+action_step     = action [ SP sets_reps ] [ SP duration ] [ SP distance ]
+                  { SP param } [ SP rest_param ] ;
 
-action          = lower_word { ( "-" | SP ) lower_word } ;
-exercise        = title_word { ( "-" | SP ) title_word } ;
-lower_word      = lower { letter | digit } ;
-title_word      = upper { letter | digit } ;
+action          = word { ( "-" | SP ) word } ;
+word            = letter { letter | digit } ;
 
 sets_reps       = [ count "x" ] ( count | "max" ) [ "rep" | "reps" ] ;
 rest_param      = "@rest" SP duration ;
@@ -671,11 +641,13 @@ blank           = newline ;
 
 ## Appendix B: Reserved Words
 
-### Common Endurance Actions
+### Common Actions
 
-These are conventional lowercase action names. Any lowercase word is a valid endurance action — this list is not exhaustive:
+These are conventional action names. Any word or phrase is a valid action — this list is not exhaustive:
 
-`run`, `bike`, `swim`, `row`, `ski`, `walk`, `hike`, `skate-ski`, `classic-ski`, `alpine-ski`, `snowboard`, `snowshoe`, `skate`, `paddle`, `kayak`, `surf`, `climb`, `elliptical`, `stairs`, `jumprope`, `ebike`, `other`, `warmup`, `cooldown`, `recover`
+`Run`, `Bike`, `Swim`, `Row`, `Ski`, `Walk`, `Hike`, `Warmup`, `Cooldown`, `Recover`, `Bench Press`, `Back Squat`, `Deadlift`, `Pull-Up`, `Push-Up`, `Plank`, `Rest`, `Kettlebell Swing`, `Burpee`, `Power Clean`, `Thruster`
+
+Lowercase forms (`run`, `bike`, `swim`, etc.) are accepted for backward compatibility.
 
 ### Container Keywords
 
@@ -698,15 +670,9 @@ These are conventional lowercase action names. Any lowercase word is a valid end
 
 The `[type]` tag on headings accepts any string. The following sport type names are derived from the FIT SDK sport/sub_sport enum table and serve as the canonical list. Applications SHOULD use these names for interoperability.
 
-### Broad Categories
-
-These single-word values can be used directly as sport types for simplicity:
-
-`endurance`, `strength`, `mobility`, `mixed`
-
 ### FIT SDK Sport Types (canonical)
 
-Applications map these to broad categories for type inference. The parser accepts them all without validation.
+The parser accepts any string as a sport type without validation. Applications may group these into broad categories for display purposes.
 
 **Endurance:** Running, Treadmill Running, Street Running, Trail Running, Track Running, Indoor Running, Ultra Running, Virtual Running, Cycling, Road Cycling, Mountain Biking, Downhill Mountain Biking, Cyclocross, Track Cycling, Gravel Cycling, Mixed Surface Cycling, Bike Commuting, Virtual Cycling, Indoor Cycling, Spin, Recumbent Cycling, Hand Cycling, BMX, Swimming, Pool Swimming, Open Water Swimming, Walking, Indoor Walking, Casual Walking, Speed Walking, Hiking, Rowing, Indoor Rowing, Cross Country Skiing, Skate Skiing, Backcountry XC Skiing, Alpine Skiing, Backcountry Skiing, Resort Skiing, Snowboarding, Backcountry Snowboarding, Resort Snowboarding, Snowshoeing, Mountaineering, Paddling, Kayaking, Whitewater Kayaking, Stand Up Paddleboarding, Surfing, Sailing, Sail Racing, Inline Skating, Ice Skating, E-Biking, E-Bike Fitness, E-Mountain Biking, Elliptical, Stair Climber, Multisport
 

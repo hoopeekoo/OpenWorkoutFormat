@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from owf.ast.steps import EnduranceStep
+from owf.ast.steps import Step
 from owf.loader import load
 
 
@@ -27,45 +27,42 @@ def test_load_includes_source(valid_dir: Path):
     w1 = doc.workouts[0]
     assert w1.name == "Warm Up"
     assert len(w1.steps) == 1
-    assert isinstance(w1.steps[0], EnduranceStep)
+    assert isinstance(w1.steps[0], Step)
 
     w2 = doc.workouts[1]
     assert w2.name == "Cool Down"
     assert len(w2.steps) == 1
-    assert isinstance(w2.steps[0], EnduranceStep)
+    assert isinstance(w2.steps[0], Step)
 
 
-def test_load_examples_endurance():
-    doc = load(Path("examples/endurance.owf"))
+def test_load_examples_easy_run():
+    doc = load(Path("examples/easy_run.owf"))
     assert len(doc.workouts) == 1
-    assert doc.metadata == {}
+    assert doc.workouts[0].name == "Easy Run"
+    assert doc.workouts[0].sport_type == "Running"
 
 
-def test_load_examples_strength():
-    doc = load(Path("examples/strength.owf"))
+def test_load_examples_strength_upper():
+    doc = load(Path("examples/strength_upper.owf"))
     assert len(doc.workouts) == 1
     assert doc.workouts[0].name == "Upper Body"
 
 
-def test_load_examples_crossfit():
-    doc = load(Path("examples/crossfit.owf"))
-    assert len(doc.workouts) == 5
-
-
-def test_load_examples_composed():
-    doc = load(Path("examples/composed.owf"))
-    # composed.owf has # Full Session, # Threshold Ride, # Upper Body
-    # Now these are 3 flat workouts
+def test_load_examples_crossfit_benchmarks():
+    doc = load(Path("examples/crossfit_benchmarks.owf"))
     assert len(doc.workouts) == 3
-    assert doc.workouts[0].name == "Full Session"
-    assert doc.workouts[1].name == "Threshold Ride"
-    assert doc.workouts[2].name == "Upper Body"
 
 
-def test_load_examples_weekend_session():
-    doc = load(Path("examples/weekend_session.owf"))
-    # weekend_session.owf has # Run Warmup, # Chipper, # Cooldown
+def test_load_examples_triathlon_brick():
+    doc = load(Path("examples/triathlon_brick.owf"))
     assert len(doc.workouts) == 3
-    assert doc.workouts[0].name == "Run Warmup"
-    assert doc.workouts[1].name == "Chipper"
-    assert doc.workouts[2].name == "Cooldown"
+    assert doc.workouts[0].name == "Swim"
+    assert doc.workouts[1].name == "Bike"
+    assert doc.workouts[2].name == "Brick Run"
+
+
+def test_load_examples_emom_amrap():
+    doc = load(Path("examples/emom_amrap.owf"))
+    assert len(doc.workouts) == 4
+    assert doc.workouts[0].name == "EMOM Strength"
+    assert doc.workouts[2].name == "Cindy"

@@ -1,0 +1,35 @@
+@ description: Weekend triathlon brick session
+@ author: Coach Rivera
+@ tags: triathlon, race prep, olympic distance
+
+# Swim [Open Water Swimming] (2026-03-15 07:00)
+@ location: Lake Zurich
+
+- Swim 400m @Z1
+- 4x:
+  - Swim 200m @Z3
+  - Recover 100m @Z1
+- Swim 200m @Z1
+
+> Practice sighting every 6 strokes. Total: 1800m.
+
+# Bike [Cycling] (2026-03-15 08:00-09:00)
+@ location: Zurich — Rapperswil loop
+
+- Warmup 10min @Z1
+- Bike 30min @85% of FTP
+- 3x:
+  - Bike 3min @95% of FTP
+  - Recover 2min @Z1
+- Cooldown 10min @Z1
+
+> Aim for 33-34 km/h average on the flat section.
+
+# Brick Run [Running] (2026-03-15 09:00)
+
+- Run 3km @5:00/km
+  > Legs will feel heavy — push through the first km.
+- Run 2km @4:30/km
+- Cooldown 1km @Z1
+
+> Transition practice: bike-to-run in under 90s.
