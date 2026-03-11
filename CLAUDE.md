@@ -103,13 +103,13 @@ Removed syntax (parser rejects with error): `@easy`, `@hard`, `@moderate`, `@thr
 - Heading-level `@RIR` = default for exercises (per-step overrides); `@RPE` = workout-wide
 - Resolver only touches `PercentOfParam` and `BodyweightPlusParam`; all other params pass through
 
-## Cross-Project Impact (Grit)
+## Cross-Project Impact (Isopepe)
 
-Grit depends on OWF. Changes to these areas affect Grit — run **cross-project-checker** agent:
-- **AST class names**: stored as `node_type` strings in Grit DB (`Step`, `Workout`, etc.)
-- **AST field names**: used in Grit templates via `asdict()` (e.g. `data.action`, `data.sets`, `data.reps`)
-- **`sport_type` values**: Grit derives `workout_type` (broad category) from `sport_type` via `sport_types.py`; drives CSS badge classes (`badge-endurance`, `badge-strength`, etc.)
-- **Serializer output**: reconstructed in Grit detail pages via `owf.dumps()`
+Isopepe depends on OWF. Changes to these areas affect Isopepe — run **cross-project-checker** agent:
+- **AST class names**: stored as `node_type` strings in Isopepe DB (`Step`, `Workout`, etc.)
+- **AST field names**: used in Isopepe templates via `asdict()` (e.g. `data.action`, `data.sets`, `data.reps`)
+- **`sport_type` values**: Isopepe derives `workout_type` (broad category) from `sport_type` via `sport_types.py`; drives CSS badge classes (`badge-endurance`, `badge-strength`, etc.)
+- **Serializer output**: reconstructed in Isopepe detail pages via `owf.dumps()`
 
 ## Formal Specification
 
