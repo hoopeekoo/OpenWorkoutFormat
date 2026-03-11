@@ -16,19 +16,14 @@ from owf.ast.blocks import (
     Superset,
 )
 from owf.ast.steps import (
-    EnduranceStep,
     RepeatStep,
-    RestStep,
-    StrengthStep,
+    Step,
 )
 from owf.errors import ParseError, SourceSpan
 from owf.parser.block_builder import RawBlock, build_blocks_for_workout
 from owf.parser.param_parser import parse_params
 from owf.parser.scanner import LineType, LogicalLine, scan
 from owf.units import Distance, Duration
-
-# Step classification by casing: lowercase = endurance, Title Case = strength.
-# No hardcoded action list — any lowercase word is a valid action.
 
 # Regex for sets x reps: 3x8rep, 3x8, 100rep
 SETS_REPS_PATTERN = re.compile(
@@ -198,12 +193,13 @@ def _parse_block(block: RawBlock) -> Any:
     content = block.content
     span = block.span
 
-    # Rest: rest <duration>
-    rest_m = re.match(r"^rest\s+(.+)$", content)
+    # Rest: Rest <duration> (standalone rest step)
+    rest_m = re.match(r"^Rest\s+(.+)$", content)
     if rest_m and not block.children:
         try:
             dur = Duration.parse(rest_m.group(1))
-            return RestStep(
+            return Step(
+                action="Rest",
                 duration=dur,
                 metadata=block.metadata,
                 notes=tuple(block.notes),
@@ -339,12 +335,20 @@ def _parse_block(block: RawBlock) -> Any:
             span=span,
         )
 
-    # Parse as endurance or strength step
+    # Parse as unified step (any action, any combination of fields)
     return _parse_step_line(content, block, span)
 
 
-def _parse_step_line(content: str, block: RawBlock, span: SourceSpan) -> Any:
-    """Parse a step line into EnduranceStep or StrengthStep."""
+def _parse_step_line(content: str, block: RawBlock, span: SourceSpan) -> Step:
+    """Parse a step line into a unified Step node.
+
+    Tokens are pattern-matched (order-independent after the action):
+    - Sets×Reps: 3x10rep, maxrep
+    - Duration: 20min, 90s
+    - Distance: 5km, 400m
+    - Param: @Z2, @80kg, @RPE 7
+    - Rest: @rest 90s (inline rest modifier)
+    """
     tokens = content.split()
     if not tokens:
         raise ParseError("Empty step", span)
@@ -397,22 +401,30 @@ def _parse_step_line(content: str, block: RawBlock, span: SourceSpan) -> Any:
 
     action = " ".join(action_tokens)
 
+    # Enforce Title Case: first word must start with an uppercase letter
     first_word = action_tokens[0] if action_tokens else ""
-
-    # Casing rule: lowercase first word = endurance, Title Case = strength
     if first_word and first_word[0].islower():
-        return _build_endurance_step(action, rest_tokens, block, span)
-    else:
-        return _build_strength_step(action, rest_tokens, block, span)
+        raise ParseError(
+            f"Action must be Title Case: {first_word!r} "
+            f"(did you mean {first_word.capitalize()!r}?)",
+            span,
+        )
+
+    return _build_step(action, rest_tokens, block, span)
 
 
-def _build_endurance_step(
+def _build_step(
     action: str,
     metric_tokens: list[str],
     block: RawBlock,
     span: SourceSpan,
-) -> EnduranceStep:
-    """Build an EnduranceStep from parsed tokens."""
+) -> Step:
+    """Build a unified Step from parsed tokens.
+
+    All tokens populate the single Step node — any combination is valid.
+    """
+    sets: int | None = None
+    reps: int | str | None = None
     duration: Duration | None = None
     distance: Distance | None = None
     param_tokens: list[str] = []
@@ -422,58 +434,7 @@ def _build_endurance_step(
             param_tokens.append(tok)
             continue
 
-        # Try as "of" or other expression continuations
-        if param_tokens and not tok.startswith("@"):
-            param_tokens.append(tok)
-            continue
-
-        if duration is None:
-            try:
-                duration = Duration.parse(tok)
-                continue
-            except ValueError:
-                pass
-
-        if distance is None:
-            try:
-                distance = Distance.parse(tok)
-                continue
-            except ValueError:
-                pass
-
-        param_tokens.append(tok)
-
-    params, _rest = parse_params(param_tokens, span)
-
-    return EnduranceStep(
-        action=action,
-        duration=duration,
-        distance=distance,
-        params=tuple(params),
-        metadata=block.metadata,
-        notes=tuple(block.notes),
-        span=span,
-    )
-
-
-def _build_strength_step(
-    exercise: str,
-    metric_tokens: list[str],
-    block: RawBlock,
-    span: SourceSpan,
-) -> StrengthStep:
-    """Build a StrengthStep from parsed tokens."""
-    sets: int | None = None
-    reps: int | str | None = None
-    duration: Duration | None = None
-    param_tokens: list[str] = []
-
-    for tok in metric_tokens:
-        if tok.startswith("@"):
-            param_tokens.append(tok)
-            continue
-
-        # Try as expression continuation
+        # Try as expression continuation (e.g. "of FTP" after "@80%")
         if param_tokens and not tok.startswith("@"):
             param_tokens.append(tok)
             continue
@@ -495,17 +456,26 @@ def _build_strength_step(
             except ValueError:
                 pass
 
+        # Try distance
+        if distance is None:
+            try:
+                distance = Distance.parse(tok)
+                continue
+            except ValueError:
+                pass
+
         param_tokens.append(tok)
 
     params, rest_duration = parse_params(param_tokens, span)
 
-    return StrengthStep(
-        exercise=exercise,
+    return Step(
+        action=action,
         sets=sets,
         reps=reps,
         duration=duration,
-        params=tuple(params),
+        distance=distance,
         rest=rest_duration,
+        params=tuple(params),
         metadata=block.metadata,
         notes=tuple(block.notes),
         span=span,

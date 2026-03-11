@@ -11,44 +11,24 @@ from owf.units import Distance, Duration
 
 
 @dataclass(frozen=True, slots=True)
-class EnduranceStep:
-    """An endurance step: action + duration/distance + params.
+class Step:
+    """A unified step: any action with any combination of fields.
 
-    Examples: bike 5min @200W, run 10km @4:30/km, warmup 15min @easy
+    Examples:
+        Run 20min @Z2
+        Bench Press 3x8rep @80kg @rest 90s
+        Rest 5min
+        Bike 50min 30km @Z3
+        Sled Push 4x50m @100kg
     """
 
-    action: str  # run, bike, swim, warmup, cooldown, recover, etc.
-    duration: Duration | None = None
-    distance: Distance | None = None
-    params: tuple[Param, ...] = ()
-    metadata: dict[str, str] = field(default_factory=dict)
-    notes: tuple[str, ...] = ()
-    span: SourceSpan | None = field(default=None, compare=False, repr=False)
-
-
-@dataclass(frozen=True, slots=True)
-class StrengthStep:
-    """A strength step: exercise + sets x reps + params.
-
-    Examples: bench press 3x8rep @80kg rest:90s
-    """
-
-    exercise: str
+    action: str  # "Run", "Bench Press", "Rest", etc. (Title Case)
     sets: int | None = None
     reps: int | str | None = None  # int or "max"
-    duration: Duration | None = None  # for timed sets
+    duration: Duration | None = None
+    distance: Distance | None = None
+    rest: Duration | None = None  # inter-set rest
     params: tuple[Param, ...] = ()
-    rest: Duration | None = None
-    metadata: dict[str, str] = field(default_factory=dict)
-    notes: tuple[str, ...] = ()
-    span: SourceSpan | None = field(default=None, compare=False, repr=False)
-
-
-@dataclass(frozen=True, slots=True)
-class RestStep:
-    """A rest step: rest 5min."""
-
-    duration: Duration
     metadata: dict[str, str] = field(default_factory=dict)
     notes: tuple[str, ...] = ()
     span: SourceSpan | None = field(default=None, compare=False, repr=False)
@@ -66,4 +46,4 @@ class RepeatStep:
 
 
 # Union type for all steps
-Step = EnduranceStep | StrengthStep | RestStep | RepeatStep
+StepUnion = Step | RepeatStep

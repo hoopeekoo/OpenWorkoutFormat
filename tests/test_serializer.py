@@ -6,18 +6,18 @@ from owf.serializer import dumps
 
 def test_serialize_simple_endurance():
     text = (
-        "# Easy Run [endurance]\n\n- warmup 15min @Z1\n"
-        "- run 5km @4:30/km\n- cooldown 10min @Z1\n"
+        "# Easy Run [endurance]\n\n- Warmup 15min @Z1\n"
+        "- Run 5km @4:30/km\n- Cooldown 10min @Z1\n"
     )
     doc = parse_document(text)
     result = dumps(doc)
     assert "# Easy Run [endurance]" in result
-    assert "- warmup 15min @Z1" in result
-    assert "- run 5km @4:30/km" in result
+    assert "- Warmup 15min @Z1" in result
+    assert "- Run 5km @4:30/km" in result
 
 
 def test_serialize_with_metadata():
-    text = "@ FTP: 250W\n\n# Ride [endurance]\n\n- bike 30min @200W\n"
+    text = "@ FTP: 250W\n\n# Ride [endurance]\n\n- Bike 30min @200W\n"
     doc = parse_document(text)
     result = dumps(doc)
     assert "@ FTP: 250W" in result
@@ -27,13 +27,13 @@ def test_serialize_with_metadata():
 def test_serialize_repeat_block():
     text = (
         "# Intervals\n\n- 5x:\n"
-        "  - bike 5min @200W\n  - recover 3min @Z1\n"
+        "  - Bike 5min @200W\n  - Recover 3min @Z1\n"
     )
     doc = parse_document(text)
     result = dumps(doc)
     assert "- 5x:" in result
-    assert "  - bike 5min @200W" in result
-    assert "  - recover 3min @Z1" in result
+    assert "  - Bike 5min @200W" in result
+    assert "  - Recover 3min @Z1" in result
 
 
 def test_serialize_strength():
@@ -62,11 +62,11 @@ def test_serialize_amrap():
 
 
 def test_serialize_for_time():
-    text = "# Murph [mixed]\n\n- for-time:\n  - run 1mile\n  - Pull-Up 100rep\n"
+    text = "# Murph [mixed]\n\n- for-time:\n  - Run 1mile\n  - Pull-Up 100rep\n"
     doc = parse_document(text)
     result = dumps(doc)
     assert "- for-time:" in result
-    assert "  - run 1mile" in result
+    assert "  - Run 1mile" in result
 
 
 def test_serialize_rir():
@@ -88,7 +88,7 @@ def test_serialize_superset():
 
 
 def test_serialize_workout_rpe():
-    text = "# Run [endurance] @RPE 7\n\n- run 5km\n"
+    text = "# Run [endurance] @RPE 7\n\n- Run 5km\n"
     doc = parse_document(text)
     result = dumps(doc)
     assert "# Run [endurance] @RPE 7" in result
@@ -119,7 +119,7 @@ def test_serialize_circuit():
 
 
 def test_serialize_percent_of():
-    text = "# Ride\n\n- bike 30min @80% of FTP\n"
+    text = "# Ride\n\n- Bike 30min @80% of FTP\n"
     doc = parse_document(text)
     result = dumps(doc)
     assert "@80% of FTP" in result
@@ -133,14 +133,14 @@ def test_serialize_bodyweight_plus():
 
 
 def test_serialize_zone():
-    text = "# Run\n\n- run 10min @Z2\n"
+    text = "# Run\n\n- Run 10min @Z2\n"
     doc = parse_document(text)
     result = dumps(doc)
     assert "@Z2" in result
 
 
 def test_serialize_heart_rate():
-    text = "# Run\n\n- run 10min @140bpm\n"
+    text = "# Run\n\n- Run 10min @140bpm\n"
     doc = parse_document(text)
     result = dumps(doc)
     assert "@140bpm" in result

@@ -30,21 +30,21 @@ def test_double_hash_raises():
 
 
 def test_step_line():
-    lines = scan("- warmup 15min @easy")
+    lines = scan("- Warmup 15min @easy")
     assert lines[0].line_type == LineType.STEP
-    assert lines[0].content == "warmup 15min @easy"
+    assert lines[0].content == "Warmup 15min @easy"
     assert lines[0].indent == 0
 
 
 def test_indented_step():
-    lines = scan("  - bike 5min @200W")
+    lines = scan("  - Bike 5min @200W")
     assert lines[0].line_type == LineType.STEP
     assert lines[0].indent == 2
-    assert lines[0].content == "bike 5min @200W"
+    assert lines[0].content == "Bike 5min @200W"
 
 
 def test_nested_steps():
-    text = "- 5x:\n  - bike 5min @200W\n  - recover 3min @easy"
+    text = "- 5x:\n  - Bike 5min @200W\n  - Recover 3min @easy"
     lines = scan(text)
     steps = [ln for ln in lines if ln.line_type == LineType.STEP]
     assert len(steps) == 3
@@ -81,11 +81,11 @@ FTP: 250W
 
 # Ride [bike]
 
-- warmup 15min @easy
+- Warmup 15min @easy
 - 5x:
-  - bike 5min @200W
-  - recover 3min @easy
-- cooldown 10min @easy
+  - Bike 5min @200W
+  - Recover 3min @easy
+- Cooldown 10min @easy
 
 > Nice ride."""
     lines = scan(text)

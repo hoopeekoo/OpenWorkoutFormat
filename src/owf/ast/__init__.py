@@ -23,11 +23,9 @@ from owf.ast.params import (
     ZoneParam,
 )
 from owf.ast.steps import (
-    EnduranceStep,
     RepeatStep,
-    RestStep,
     Step,
-    StrengthStep,
+    StepUnion,
 )
 
 __all__ = [
@@ -38,7 +36,6 @@ __all__ = [
     "CustomInterval",
     "Document",
     "EMOM",
-    "EnduranceStep",
     "ForTime",
     "HeartRateParam",
     "PaceParam",
@@ -48,9 +45,8 @@ __all__ = [
     "RIRParam",
     "RPEParam",
     "RepeatStep",
-    "RestStep",
     "Step",
-    "StrengthStep",
+    "StepUnion",
     "Superset",
     "WeightParam",
     "Workout",

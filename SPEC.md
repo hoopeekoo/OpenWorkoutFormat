@@ -186,7 +186,6 @@ Every step line begins with `- ` followed by the step content. All steps use the
 
 Action names use Title Case (`Run`, `Bike`, `Bench Press`, `Pull-Up`). There is no hardcoded list of actions — any Title Case word or phrase is a valid action. This makes the format extensible: users can write `Paddle Board`, `Turkish Get-Up`, or any other movement without parser changes.
 
-The parser also accepts lowercase actions (`run`, `bike`, `warmup`) for backward compatibility.
 
 ### Examples
 
@@ -647,7 +646,6 @@ These are conventional action names. Any word or phrase is a valid action — th
 
 `Run`, `Bike`, `Swim`, `Row`, `Ski`, `Walk`, `Hike`, `Warmup`, `Cooldown`, `Recover`, `Bench Press`, `Back Squat`, `Deadlift`, `Pull-Up`, `Push-Up`, `Plank`, `Rest`, `Kettlebell Swing`, `Burpee`, `Power Clean`, `Thruster`
 
-Lowercase forms (`run`, `bike`, `swim`, etc.) are accepted for backward compatibility.
 
 ### Container Keywords
 

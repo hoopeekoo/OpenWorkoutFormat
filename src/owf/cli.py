@@ -30,10 +30,8 @@ from owf.ast.params import (
     ZoneParam,
 )
 from owf.ast.steps import (
-    EnduranceStep,
     RepeatStep,
-    RestStep,
-    StrengthStep,
+    Step,
 )
 from owf.loader import load
 from owf.resolver import resolve
@@ -125,36 +123,21 @@ def _print_workout(workout: Any) -> None:
 def _print_node(node: Any, indent: int) -> None:
     prefix = "  " * indent
 
-    if isinstance(node, EnduranceStep):
+    if isinstance(node, Step):
         parts = [node.action]
-        if node.duration:
-            parts.append(str(node.duration))
-        if node.distance:
-            parts.append(str(node.distance))
-        for p in node.params:
-            parts.append(_format_param(p))
-        print(f"{prefix}{' '.join(parts)}")
-        for note in node.notes:
-            print(f"{prefix}> {note}")
-
-    elif isinstance(node, StrengthStep):
-        parts = [node.exercise]
         if node.sets is not None and node.reps is not None:
             parts.append(f"{node.sets}x{node.reps}rep")
         elif node.reps is not None:
             parts.append(f"{node.reps}rep")
         if node.duration:
             parts.append(str(node.duration))
+        if node.distance:
+            parts.append(str(node.distance))
         for p in node.params:
             parts.append(_format_param(p))
         if node.rest:
             parts.append(f"rest:{node.rest}")
         print(f"{prefix}{' '.join(parts)}")
-        for note in node.notes:
-            print(f"{prefix}> {note}")
-
-    elif isinstance(node, RestStep):
-        print(f"{prefix}rest {node.duration}")
         for note in node.notes:
             print(f"{prefix}> {note}")
 
@@ -165,45 +148,57 @@ def _print_node(node: Any, indent: int) -> None:
         print(f"{prefix}{node.count}x:")
         for child in node.steps:
             _print_node(child, indent + 1)
+        for note in node.notes:
+            print(f"{prefix}> {note}")
 
     elif isinstance(node, Superset):
         print(f"{prefix}{node.count}x superset:")
         for child in node.steps:
             _print_node(child, indent + 1)
+        for note in node.notes:
+            print(f"{prefix}> {note}")
 
     elif isinstance(node, Circuit):
         print(f"{prefix}{node.count}x circuit:")
         for child in node.steps:
             _print_node(child, indent + 1)
+        for note in node.notes:
+            print(f"{prefix}> {note}")
 
     elif isinstance(node, EMOM):
         print(f"{prefix}emom {node.duration}:")
         for child in node.steps:
             _print_node(child, indent + 1)
+        for note in node.notes:
+            print(f"{prefix}> {note}")
 
     elif isinstance(node, AlternatingEMOM):
         print(f"{prefix}emom {node.duration} alternating:")
         for child in node.steps:
             _print_node(child, indent + 1)
+        for note in node.notes:
+            print(f"{prefix}> {note}")
 
     elif isinstance(node, CustomInterval):
         print(f"{prefix}every {node.interval} for {node.duration}:")
         for child in node.steps:
             _print_node(child, indent + 1)
+        for note in node.notes:
+            print(f"{prefix}> {note}")
 
     elif isinstance(node, AMRAP):
         print(f"{prefix}amrap {node.duration}:")
         for child in node.steps:
             _print_node(child, indent + 1)
+        for note in node.notes:
+            print(f"{prefix}> {note}")
 
     elif isinstance(node, ForTime):
         cap = f" {node.time_cap}" if node.time_cap else ""
         print(f"{prefix}for-time{cap}:")
         for child in node.steps:
             _print_node(child, indent + 1)
-
-    for note in getattr(node, "notes", ()):
-        if not isinstance(node, (EnduranceStep, StrengthStep, RestStep)):
+        for note in node.notes:
             print(f"{prefix}> {note}")
 
 

@@ -8,7 +8,7 @@ from owf.serializer import dumps
 
 
 def test_date_on_heading():
-    text = "# Morning Run [endurance] (2025-02-27)\n\n- run 5km"
+    text = "# Morning Run [endurance] (2025-02-27)\n\n- Run 5km"
     doc = parse_document(text)
     w = doc.workouts[0]
     assert w.name == "Morning Run"
@@ -17,7 +17,7 @@ def test_date_on_heading():
 
 
 def test_date_with_time_range():
-    text = "# Morning Run [endurance] (2025-02-27 06:00-07:00)\n\n- run 5km"
+    text = "# Morning Run [endurance] (2025-02-27 06:00-07:00)\n\n- Run 5km"
     doc = parse_document(text)
     w = doc.workouts[0]
     assert w.date == WorkoutDate(
@@ -26,14 +26,14 @@ def test_date_with_time_range():
 
 
 def test_date_with_start_time_only():
-    text = "# Morning Run [endurance] (2025-02-27 06:00)\n\n- run 5km"
+    text = "# Morning Run [endurance] (2025-02-27 06:00)\n\n- Run 5km"
     doc = parse_document(text)
     w = doc.workouts[0]
     assert w.date == WorkoutDate(date="2025-02-27", start_time="06:00")
 
 
 def test_date_without_type():
-    text = "# Morning Run (2025-02-27)\n\n- run 5km"
+    text = "# Morning Run (2025-02-27)\n\n- Run 5km"
     doc = parse_document(text)
     w = doc.workouts[0]
     assert w.name == "Morning Run"
@@ -42,7 +42,7 @@ def test_date_without_type():
 
 
 def test_no_date_backward_compat():
-    text = "# Morning Run [endurance]\n\n- run 5km"
+    text = "# Morning Run [endurance]\n\n- Run 5km"
     doc = parse_document(text)
     w = doc.workouts[0]
     assert w.date is None
@@ -66,7 +66,7 @@ def test_workout_date_str_with_start_only():
 def test_date_on_multiple_workouts():
     """Dates on individual workouts are preserved."""
     text = (
-        "# Ride [endurance] (2025-02-27 14:00-15:00)\n\n- bike 30min\n\n"
+        "# Ride [endurance] (2025-02-27 14:00-15:00)\n\n- Bike 30min\n\n"
         "# Strength [strength] (2025-02-27 15:15-16:00)\n\n"
         "- Bench Press 3x8rep @80kg"
     )
@@ -81,21 +81,21 @@ def test_date_on_multiple_workouts():
 
 
 def test_serialize_date():
-    text = "# Morning Run [endurance] (2025-02-27 06:00-07:00)\n\n- run 5km\n"
+    text = "# Morning Run [endurance] (2025-02-27 06:00-07:00)\n\n- Run 5km\n"
     doc = parse_document(text)
     result = dumps(doc)
     assert "# Morning Run [endurance] (2025-02-27 06:00-07:00)" in result
 
 
 def test_serialize_date_only():
-    text = "# Morning Run (2025-02-27)\n\n- run 5km\n"
+    text = "# Morning Run (2025-02-27)\n\n- Run 5km\n"
     doc = parse_document(text)
     result = dumps(doc)
     assert "# Morning Run (2025-02-27)" in result
 
 
 def test_roundtrip_with_date():
-    text = "# Morning Run [endurance] (2025-02-27 06:00-07:00)\n\n- run 5km"
+    text = "# Morning Run [endurance] (2025-02-27 06:00-07:00)\n\n- Run 5km"
     doc1 = parse_document(text)
     serialized = dumps(doc1)
     doc2 = parse_document(serialized)

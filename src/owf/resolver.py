@@ -25,9 +25,8 @@ from owf.ast.params import (
     WeightParam,
 )
 from owf.ast.steps import (
-    EnduranceStep,
     RepeatStep,
-    StrengthStep,
+    Step,
 )
 from owf.errors import ResolveError
 
@@ -52,11 +51,7 @@ def _resolve_workout(workout: Workout, variables: dict[str, str]) -> Workout:
 
 
 def _resolve_step(step: Any, variables: dict[str, str]) -> Any:
-    if isinstance(step, EnduranceStep):
-        resolved_params = tuple(_resolve_param(p, variables) for p in step.params)
-        return replace(step, params=resolved_params)
-
-    if isinstance(step, StrengthStep):
+    if isinstance(step, Step):
         resolved_params = tuple(_resolve_param(p, variables) for p in step.params)
         return replace(step, params=resolved_params)
 

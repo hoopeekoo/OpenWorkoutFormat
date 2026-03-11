@@ -20,8 +20,8 @@ def _roundtrip(text: str) -> None:
 
 def test_roundtrip_endurance():
     _roundtrip(
-        "# Run [run]\n\n- warmup 15min @Z1\n"
-        "- run 5km @4:30/km\n- cooldown 10min @Z1"
+        "# Run [run]\n\n- Warmup 15min @Z1\n"
+        "- Run 5km @4:30/km\n- Cooldown 10min @Z1"
     )
 
 
@@ -36,7 +36,7 @@ def test_roundtrip_strength():
 def test_roundtrip_intervals():
     _roundtrip(
         "# Intervals\n\n- 5x:\n"
-        "  - bike 5min @200W\n  - recover 3min @Z1"
+        "  - Bike 5min @200W\n  - Recover 3min @Z1"
     )
 
 
@@ -58,7 +58,7 @@ def test_roundtrip_amrap():
 def test_roundtrip_for_time():
     _roundtrip(
         "# Murph [wod]\n\n- for-time:\n"
-        "  - run 1mile\n  - Pull-Up 100rep\n"
+        "  - Run 1mile\n  - Pull-Up 100rep\n"
         "  - Push-Up 200rep"
     )
 
@@ -66,13 +66,13 @@ def test_roundtrip_for_time():
 def test_roundtrip_metadata():
     _roundtrip(
         "@ FTP: 250W\n\n"
-        "# Ride [bike]\n\n- bike 30min @200W"
+        "# Ride [bike]\n\n- Bike 30min @200W"
     )
 
 
 def test_roundtrip_multiple_workouts():
     _roundtrip(
-        "# Ride [bike]\n\n- bike 30min\n\n"
+        "# Ride [bike]\n\n- Bike 30min\n\n"
         "# Strength [strength]\n\n- Bench Press 3x8rep @80kg"
     )
 
@@ -95,7 +95,7 @@ def test_roundtrip_circuit():
 
 
 def test_roundtrip_percent_of():
-    _roundtrip("# Ride\n\n- bike 30min @80% of FTP")
+    _roundtrip("# Ride\n\n- Bike 30min @80% of FTP")
 
 
 def test_roundtrip_bodyweight_plus():
@@ -103,8 +103,8 @@ def test_roundtrip_bodyweight_plus():
 
 
 def test_roundtrip_zone():
-    _roundtrip("# Run\n\n- run 10min @Z2\n- recover 5min @Z1")
+    _roundtrip("# Run\n\n- Run 10min @Z2\n- Recover 5min @Z1")
 
 
 def test_roundtrip_heart_rate():
-    _roundtrip("# Run\n\n- run 10min @140bpm")
+    _roundtrip("# Run\n\n- Run 10min @140bpm")

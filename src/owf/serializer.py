@@ -27,10 +27,8 @@ from owf.ast.params import (
     ZoneParam,
 )
 from owf.ast.steps import (
-    EnduranceStep,
     RepeatStep,
-    RestStep,
-    StrengthStep,
+    Step,
 )
 
 
@@ -55,14 +53,6 @@ def dumps(doc: Document) -> str:
     if not result.endswith("\n"):
         result += "\n"
     return result
-
-
-def _normalize_name(name: str) -> str:
-    """Title-case a step name, preserving hyphenation."""
-    return "-".join(
-        " ".join(w.capitalize() for w in part.split())
-        for part in name.split("-")
-    )
 
 
 def _heading_line(workout: Workout) -> str:
@@ -115,38 +105,21 @@ def _serialize_node(node: Any, indent: int) -> list[str]:
     child_prefix = "  " * (indent + 1)
     meta = _metadata_lines(node.metadata, child_prefix) if node.metadata else []
 
-    if isinstance(node, EnduranceStep):
+    if isinstance(node, Step):
         parts = [node.action]
-        if node.duration:
-            parts.append(str(node.duration))
-        if node.distance:
-            parts.append(str(node.distance))
-        for p in node.params:
-            parts.append(_serialize_param(p))
-        lines.append(f"{prefix}- {' '.join(parts)}")
-        lines.extend(meta)
-        for note in node.notes:
-            lines.append(f"{prefix}> {note}")
-
-    elif isinstance(node, StrengthStep):
-        parts = [_normalize_name(node.exercise)]
         if node.sets is not None and node.reps is not None:
             parts.append(f"{node.sets}x{node.reps}rep")
         elif node.reps is not None:
             parts.append(f"{node.reps}rep")
         if node.duration:
             parts.append(str(node.duration))
+        if node.distance:
+            parts.append(str(node.distance))
         for p in node.params:
             parts.append(_serialize_param(p))
         if node.rest:
             parts.append(f"@rest {node.rest}")
         lines.append(f"{prefix}- {' '.join(parts)}")
-        lines.extend(meta)
-        for note in node.notes:
-            lines.append(f"{prefix}> {note}")
-
-    elif isinstance(node, RestStep):
-        lines.append(f"{prefix}- rest {node.duration}")
         lines.extend(meta)
         for note in node.notes:
             lines.append(f"{prefix}> {note}")

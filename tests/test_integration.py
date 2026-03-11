@@ -9,7 +9,7 @@ from owf.ast.blocks import (
     Superset,
 )
 from owf.ast.params import PowerParam
-from owf.ast.steps import EnduranceStep, RepeatStep, StrengthStep
+from owf.ast.steps import RepeatStep, Step
 from owf.parser.step_parser import parse_document
 from owf.resolver import resolve
 from owf.serializer import dumps
@@ -17,11 +17,11 @@ from owf.serializer import dumps
 FULL_EXAMPLE = """\
 # Threshold Ride [endurance]
 
-- warmup 15min @60% of FTP
+- Warmup 15min @60% of FTP
 - 5x:
-  - bike 5min @95% of FTP
-  - recover 3min @50% of FTP
-- cooldown 10min @Z1
+  - Bike 5min @95% of FTP
+  - Recover 3min @50% of FTP
+- Cooldown 10min @Z1
 
 > Felt strong through set 3, faded on 4-5.
 
@@ -53,11 +53,11 @@ FULL_EXAMPLE = """\
 # Murph [mixed]
 
 - for-time:
-  - run 1mile
+  - Run 1mile
   - Pull-Up 100rep
   - Push-Up 200rep
   - Air Squat 300rep
-  - run 1mile
+  - Run 1mile
 
 # Metcon [mixed]
 
@@ -70,13 +70,13 @@ FULL_EXAMPLE = """\
 MULTI_WORKOUT_EXAMPLE = """\
 # Saturday Warmup [endurance]
 
-- warmup 10min @Z1
+- Warmup 10min @Z1
 
 # Threshold Ride [endurance]
 
 - 5x:
-  - bike 5min @95% of FTP
-  - recover 3min @50% of FTP
+  - Bike 5min @95% of FTP
+  - Recover 3min @50% of FTP
 
 # Upper Body [strength]
 
@@ -107,8 +107,8 @@ def test_threshold_ride_structure():
     assert len(ride.steps) == 3
 
     warmup = ride.steps[0]
-    assert isinstance(warmup, EnduranceStep)
-    assert warmup.action == "warmup"
+    assert isinstance(warmup, Step)
+    assert warmup.action == "Warmup"
     assert warmup.duration is not None
     assert warmup.duration.seconds == 900
 
@@ -118,8 +118,8 @@ def test_threshold_ride_structure():
     assert len(intervals.steps) == 2
 
     cooldown = ride.steps[2]
-    assert isinstance(cooldown, EnduranceStep)
-    assert cooldown.action == "cooldown"
+    assert isinstance(cooldown, Step)
+    assert cooldown.action == "Cooldown"
 
 
 def test_upper_body_structure():
@@ -134,8 +134,8 @@ def test_upper_body_structure():
     assert len(superset.steps) == 2
 
     curl = upper.steps[1]
-    assert isinstance(curl, StrengthStep)
-    assert curl.exercise == "Bicep Curl"
+    assert isinstance(curl, Step)
+    assert curl.action == "Bicep Curl"
     assert curl.sets == 3
     assert curl.reps == 12
 
@@ -195,8 +195,8 @@ def test_multi_workout_structure():
     assert warmup_w.name == "Saturday Warmup"
     assert warmup_w.sport_type == "endurance"
     assert len(warmup_w.steps) == 1
-    assert isinstance(warmup_w.steps[0], EnduranceStep)
-    assert warmup_w.steps[0].action == "warmup"
+    assert isinstance(warmup_w.steps[0], Step)
+    assert warmup_w.steps[0].action == "Warmup"
 
     ride = doc.workouts[1]
     assert ride.name == "Threshold Ride"
@@ -222,7 +222,7 @@ def test_resolve_full_example():
     # Check that FTP-based expressions were resolved
     ride = resolved.workouts[0]
     warmup = ride.steps[0]
-    assert isinstance(warmup, EnduranceStep)
+    assert isinstance(warmup, Step)
     # 60% of 250W = 150W
     param = warmup.params[0]
     assert isinstance(param, PowerParam)
@@ -239,7 +239,7 @@ def test_resolve_multi_workout_example():
     repeat = ride.steps[0]
     assert isinstance(repeat, RepeatStep)
     bike = repeat.steps[0]
-    assert isinstance(bike, EnduranceStep)
+    assert isinstance(bike, Step)
     param = bike.params[0]
     assert isinstance(param, PowerParam)
     # 95% of 250W = 237.5W -> rounds to 238
@@ -271,7 +271,7 @@ def test_serialize_multi_workout_example():
     assert "# Saturday Warmup [endurance]" in serialized
     assert "# Threshold Ride [endurance]" in serialized
     assert "# Upper Body [strength]" in serialized
-    assert "- warmup 10min @Z1" in serialized
+    assert "- Warmup 10min @Z1" in serialized
     assert "> Great session overall." in serialized
 
 

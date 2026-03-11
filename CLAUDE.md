@@ -6,7 +6,7 @@ Human-readable workout format (`.owf`) with a Python parser. Zero runtime depend
 
 ```bash
 source .venv/bin/activate
-pytest tests/ -v          # 220 tests
+pytest tests/ -v          # 227 tests
 mypy src/                 # strict mode
 ruff check src/           # linting
 ```
@@ -37,17 +37,15 @@ Raw text → Scanner → Block Builder → Step Parser → Resolver → resolved
 ## Critical Rules
 
 - **Zero runtime dependencies** — stdlib imports only (PyYAML is optional)
-- **No class inheritance** for AST nodes — use Union types: `Step = EnduranceStep | StrengthStep | ...`
+- **No class inheritance** for AST nodes — use Union types
 - AST nodes are **frozen dataclasses** with `slots=True` (Python 3.14 compat)
 - `SourceSpan` on every AST node for error reporting (1-based line/col)
-- `Workout.sport_type` = bracket tag value (e.g. `"Trail Running"`, `"endurance"`, `"Strength Training"`), set from `[Tag]` in heading
-- No `workout_type` field on AST — broad category (`endurance`, `strength`, `mixed`, `mobility`) is derived by consuming apps
+- **Unified step model**: single `Step` type for all actions (no EnduranceStep/StrengthStep distinction)
+- **Title Case enforced**: all actions must start with uppercase (`Run`, `Bike`, `Bench Press`). Lowercase raises `ParseError`.
+- Common actions: `Run`, `Bike`, `Swim`, `Row`, `Ski`, `Walk`, `Hike`, `Warmup`, `Cooldown`, `Recover`, `Rest`, etc.
+- `Workout.sport_type` = bracket tag value (e.g. `"Trail Running"`, `"Strength Training"`), set from `[Tag]` in heading
+- No `workout_type` field on AST — broad category derived by consuming apps
 - Parser accepts **any string** in `[brackets]` — no validation; apps do sport_type → category mapping
-- No `mixed` inference in parser — apps derive this from child sport types
-- **Step classification by casing**: lowercase first word = `EnduranceStep`, Title Case first word = `StrengthStep`
-- No hardcoded endurance action list — any lowercase word is a valid endurance action
-- Serializer preserves casing: endurance actions stay lowercase, strength exercises stay Title Case
-- Common endurance actions: `run`, `bike`, `swim`, `row`, `ski`, `walk`, `hike`, `warmup`, `cooldown`, `recover`, etc.
 - Duration supports compound formats: `1h30min`, `5min30s`, `1h28min2s` (both parse and `__str__`)
 - `Document.metadata` = `@ key: value` document-level metadata, NOT training variables
 - `Workout.metadata` = workout metadata attached via `@ key: value` after headings
@@ -56,6 +54,27 @@ Raw text → Scanner → Block Builder → Step Parser → Resolver → resolved
 - `rest:` syntax replaced by `@rest duration` (e.g. `@rest 90s`)
 - **`#` is the only heading level** — `##` raises `ParseError`
 - Dates are allowed on `#` workout headings
+
+## AST Step Model
+
+Single unified `Step` type — any combination of fields is valid:
+
+```python
+@dataclass(frozen=True, slots=True)
+class Step:
+    action: str                          # "Run", "Bench Press", "Rest", etc.
+    sets: int | None = None
+    reps: int | str | None = None        # int or "max"
+    duration: Duration | None = None
+    distance: Distance | None = None
+    rest: Duration | None = None         # @rest between sets
+    params: tuple[Param, ...] = ()
+    metadata: dict[str, str] = ()
+    notes: tuple[str, ...] = ()
+    span: SourceSpan | None = None
+```
+
+Container blocks (`RepeatStep`, `Superset`, `Circuit`, `EMOM`, etc.) are separate types.
 
 ## Parameter Types
 
@@ -81,14 +100,14 @@ Removed syntax (parser rejects with error): `@easy`, `@hard`, `@moderate`, `@thr
 - `owf.load()` does NOT resolve includes — it's just read + parse
 - Notes boundary: no blank line before = step-level; blank line before = workout-level
 - `#` = workout; `##` raises `ParseError`
-- Heading-level `@RIR` = default for strength exercises (per-step overrides); `@RPE` = workout-wide
+- Heading-level `@RIR` = default for exercises (per-step overrides); `@RPE` = workout-wide
 - Resolver only touches `PercentOfParam` and `BodyweightPlusParam`; all other params pass through
 
 ## Cross-Project Impact (Grit)
 
 Grit depends on OWF. Changes to these areas affect Grit — run **cross-project-checker** agent:
-- **AST class names**: stored as `node_type` strings in Grit DB (`EnduranceStep`, `StrengthStep`, `Workout`, etc.)
-- **AST field names**: used in Grit templates via `asdict()` (e.g. `data.exercise`, `data.action`)
+- **AST class names**: stored as `node_type` strings in Grit DB (`Step`, `Workout`, etc.)
+- **AST field names**: used in Grit templates via `asdict()` (e.g. `data.action`, `data.sets`, `data.reps`)
 - **`sport_type` values**: Grit derives `workout_type` (broad category) from `sport_type` via `sport_types.py`; drives CSS badge classes (`badge-endurance`, `badge-strength`, etc.)
 - **Serializer output**: reconstructed in Grit detail pages via `owf.dumps()`
 

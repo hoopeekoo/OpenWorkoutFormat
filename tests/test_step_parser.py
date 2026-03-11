@@ -13,7 +13,7 @@ from owf.ast.blocks import (
     Superset,
 )
 from owf.ast.params import PercentOfParam, PowerParam, RIRParam
-from owf.ast.steps import EnduranceStep, RepeatStep, RestStep, StrengthStep
+from owf.ast.steps import RepeatStep, Step
 from owf.errors import ParseError
 from owf.parser.step_parser import parse_document
 
@@ -27,8 +27,8 @@ def test_empty_document():
 def test_simple_endurance():
     """Single # heading produces a single workout."""
     text = (
-        "# Easy Run [endurance]\n\n- warmup 15min @Z1\n"
-        "- run 5km @4:30/km\n- cooldown 10min @Z1"
+        "# Easy Run [endurance]\n\n- Warmup 15min @Z1\n"
+        "- Run 5km @4:30/km\n- Cooldown 10min @Z1"
     )
     doc = parse_document(text)
     assert len(doc.workouts) == 1
@@ -36,43 +36,44 @@ def test_simple_endurance():
     assert w.name == "Easy Run"
     assert w.sport_type == "endurance"
     assert len(w.steps) == 3
-    assert isinstance(w.steps[0], EnduranceStep)
-    assert w.steps[0].action == "warmup"
+    assert isinstance(w.steps[0], Step)
+    assert w.steps[0].action == "Warmup"
     assert w.steps[0].duration is not None
     assert w.steps[0].duration.seconds == 900
 
 
 def test_endurance_with_distance():
-    text = "# Run\n\n- run 10km @4:30/km"
+    text = "# Run\n\n- Run 10km @4:30/km"
     doc = parse_document(text)
     w = doc.workouts[0]
     step = w.steps[0]
-    assert isinstance(step, EnduranceStep)
+    assert isinstance(step, Step)
     assert step.distance is not None
     assert step.distance.value == 10
     assert step.distance.unit == "km"
 
 
 def test_rest_step():
-    text = "# Session\n\n- rest 5min"
+    text = "# Session\n\n- Rest 5min"
     doc = parse_document(text)
     step = doc.workouts[0].steps[0]
-    assert isinstance(step, RestStep)
+    assert isinstance(step, Step)
+    assert step.action == "Rest"
     assert step.duration.seconds == 300
 
 
 def test_repeat_block():
     text = (
         "# Intervals\n\n- 5x:\n"
-        "  - bike 5min @200W\n  - recover 3min @Z1"
+        "  - Bike 5min @200W\n  - Recover 3min @Z1"
     )
     doc = parse_document(text)
     step = doc.workouts[0].steps[0]
     assert isinstance(step, RepeatStep)
     assert step.count == 5
     assert len(step.steps) == 2
-    assert isinstance(step.steps[0], EnduranceStep)
-    assert isinstance(step.steps[1], EnduranceStep)
+    assert isinstance(step.steps[0], Step)
+    assert isinstance(step.steps[1], Step)
 
 
 def test_strength_step():
@@ -82,8 +83,8 @@ def test_strength_step():
     )
     doc = parse_document(text)
     step = doc.workouts[0].steps[0]
-    assert isinstance(step, StrengthStep)
-    assert step.exercise == "Bench Press"
+    assert isinstance(step, Step)
+    assert step.action == "Bench Press"
     assert step.sets == 3
     assert step.reps == 8
     assert step.rest is not None
@@ -168,7 +169,7 @@ def test_amrap():
 def test_for_time():
     text = (
         "# Murph [mixed]\n\n- for-time:\n"
-        "  - run 1mile\n  - Pull-Up 100rep\n"
+        "  - Run 1mile\n  - Pull-Up 100rep\n"
         "  - Push-Up 200rep"
     )
     doc = parse_document(text)
@@ -179,7 +180,7 @@ def test_for_time():
 
 
 def test_for_time_with_cap():
-    text = "# WoD [mixed]\n\n- for-time 20min:\n  - run 5km"
+    text = "# WoD [mixed]\n\n- for-time 20min:\n  - Run 5km"
     doc = parse_document(text)
     step = doc.workouts[0].steps[0]
     assert isinstance(step, ForTime)
@@ -190,7 +191,7 @@ def test_for_time_with_cap():
 def test_multiple_workouts():
     """Multiple # headings produce flat workouts in doc.workouts."""
     text = (
-        "# Ride [endurance]\n\n- bike 30min\n\n"
+        "# Ride [endurance]\n\n- Bike 30min\n\n"
         "# Strength [strength]\n\n- Bench Press 3x8rep @80kg"
     )
     doc = parse_document(text)
@@ -204,7 +205,7 @@ def test_multiple_workouts():
 def test_metadata():
     text = (
         "@ FTP: 250W\n@ 1RM bench press: 100kg\n\n"
-        "# Ride [endurance]\n\n- bike 30min @80% of FTP"
+        "# Ride [endurance]\n\n- Bike 30min @80% of FTP"
     )
     doc = parse_document(text)
     assert doc.metadata == {"FTP": "250W", "1RM bench press": "100kg"}
@@ -212,19 +213,19 @@ def test_metadata():
 
 
 def test_notes_on_workout():
-    text = "# Ride [endurance]\n\n- bike 30min @Z1\n\n> Great ride today."
+    text = "# Ride [endurance]\n\n- Bike 30min @Z1\n\n> Great ride today."
     doc = parse_document(text)
     w = doc.workouts[0]
     step = w.steps[0]
-    assert isinstance(step, EnduranceStep)
+    assert isinstance(step, Step)
     assert "Great ride today." in step.notes or "Great ride today." in w.notes
 
 
 def test_endurance_with_power_param():
-    text = "# Ride [endurance]\n\n- bike 5min @200W"
+    text = "# Ride [endurance]\n\n- Bike 5min @200W"
     doc = parse_document(text)
     step = doc.workouts[0].steps[0]
-    assert isinstance(step, EnduranceStep)
+    assert isinstance(step, Step)
     assert len(step.params) == 1
     assert isinstance(step.params[0], PowerParam)
     assert step.params[0].value == 200
@@ -237,7 +238,7 @@ def test_strength_with_rir():
     )
     doc = parse_document(text)
     step = doc.workouts[0].steps[0]
-    assert isinstance(step, StrengthStep)
+    assert isinstance(step, Step)
     rir_params = [p for p in step.params if isinstance(p, RIRParam)]
     assert len(rir_params) == 1
     assert rir_params[0].value == 2
@@ -245,14 +246,14 @@ def test_strength_with_rir():
 
 def test_double_hash_raises_parse_error():
     """## headings raise ParseError."""
-    text = "## Training\n\n- run 5km"
+    text = "## Training\n\n- Run 5km"
     with pytest.raises(ParseError, match="not allowed"):
         parse_document(text)
 
 
 def test_sport_type_parsed():
     """Bracket tags set sport_type."""
-    text = "# Morning Run [Trail Running]\n\n- run 5km\n"
+    text = "# Morning Run [Trail Running]\n\n- Run 5km\n"
     doc = parse_document(text)
     w = doc.workouts[0]
     assert w.sport_type == "Trail Running"
@@ -261,7 +262,7 @@ def test_sport_type_parsed():
 def test_sport_type_on_workouts():
     """Multiple workouts can each have sport_type."""
     text = (
-        "# Ride [Gravel Cycling]\n\n- bike 30min\n\n"
+        "# Ride [Gravel Cycling]\n\n- Bike 30min\n\n"
         "# Gym [Strength Training]\n\n- Deadlift 3x5rep @100kg"
     )
     doc = parse_document(text)
@@ -271,7 +272,7 @@ def test_sport_type_on_workouts():
 
 def test_legacy_tags_become_sport_type():
     """Legacy tags [endurance] etc. now set sport_type like any other tag."""
-    text = "# Run [endurance]\n\n- run 5km\n"
+    text = "# Run [endurance]\n\n- Run 5km\n"
     doc = parse_document(text)
     w = doc.workouts[0]
     assert w.sport_type == "endurance"
@@ -281,7 +282,7 @@ def test_sport_type_roundtrip():
     """Sport type round-trips through serialize -> parse."""
     from owf.serializer import dumps
 
-    text = "# Morning Run [Trail Running]\n\n- run 5km\n"
+    text = "# Morning Run [Trail Running]\n\n- Run 5km\n"
     doc1 = parse_document(text)
     serialized = dumps(doc1)
     assert "[Trail Running]" in serialized
@@ -291,7 +292,7 @@ def test_sport_type_roundtrip():
 
 def test_sport_type_with_date():
     """Sport type and date can coexist on a heading."""
-    text = "# Run [Trail Running] (2025-02-27)\n\n- run 5km\n"
+    text = "# Run [Trail Running] (2025-02-27)\n\n- Run 5km\n"
     doc = parse_document(text)
     w = doc.workouts[0]
     assert w.sport_type == "Trail Running"
@@ -312,39 +313,39 @@ def test_sport_type_with_params():
 
 def test_sport_type_unknown_accepted():
     """Parser accepts any string in brackets, even unknown ones."""
-    text = "# Fun [Underwater Basket Weaving]\n\n- swim 30min\n"
+    text = "# Fun [Underwater Basket Weaving]\n\n- Swim 30min\n"
     doc = parse_document(text)
     w = doc.workouts[0]
     assert w.sport_type == "Underwater Basket Weaving"
 
 
-def test_casing_serialization():
-    """Serializer preserves lowercase endurance actions and Title Case exercises."""
+def test_unified_step_serialization():
+    """Serializer handles unified Step for both endurance and strength actions."""
     from owf.serializer import dumps
 
-    text = "# Workout\n\n- run 5km\n- Bench Press 3x8rep @80kg\n"
+    text = "# Workout\n\n- Run 5km\n- Bench Press 3x8rep @80kg\n"
     doc = parse_document(text)
     result = dumps(doc)
-    assert "- run 5km" in result
+    assert "- Run 5km" in result
     assert "- Bench Press 3x8rep @80kg" in result
 
 
-def test_casing_roundtrip():
-    """Casing-based output re-parses correctly."""
+def test_unified_step_roundtrip():
+    """Unified Step output re-parses correctly."""
     from owf.serializer import dumps
 
-    text = "# Workout\n\n- run 5km\n- Bench Press 3x8rep @80kg\n"
+    text = "# Workout\n\n- Run 5km\n- Bench Press 3x8rep @80kg\n"
     doc1 = parse_document(text)
     serialized = dumps(doc1)
     doc2 = parse_document(serialized)
-    # Endurance action stays lowercase
-    assert doc2.workouts[0].steps[0].action == "run"
-    # Strength exercise stays Title Case
-    assert doc2.workouts[0].steps[1].exercise == "Bench Press"
+    # Endurance action preserved
+    assert doc2.workouts[0].steps[0].action == "Run"
+    # Strength action preserved
+    assert doc2.workouts[0].steps[1].action == "Bench Press"
 
 
 def test_heading_with_rpe():
-    text = "# Run [endurance] @RPE 7\n\n- run 5km\n"
+    text = "# Run [endurance] @RPE 7\n\n- Run 5km\n"
     doc = parse_document(text)
     w = doc.workouts[0]
     assert w.rpe == 7
@@ -383,7 +384,7 @@ def test_heading_params_dont_affect_steps():
     w = doc.workouts[0]
     assert w.rir == 2
     step = w.steps[0]
-    assert isinstance(step, StrengthStep)
+    assert isinstance(step, Step)
     rir_params = [p for p in step.params if isinstance(p, RIRParam)]
     assert len(rir_params) == 0
 
@@ -395,47 +396,47 @@ def test_strength_with_percentage_weight():
     )
     doc = parse_document(text)
     step = doc.workouts[0].steps[0]
-    assert isinstance(step, StrengthStep)
+    assert isinstance(step, Step)
     assert len(step.params) == 1
     assert isinstance(step.params[0], PercentOfParam)
     assert step.params[0].percent == 80
     assert step.params[0].variable == "1RM bench press"
 
 
-# -- Parametrized test for all new endurance actions (parse + round-trip) --
+# -- Parametrized test for endurance actions (parse + round-trip) --
 
-_NEW_ACTIONS = [
-    "skate-ski",
-    "classic-ski",
-    "alpine-ski",
-    "snowboard",
-    "snowshoe",
-    "skate",
-    "paddle",
-    "kayak",
-    "surf",
-    "climb",
-    "elliptical",
-    "stairs",
-    "jumprope",
-    "ebike",
-    "other",
+_ACTIONS = [
+    "Skate-Ski",
+    "Classic-Ski",
+    "Alpine-Ski",
+    "Snowboard",
+    "Snowshoe",
+    "Skate",
+    "Paddle",
+    "Kayak",
+    "Surf",
+    "Climb",
+    "Elliptical",
+    "Stairs",
+    "Jumprope",
+    "Ebike",
+    "Other",
 ]
 
 
-@pytest.mark.parametrize("action", _NEW_ACTIONS)
-def test_new_endurance_action_parse(action: str) -> None:
+@pytest.mark.parametrize("action", _ACTIONS)
+def test_action_parse(action: str) -> None:
     text = f"# Workout\n\n- {action} 30min @Z2"
     doc = parse_document(text)
     step = doc.workouts[0].steps[0]
-    assert isinstance(step, EnduranceStep)
+    assert isinstance(step, Step)
     assert step.action == action
     assert step.duration is not None
     assert step.duration.seconds == 1800
 
 
-@pytest.mark.parametrize("action", _NEW_ACTIONS)
-def test_new_endurance_action_roundtrip(action: str) -> None:
+@pytest.mark.parametrize("action", _ACTIONS)
+def test_action_roundtrip(action: str) -> None:
     from owf.serializer import dumps
 
     text = f"# Workout\n\n- {action} 30min @Z2"
@@ -444,16 +445,61 @@ def test_new_endurance_action_roundtrip(action: str) -> None:
     doc2 = parse_document(serialized)
     step1 = doc1.workouts[0].steps[0]
     step2 = doc2.workouts[0].steps[0]
-    assert isinstance(step1, EnduranceStep)
-    assert isinstance(step2, EnduranceStep)
+    assert isinstance(step1, Step)
+    assert isinstance(step2, Step)
     assert step1.action == step2.action
     assert step1.duration == step2.duration
 
 
 def test_date_on_heading():
     """Dates are allowed directly on # headings."""
-    text = "# Morning Run [endurance] (2025-02-27)\n\n- run 5km"
+    text = "# Morning Run [endurance] (2025-02-27)\n\n- Run 5km"
     doc = parse_document(text)
     w = doc.workouts[0]
     assert w.date is not None
     assert w.date.date == "2025-02-27"
+
+
+def test_mixed_field_step():
+    """A step can have any combination of fields."""
+    text = "# Workout\n\n- Sled Push 4rep 50m @100kg"
+    doc = parse_document(text)
+    step = doc.workouts[0].steps[0]
+    assert isinstance(step, Step)
+    assert step.action == "Sled Push"
+    assert step.reps == 4
+    assert step.distance is not None
+    assert step.distance.value == 50
+    assert step.distance.unit == "m"
+
+
+def test_step_with_duration_and_rest():
+    """Unified step with duration and rest."""
+    text = "# Workout\n\n- Plank 60s @rest 30s"
+    doc = parse_document(text)
+    step = doc.workouts[0].steps[0]
+    assert isinstance(step, Step)
+    assert step.action == "Plank"
+    assert step.duration is not None
+    assert step.duration.seconds == 60
+    assert step.rest is not None
+    assert step.rest.seconds == 30
+
+
+def test_step_with_sets_reps_and_distance():
+    """Unified step with sets x reps and distance."""
+    text = "# Workout\n\n- Sled Push 4x1rep 50m @100kg"
+    doc = parse_document(text)
+    step = doc.workouts[0].steps[0]
+    assert isinstance(step, Step)
+    assert step.action == "Sled Push"
+    assert step.sets == 4
+    assert step.reps == 1
+    assert step.distance is not None
+    assert step.distance.value == 50
+
+
+def test_lowercase_action_rejected():
+    """Lowercase actions raise ParseError — Title Case required."""
+    with pytest.raises(ParseError, match="Title Case"):
+        parse_document("# Test\n\n- run 5km")

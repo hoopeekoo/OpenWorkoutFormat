@@ -11,14 +11,14 @@ def _get_workout_lines(text: str) -> list:
 
 
 def test_flat_steps():
-    text = "- warmup 15min\n- run 5km\n- cooldown 10min"
+    text = "- Warmup 15min\n- Run 5km\n- Cooldown 10min"
     blocks, notes = build_blocks_for_workout(_get_workout_lines(text))
     assert len(blocks) == 3
     assert notes == []
 
 
 def test_nested_steps():
-    text = "- 5x:\n  - bike 5min\n  - recover 3min"
+    text = "- 5x:\n  - Bike 5min\n  - Recover 3min"
     blocks, notes = build_blocks_for_workout(_get_workout_lines(text))
     assert len(blocks) == 1
     assert blocks[0].content == "5x:"
@@ -26,17 +26,17 @@ def test_nested_steps():
 
 
 def test_mixed_flat_and_nested():
-    text = "- warmup 15min\n- 5x:\n  - bike 5min\n  - recover 3min\n- cooldown 10min"
+    text = "- Warmup 15min\n- 5x:\n  - Bike 5min\n  - Recover 3min\n- Cooldown 10min"
     blocks, notes = build_blocks_for_workout(_get_workout_lines(text))
     assert len(blocks) == 3
-    assert blocks[0].content == "warmup 15min"
+    assert blocks[0].content == "Warmup 15min"
     assert blocks[1].content == "5x:"
     assert len(blocks[1].children) == 2
-    assert blocks[2].content == "cooldown 10min"
+    assert blocks[2].content == "Cooldown 10min"
 
 
 def test_trailing_notes():
-    text = "- run 5km\n\n> Great run!"
+    text = "- Run 5km\n\n> Great run!"
     blocks, notes = build_blocks_for_workout(_get_workout_lines(text))
     assert len(blocks) == 1
     # Blank line before note → workout-level trailing note, not step note
@@ -45,7 +45,7 @@ def test_trailing_notes():
 
 
 def test_step_level_notes():
-    text = "- run 5km\n> Great run!"
+    text = "- Run 5km\n> Great run!"
     blocks, notes = build_blocks_for_workout(_get_workout_lines(text))
     assert len(blocks) == 1
     # No blank line → step-level note
@@ -54,7 +54,7 @@ def test_step_level_notes():
 
 
 def test_deeply_nested():
-    text = "- 3x:\n  - 2x:\n    - run 1km"
+    text = "- 3x:\n  - 2x:\n    - Run 1km"
     blocks, notes = build_blocks_for_workout(_get_workout_lines(text))
     assert len(blocks) == 1
     assert len(blocks[0].children) == 1
