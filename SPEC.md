@@ -29,7 +29,7 @@ Contains one or more workouts. No program-level structure.
 @ location: Indoor trainer
 
 - 5x:
-  - Bike 5min @95% of FTP
+  - Bike 5min @95% FTP
   - Recover 3min @Z1
 
 # Upper Body [Strength Training] (2026-03-09)
@@ -51,7 +51,8 @@ Contains a `##` program heading, week separators, and workouts organized into a 
 @ progression: Back Squat +2.5kg/week
 @ deload: week 4 x0.8
 
---- Week 1 (template) ---
+--- Week 1 ---
+@ template: true
 @ focus: Base volume
 
 # Upper [Strength Training]
@@ -62,7 +63,7 @@ Contains a `##` program heading, week separators, and workouts organized into a 
 - Back Squat 3x8 @80kg @rest 2min
 - Romanian Deadlift 3x8 @60kg @rest 90s
 
---- Week 4 (Deload) ---
+--- Week 4 ---
 @ deload: true
 ```
 
@@ -72,7 +73,7 @@ Contains a `##` program heading, week separators, and workouts organized into a 
 |--------|---------|---------|
 | `## ` | Program heading | `## Strength Block (12 weeks)` |
 | `# ` | Workout heading | `# Threshold Ride [Cycling]` |
-| `--- ` | Week separator | `--- Week 1 (template) ---` |
+| `--- ` | Week separator | `--- Week 1 ---` |
 | `- ` | Step line | `- Run 5km @4:30/km` |
 | `> ` | Note | `> Felt strong today.` |
 | `@ ` | Metadata | `@ location: Downtown Gym` |
@@ -120,13 +121,13 @@ Metadata lines use the `@ key: value` syntax. They can attach to documents/progr
 | Program | `progression` | Progression rule (see Section 13) |
 | Program | `deload` | Deload rule (see Section 14) |
 | Program | `cycle` | `true` if program repeats after last workout |
+| Week | `template` | `true` if this week is the base template |
 | Week | `focus` | Training focus for this week |
 | Week | `deload` | `true` if this is a deload week |
 | Workout | `location` | Where the workout takes place |
 | Workout | `source` | Data origin (device, platform) |
 | Workout | `focus` | Training focus or intent |
 | Container | `rest_between_rounds` | Rest injected between rounds |
-| Container | `style` | `superset` or `circuit` (on repeat blocks) |
 | Step | `tempo` | Lifting tempo (eccentric-pause-concentric-pause) |
 | Step | `unilateral` | Reps/weight apply per side |
 | Step | `equipment` | Specific gear for this movement |
@@ -251,25 +252,25 @@ Container blocks hold nested steps and are indicated by a trailing `:` on the st
 
 Repeats the nested steps `N` times.
 
-**Superset and circuit** are repeat blocks with a `@ style` metadata annotation:
+**Superset and circuit** use a first-class prefix before the repeat count:
 
 ```
-- 3x:
-  @ style: superset
+- superset 3x:
   - Bench Press 8rep @80kg
   - Dumbbell Row 8rep @32kg
 ```
 
 ```
-- 4x:
-  @ style: circuit
+- circuit 4x:
   @ rest_between_rounds: 90s
   - Kettlebell Swing 15rep @24kg
   - Push-Up 15rep
   - Goblet Squat 12rep @24kg
 ```
 
-The `@ style` metadata is informational — it does not change parsing behavior. It allows consuming applications to display and label the block appropriately.
+The style prefix sets the `style` field on the `RepeatBlock` AST node. It is informational — it does not change execution behavior. It allows consuming applications to display and label the block appropriately.
+
+> **Fallback**: `@ style: superset` or `@ style: circuit` metadata on a plain `Nx:` block is also accepted for backward compatibility.
 
 ### Interval
 
@@ -278,7 +279,7 @@ The `@ style` metadata is informational — it does not change parsing behavior.
   - step
 ```
 
-Performs the step every `<interval>` for `<duration>` total. Durations default to minutes if no unit is given.
+Performs the step every `<interval>` for `<duration>` total. Duration units are required on all values (e.g., `10min`, `90s`, `1h`).
 
 **EMOM** (Every Minute On the Minute) is an interval with a 1-minute interval:
 
@@ -345,14 +346,16 @@ Heart rate / effort zones:
 
 ### Percentage of Variable
 
-A percentage of a training variable. The variable is resolved at runtime.
+A percentage of a training variable. The variable is resolved at runtime. The word `of` is optional.
 
 ```
-@80% of FTP
-@70% of max HR
-@95% of 1RM bench press
-@90% of LTHR
+@80% FTP
+@70% max HR
+@95% 1RM bench press
+@90% LTHR
 ```
+
+The longer form with `of` is also accepted: `@80% of FTP`.
 
 Known variables: `FTP`, `LTHR`, `max HR`, `TP` (threshold pace), `1RM <exercise>`.
 
@@ -416,7 +419,7 @@ Value is an integer. Can also appear at the heading level to set a default RIR f
 @rest 90s    @rest 2min    @rest 120s
 ```
 
-Appears at the end of a step line. Specifies rest between sets.
+Appears at the end of a step line. Specifies rest between sets of the same exercise. For rest between different exercises, use a standalone `- Rest 90s` step. For rest between rounds of a container, use `@ rest_between_rounds: 90s` metadata on the container.
 
 ## 9. Variable Resolution
 
@@ -434,9 +437,9 @@ resolved = owf.resolve(doc, {
 ### Resolution Rules
 
 - `PercentOfParam` resolves based on the variable's unit:
-  - `@80% of FTP` + `FTP=250W` → `PowerParam(200.0)`
-  - `@70% of max HR` + `max HR=185bpm` → `HeartRateParam(130)`
-  - `@80% of 1RM bench press` + `1RM bench press=100kg` → `WeightParam(80.0, "kg")`
+  - `@80% FTP` + `FTP=250W` → `PowerParam(200.0)`
+  - `@70% max HR` + `max HR=185bpm` → `HeartRateParam(130)`
+  - `@80% 1RM bench press` + `1RM bench press=100kg` → `WeightParam(80.0, "kg")`
 - `BodyweightPlusParam` resolves using the bodyweight variable:
   - `@bodyweight + 20kg` + `bodyweight=80kg` → `WeightParam(100.0, "kg")`
 - All other param types are already concrete and pass through unchanged.
@@ -454,7 +457,7 @@ resolved = owf.resolve(doc, {
 | `MM:SS` | `1:30` | Minutes and seconds (= 90s) |
 | `HH:MM:SS` | `1:30:00` | Hours, minutes, seconds |
 
-Bare numbers in Interval, AMRAP, and For-Time containers default to **minutes**.
+Duration units are always required — bare numbers are not allowed. Use `10min`, `90s`, `1h30min`, etc.
 
 ### Distance
 
@@ -503,7 +506,7 @@ Notes are lines prefixed with `> `. They can appear:
 3. **After a week separator** (in programs) — attached to the week:
 
 ```
---- Week 4 (Deload) ---
+--- Week 4 ---
 @ deload: true
 > Recovery week — reduce all weights by 20%.
 ```
@@ -552,15 +555,20 @@ Week separators divide the program into microcycles. The name is free text betwe
 Examples:
 
 ```
---- Week 1 (template) ---
+--- Week 1 ---
+@ template: true
+
 --- Week 2 ---
---- Week 4 (Deload) ---
+
+--- Week 4 ---
+@ deload: true
+
 --- Cycle ---
 ```
 
 ### Template Weeks
 
-A week marked `(template)` in its name defines the base workout pattern. Subsequent weeks without explicit workout content are **derived** from the most recent template by applying progression rules.
+A week with `@ template: true` metadata defines the base workout pattern. Subsequent weeks without explicit workout content are **derived** from the most recent template by applying progression rules.
 
 - A template week must contain at least one workout with concrete steps.
 - Only weeks that differ from the derived version need explicit content.
@@ -582,7 +590,7 @@ Progression rules are program-level metadata that define how training variables 
 | `+Nrep/week` | Add N reps each week | `@ progression: Pull-Up +1rep/week` |
 | `-Ns/week` | Reduce rest by N seconds each week | `@ progression: Bench Press -5s/week` |
 
-**Action matching**: The action name in the progression rule matches steps case-insensitively. `Bench Press` matches `- Bench Press 3x8 @60kg`. Multiple progression rules can target the same action (e.g., weight and rest changes).
+**Action matching**: The action name in the progression rule must match the step action **exactly** (case-insensitive). `Bench Press` matches `- Bench Press 3x8 @60kg` but does not match `- Incline Bench Press 3x8 @50kg`. Multiple progression rules can target the same action (e.g., weight and rest changes).
 
 ### Deload Rules
 
@@ -601,10 +609,10 @@ Example:
 @ deload: week 4 x0.8
 ```
 
-A week can also be explicitly marked as a deload:
+A week can also be explicitly marked as a deload via metadata:
 
 ```
---- Week 4 (Deload) ---
+--- Week 4 ---
 @ deload: true
 ```
 
@@ -650,7 +658,8 @@ Programs without dates on workout headings are unscheduled — the consuming app
 @ progression: Dumbbell Row +2kg/week
 @ deload: week 4 x0.8
 
---- Week 1 (template) ---
+--- Week 1 ---
+@ template: true
 @ focus: Base volume
 
 # Day 1 — Upper [Strength Training]
@@ -659,8 +668,7 @@ Programs without dates on workout headings are unscheduled — the consuming app
   @ tempo: 30X1
 - Dumbbell Row 3x8 @24kg @rest 90s
   @ unilateral: true
-- 3x:
-  @ style: superset
+- superset 3x:
   - Lateral Raise 12 @8kg @rest 30s
   - Face Pull 15 @RPE 7 @rest 30s
 - Triceps Pushdown 3x15 @RPE 8 @rest 60s
@@ -678,7 +686,7 @@ Programs without dates on workout headings are unscheduled — the consuming app
 --- Week 3 ---
 > Derived from template. Bench +5kg, Squat +5kg, RDL +5kg, Row +4kg.
 
---- Week 4 (Deload) ---
+--- Week 4 ---
 @ deload: true
 > Auto-generated: 80% of Week 3 weights.
 ```
@@ -692,7 +700,7 @@ An OWF workout document (`.owf`) can contain multiple workouts:
 
 - Warmup 10min @Z1
 - 5x:
-  - Bike 5min @95% of FTP
+  - Bike 5min @95% FTP
   - Recover 3min @Z1
 - Cooldown 10min @Z1
 
@@ -768,7 +776,7 @@ step_content    = container_block | action_step ;
 
 container_block = repeat | interval | amrap | for_time ;
 
-repeat          = count "x:" ;
+repeat          = [ ( "superset" | "circuit" ) SP ] count "x:" ;
 interval        = "every" SP duration SP "for" SP duration ":" ;
 amrap           = "amrap" SP duration ":" ;
 for_time        = "for-time" [ SP duration ] ":" ;
@@ -793,7 +801,7 @@ rir             = "RIR" [ SP ] integer ;
 rest_inline     = "rest" SP duration ;
 pace            = [ "pace:" ] digit digit ":" digit digit "/" pace_unit ;
 pace_unit       = "km" | "mi" | "mile" ;
-percent_of      = number "%" SP "of" SP variable ;
+percent_of      = number "%" SP [ "of" SP ] variable ;
 variable        = { any_char - "@" - newline } ;
 bodyweight_plus = "bodyweight" SP "+" SP number ( "kg" | "lb" | "lbs" ) ;
 power           = integer "W" ;
@@ -829,7 +837,7 @@ These are conventional action names. Any word or phrase is a valid action — th
 
 ### Container Keywords
 
-`amrap`, `for-time`, `every`, `for`
+`amrap`, `for-time`, `every`, `for`, `superset`, `circuit`
 
 ### Parameter Prefixes
 

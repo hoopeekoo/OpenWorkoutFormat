@@ -175,8 +175,10 @@ def _print_node(node: Any, indent: int) -> None:
         _print_workout(node)
 
     elif isinstance(node, RepeatBlock):
-        style = f" ({node.style})" if node.style else ""
-        print(f"{prefix}{node.count}x{style}:")
+        if node.style:
+            print(f"{prefix}{node.style} {node.count}x:")
+        else:
+            print(f"{prefix}{node.count}x:")
         for child in node.steps:
             _print_node(child, indent + 1)
         for note in node.notes:

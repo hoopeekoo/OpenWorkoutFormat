@@ -88,10 +88,9 @@ def test_strength_step():
 
 
 def test_repeat_with_superset_style():
-    """3x: with @ style: superset metadata."""
+    """superset 3x: parses as RepeatBlock with style."""
     text = (
-        "# Strength\n\n- 3x:\n"
-        "  @ style: superset\n"
+        "# Strength\n\n- superset 3x:\n"
         "  - Bench Press 3x8rep @80kg @rest 90s\n"
         "  - Bent-Over Row 3x8rep @60kg @rest 90s"
     )
@@ -104,10 +103,9 @@ def test_repeat_with_superset_style():
 
 
 def test_repeat_with_circuit_style():
-    """3x: with @ style: circuit metadata."""
+    """circuit 3x: parses as RepeatBlock with style."""
     text = (
-        "# Strength\n\n- 3x:\n"
-        "  @ style: circuit\n"
+        "# Strength\n\n- circuit 3x:\n"
         "  - Kettlebell Swing 10rep @24kg\n"
         "  - Push-Up 15rep\n"
         "  - Air Squat 20rep"
@@ -118,6 +116,22 @@ def test_repeat_with_circuit_style():
     assert step.count == 3
     assert step.style == "circuit"
     assert len(step.steps) == 3
+
+
+def test_repeat_with_style_metadata_fallback():
+    """@ style: superset metadata still works as fallback."""
+    text = (
+        "# Strength\n\n- 3x:\n"
+        "  @ style: superset\n"
+        "  - Bench Press 3x8rep @80kg @rest 90s\n"
+        "  - Bent-Over Row 3x8rep @60kg @rest 90s"
+    )
+    doc = parse_document(text)
+    step = doc.workouts[0].steps[0]
+    assert isinstance(step, RepeatBlock)
+    assert step.count == 3
+    assert step.style == "superset"
+    assert len(step.steps) == 2
 
 
 def test_interval_emom():
@@ -213,7 +227,7 @@ def test_multiple_workouts():
 def test_metadata():
     text = (
         "@ FTP: 250W\n@ 1RM bench press: 100kg\n\n"
-        "# Ride [endurance]\n\n- Bike 30min @80% of FTP"
+        "# Ride [endurance]\n\n- Bike 30min @80% FTP"
     )
     doc = parse_document(text)
     assert doc.metadata == {"FTP": "250W", "1RM bench press": "100kg"}
@@ -312,17 +326,17 @@ def test_program_multiple_weeks():
     """Program with multiple weeks."""
     text = (
         "## Block (3 weeks)\n\n"
-        "--- Week 1 (template) ---\n\n# Day 1\n\n- Squat 3x5rep @100kg\n\n"
+        "--- Week 1 ---\n@ template: true\n\n# Day 1\n\n- Squat 3x5rep @100kg\n\n"
         "--- Week 2 ---\n\n"
-        "--- Week 3 (Deload) ---\n@ deload: true\n"
+        "--- Week 3 ---\n@ deload: true\n"
     )
     result = parse_document(text)
     assert isinstance(result, Program)
     assert len(result.weeks) == 3
-    assert result.weeks[0].name == "Week 1 (template)"
+    assert result.weeks[0].name == "Week 1"
     assert result.weeks[0].is_template is True
     assert result.weeks[1].name == "Week 2"
-    assert result.weeks[2].name == "Week 3 (Deload)"
+    assert result.weeks[2].name == "Week 3"
     assert result.weeks[2].is_deload is True
 
 
@@ -465,7 +479,7 @@ def test_heading_params_dont_affect_steps():
 def test_strength_with_percentage_weight():
     text = (
         "# Strength\n\n"
-        "- Bench Press 3x8rep @80% of 1RM bench press @rest 90s"
+        "- Bench Press 3x8rep @80% 1RM bench press @rest 90s"
     )
     doc = parse_document(text)
     step = doc.workouts[0].steps[0]

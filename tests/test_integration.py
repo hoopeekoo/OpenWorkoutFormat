@@ -15,19 +15,18 @@ from owf.serializer import dumps
 FULL_EXAMPLE = """\
 # Threshold Ride [endurance]
 
-- Warmup 15min @60% of FTP
+- Warmup 15min @60% FTP
 - 5x:
-  - Bike 5min @95% of FTP
-  - Recover 3min @50% of FTP
+  - Bike 5min @95% FTP
+  - Recover 3min @50% FTP
 - Cooldown 10min @Z1
 
 > Felt strong through set 3, faded on 4-5.
 
 # Upper Body [strength]
 
-- 3x:
-  @ style: superset
-  - Bench Press 3x8rep @80% of 1RM bench press @rest 90s
+- superset 3x:
+  - Bench Press 3x8rep @80% 1RM bench press @rest 90s
   - Bent-Over Row 3x8rep @60kg @rest 90s
 - Bicep Curl 3x12rep @15kg @rest 60s
 
@@ -74,8 +73,8 @@ MULTI_WORKOUT_EXAMPLE = """\
 # Threshold Ride [endurance]
 
 - 5x:
-  - Bike 5min @95% of FTP
-  - Recover 3min @50% of FTP
+  - Bike 5min @95% FTP
+  - Recover 3min @50% FTP
 
 # Upper Body [strength]
 
@@ -90,7 +89,8 @@ PROGRAM_EXAMPLE = """\
 @ progression: Bench Press +2.5kg/week
 @ deload: week 4 x0.8
 
---- Week 1 (template) ---
+--- Week 1 ---
+@ template: true
 
 # Day 1 [Strength Training]
 
@@ -104,7 +104,7 @@ PROGRAM_EXAMPLE = """\
 --- Week 2 ---
 > Derived from template + progression.
 
---- Week 4 (Deload) ---
+--- Week 4 ---
 @ deload: true
 """
 
@@ -251,8 +251,10 @@ def test_program_structure():
     assert prog.deload_rule.multiplier == 0.8
     assert len(prog.weeks) == 3
     assert prog.weeks[0].is_template is True
+    assert prog.weeks[0].name == "Week 1"
     assert len(prog.weeks[0].workouts) == 2
     assert prog.weeks[2].is_deload is True
+    assert prog.weeks[2].name == "Week 4"
 
 
 def test_resolve_full_example():
@@ -328,7 +330,8 @@ def test_serialize_program():
     assert "@ author: Coach Smith" in serialized
     assert "@ progression: Bench Press +2.5kg/week" in serialized
     assert "@ deload: week 4 x0.8" in serialized
-    assert "--- Week 1 (template) ---" in serialized
+    assert "--- Week 1 ---" in serialized
+    assert "@ template: true" in serialized
 
 
 def test_roundtrip_full_example():

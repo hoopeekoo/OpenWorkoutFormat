@@ -3,7 +3,8 @@
 @ phase: Build
 @ progression: Run -5s/week
 
---- Week 1 (template) ---
+--- Week 1 ---
+@ template: true
 @ focus: Base building
 
 # Easy Run [Running]

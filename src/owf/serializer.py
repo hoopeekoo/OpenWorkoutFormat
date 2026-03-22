@@ -110,6 +110,11 @@ def _serialize_week(week: Week) -> str:
     lines: list[str] = []
     lines.append(f"--- {week.name} ---")
 
+    if week.is_template:
+        lines.append("@ template: true")
+    if week.is_deload:
+        lines.append("@ deload: true")
+
     if week.metadata:
         for key, value in week.metadata.items():
             lines.append(f"@ {key}: {value}")
@@ -194,9 +199,10 @@ def _serialize_node(node: Any, indent: int) -> list[str]:
             lines.append(f"{child_prefix}> {note}")
 
     elif isinstance(node, RepeatBlock):
-        lines.append(f"{prefix}- {node.count}x:")
         if node.style:
-            lines.append(f"{child_prefix}@ style: {node.style}")
+            lines.append(f"{prefix}- {node.style} {node.count}x:")
+        else:
+            lines.append(f"{prefix}- {node.count}x:")
         lines.extend(meta)
         for child in node.steps:
             lines.extend(_serialize_node(child, indent + 1))
@@ -244,7 +250,7 @@ def _serialize_param(param: Param) -> str:
             if param.percent == int(param.percent)
             else param.percent
         )
-        return f"@{pct}% of {param.variable}"
+        return f"@{pct}% {param.variable}"
 
     if isinstance(param, PowerParam):
         return f"@{param.value}W"

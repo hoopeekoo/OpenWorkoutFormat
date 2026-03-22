@@ -6,7 +6,8 @@
 @ progression: Romanian Deadlift +2.5kg/week
 @ deload: week 4 x0.8
 
---- Week 1 (template) ---
+--- Week 1 ---
+@ template: true
 @ focus: Base volume
 
 # Day 1 — Upper [Strength Training]
@@ -15,8 +16,7 @@
 - Bench Press 3x8rep @60kg @rest 90s
 - Dumbbell Row 3x8rep @24kg @rest 90s
   @ unilateral: true
-- 3x:
-  @ style: superset
+- superset 3x:
   - Lateral Raise 12rep @8kg @rest 30s
   - Face Pull 15rep @RPE 7 @rest 30s
 - Triceps Pushdown 3x12rep @RPE 8 @rest 60s
@@ -34,8 +34,7 @@
 
 - Overhead Press 3x8rep @40kg @rest 90s
 - Pull-Up 3x8rep @bodyweight + 5kg @rest 90s
-- 3x:
-  @ style: superset
+- superset 3x:
   - Incline Dumbbell Bench Press 10rep @24kg @rest 60s
   - Cable Row 10rep @RPE 7 @rest 60s
 
@@ -53,6 +52,6 @@
 --- Week 3 ---
 > Derived from Week 1 template + progression rules.
 
---- Week 4 (Deload) ---
+--- Week 4 ---
 @ deload: true
 > Auto-derived: 80% of week 3 weights per program-level deload rule.

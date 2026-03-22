@@ -3,8 +3,7 @@
 
 - Warmup 5min @Z1
 
-- 4x:
-  @ style: circuit
+- circuit 4x:
   @ rest_between_rounds: 90s
   - Kettlebell Swing 15rep @24kg
   - Push-Up 15rep

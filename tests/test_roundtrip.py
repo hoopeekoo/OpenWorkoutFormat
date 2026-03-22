@@ -86,8 +86,7 @@ def test_roundtrip_multiple_workouts():
 
 def test_roundtrip_superset_style():
     _roundtrip(
-        "# Strength\n\n- 3x:\n"
-        "  @ style: superset\n"
+        "# Strength\n\n- superset 3x:\n"
         "  - Bench Press 3x8rep @80kg @rest 90s\n"
         "  - Bent-Over Row 3x8rep @60kg @rest 90s"
     )
@@ -95,8 +94,7 @@ def test_roundtrip_superset_style():
 
 def test_roundtrip_circuit_style():
     _roundtrip(
-        "# Strength\n\n- 3x:\n"
-        "  @ style: circuit\n"
+        "# Strength\n\n- circuit 3x:\n"
         "  - Kettlebell Swing 10rep @24kg\n"
         "  - Push-Up 15rep\n"
         "  - Air Squat 20rep"
@@ -104,7 +102,7 @@ def test_roundtrip_circuit_style():
 
 
 def test_roundtrip_percent_of():
-    _roundtrip("# Ride\n\n- Bike 30min @80% of FTP")
+    _roundtrip("# Ride\n\n- Bike 30min @80% FTP")
 
 
 def test_roundtrip_bodyweight_plus():
@@ -123,7 +121,8 @@ def test_roundtrip_program():
     _roundtrip(
         "## My Program (4 weeks)\n"
         "@ author: Coach\n\n"
-        "--- Week 1 (template) ---\n\n"
+        "--- Week 1 ---\n"
+        "@ template: true\n\n"
         "# Day 1\n\n- Bench Press 3x8rep @60kg\n\n"
         "--- Week 2 ---\n"
     )

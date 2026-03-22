@@ -9,8 +9,7 @@
 - Bench Press 3x8rep @80kg @rest 90s
 - Overhead Press 3x8rep @40kg @rest 90s
 - Incline Dumbbell Bench Press 3x10rep @28kg @rest 60s
-- 3x:
-  @ style: superset
+- superset 3x:
   - Lateral Raise 12rep @10kg @rest 30s
   - Triceps Pushdown 12rep @RPE 7 @rest 30s
 
@@ -18,8 +17,7 @@
 
 - Deadlift 3x5rep @120kg @rest 3min
 - Pull-Up 3x8rep @bodyweight + 10kg @rest 90s
-- 3x:
-  @ style: superset
+- superset 3x:
   - Dumbbell Row 10rep @32kg @rest 60s
     @ unilateral: true
   - Face Pull 15rep @RPE 7 @rest 30s

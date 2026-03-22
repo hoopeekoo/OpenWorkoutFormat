@@ -14,7 +14,7 @@ from owf.resolver import resolve
 
 
 def test_resolve_percentage_of_ftp():
-    text = "# Ride [bike]\n\n- Bike 5min @80% of FTP"
+    text = "# Ride [bike]\n\n- Bike 5min @80% FTP"
     doc = parse_document(text)
     resolved = resolve(doc, {"FTP": "250W"})
     step = resolved.workouts[0].steps[0]
@@ -25,7 +25,7 @@ def test_resolve_percentage_of_ftp():
 
 
 def test_resolve_percentage_of_1rm():
-    text = "# Strength\n\n- Bench Press 3x8rep @80% of 1RM bench press"
+    text = "# Strength\n\n- Bench Press 3x8rep @80% 1RM bench press"
     doc = parse_document(text)
     resolved = resolve(doc, {"1RM bench press": "100kg"})
     step = resolved.workouts[0].steps[0]
@@ -37,13 +37,13 @@ def test_resolve_percentage_of_1rm():
 
 
 def test_resolve_percentage_of_max_hr():
-    text = "# Run\n\n- Run 10min @70% of max HR"
+    text = "# Run\n\n- Run 10min @70% max HR"
     doc = parse_document(text)
     resolved = resolve(doc, {"max HR": "185bpm"})
     step = resolved.workouts[0].steps[0]
     param = step.params[0]
     assert isinstance(param, HeartRateParam)
-    assert param.value == 129  # int(70% of 185)
+    assert param.value == 129  # int(70% 185)
 
 
 def test_resolve_bodyweight_plus():
@@ -58,7 +58,7 @@ def test_resolve_bodyweight_plus():
 
 
 def test_resolve_with_different_ftp():
-    text = "# Ride [bike]\n\n- Bike 5min @80% of FTP"
+    text = "# Ride [bike]\n\n- Bike 5min @80% FTP"
     doc = parse_document(text)
     resolved = resolve(doc, {"FTP": "300W"})
     step = resolved.workouts[0].steps[0]
@@ -68,7 +68,7 @@ def test_resolve_with_different_ftp():
 
 
 def test_resolve_undefined_variable():
-    text = "# Ride [bike]\n\n- Bike 5min @80% of FTP"
+    text = "# Ride [bike]\n\n- Bike 5min @80% FTP"
     doc = parse_document(text)
     with pytest.raises(ResolveError, match="Undefined variable"):
         resolve(doc)

@@ -119,31 +119,32 @@ def parse_params(
         except ValueError:
             pass
 
-        # 5. Percent of variable: @N% — collect "of VAR" from following tokens
+        # 5. Percent of variable: @N% [of] VAR — "of" is optional
         pct_m = re.match(r"^(\d+(?:\.\d+)?)%$", value)
         if pct_m:
             pct = float(pct_m.group(1))
-            # Expect "of" then variable name tokens
-            if i + 1 < len(tokens) and tokens[i + 1].lower() == "of":
-                var_tokens: list[str] = []
-                j = i + 2
-                while j < len(tokens):
-                    next_tok = tokens[j]
-                    if next_tok.startswith("@"):
-                        break
-                    var_tokens.append(next_tok)
-                    j += 1
-                if var_tokens:
-                    variable = " ".join(var_tokens)
-                    params.append(
-                        PercentOfParam(
-                            percent=pct, variable=variable, span=span
-                        )
+            # Skip optional "of" keyword, then collect variable name tokens
+            j = i + 1
+            if j < len(tokens) and tokens[j].lower() == "of":
+                j += 1
+            var_tokens: list[str] = []
+            while j < len(tokens):
+                next_tok = tokens[j]
+                if next_tok.startswith("@"):
+                    break
+                var_tokens.append(next_tok)
+                j += 1
+            if var_tokens:
+                variable = " ".join(var_tokens)
+                params.append(
+                    PercentOfParam(
+                        percent=pct, variable=variable, span=span
                     )
-                    i = j
-                    continue
+                )
+                i = j
+                continue
             raise ParseError(
-                f"Expected 'of VARIABLE' after '{pct}%'", span
+                f"Expected variable name after '{pct}%'", span
             )
 
         # 6. Bodyweight plus: @bodyweight — collect "+ Nkg" from following tokens

@@ -79,29 +79,25 @@ def test_serialize_rir():
 
 def test_serialize_superset_style():
     text = (
-        "# Strength\n\n- 3x:\n"
-        "  @ style: superset\n"
+        "# Strength\n\n- superset 3x:\n"
         "  - Bench Press 3x8rep @80kg @rest 90s\n"
         "  - Bent-Over Row 3x8rep @60kg @rest 90s\n"
     )
     doc = parse_document(text)
     result = dumps(doc)
-    assert "- 3x:" in result
-    assert "@ style: superset" in result
+    assert "- superset 3x:" in result
 
 
 def test_serialize_circuit_style():
     text = (
-        "# Strength\n\n- 3x:\n"
-        "  @ style: circuit\n"
+        "# Strength\n\n- circuit 3x:\n"
         "  - Kettlebell Swing 10rep @24kg\n"
         "  - Push-Up 15rep\n"
         "  - Air Squat 20rep\n"
     )
     doc = parse_document(text)
     result = dumps(doc)
-    assert "- 3x:" in result
-    assert "@ style: circuit" in result
+    assert "- circuit 3x:" in result
     assert "  - Kettlebell Swing 10rep @24kg" in result
 
 
@@ -127,7 +123,7 @@ def test_serialize_percent_of():
     text = "# Ride\n\n- Bike 30min @80% of FTP\n"
     doc = parse_document(text)
     result = dumps(doc)
-    assert "@80% of FTP" in result
+    assert "@80% FTP" in result
 
 
 def test_serialize_bodyweight_plus():
@@ -157,7 +153,8 @@ def test_serialize_program():
         "@ author: Coach\n"
         "@ progression: Bench Press +2.5kg/week\n"
         "@ deload: week 4 x0.8\n\n"
-        "--- Week 1 (template) ---\n\n"
+        "--- Week 1 ---\n"
+        "@ template: true\n\n"
         "# Day 1\n\n- Bench Press 3x8rep @60kg\n\n"
         "--- Week 2 ---\n"
     )
@@ -168,5 +165,6 @@ def test_serialize_program():
     assert "@ author: Coach" in result
     assert "@ progression: Bench Press +2.5kg/week" in result
     assert "@ deload: week 4 x0.8" in result
-    assert "--- Week 1 (template) ---" in result
+    assert "--- Week 1 ---" in result
+    assert "@ template: true" in result
     assert "--- Week 2 ---" in result

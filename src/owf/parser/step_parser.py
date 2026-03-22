@@ -219,7 +219,7 @@ def _build_week(
     name = separator.content if separator else ""
     span = separator.span if separator else None
 
-    is_template = "(template)" in name.lower() if name else False
+    is_template = False
     is_deload = False
 
     # Extract week-level metadata and notes
@@ -237,6 +237,8 @@ def _build_week(
             key, _, value = ln.content.partition(": ")
             if key == "deload" and value.strip().lower() == "true":
                 is_deload = True
+            elif key == "template" and value.strip().lower() == "true":
+                is_template = True
             else:
                 metadata[key] = value
         elif ln.line_type == LineType.NOTE and not past_metadata:
@@ -247,10 +249,6 @@ def _build_week(
         else:
             if past_metadata:
                 workout_lines.append(ln)
-
-    # If "(Deload)" in name, also mark as deload
-    if name and "(deload)" in name.lower():
-        is_deload = True
 
     workouts = _split_workouts(workout_lines)
 
@@ -414,14 +412,16 @@ def _parse_block(block: RawBlock) -> Any:
         except ValueError:
             pass
 
-    # Repeat: Nx:
-    repeat_m = re.match(r"^(\d+)x\s*:\s*$", content)
+    # Repeat: Nx:, superset Nx:, circuit Nx:
+    repeat_m = re.match(r"^(?:(superset|circuit)\s+)?(\d+)x\s*:\s*$", content)
     if repeat_m:
-        count = int(repeat_m.group(1))
+        style = repeat_m.group(1)  # None, "superset", or "circuit"
+        count = int(repeat_m.group(2))
         children = tuple(_parse_block(c) for c in block.children)
 
-        # Check for @ style metadata (superset, circuit)
-        style = block.metadata.pop("style", None)
+        # Also accept @ style metadata as fallback
+        if style is None:
+            style = block.metadata.pop("style", None)
 
         return RepeatBlock(
             count=count,
@@ -434,18 +434,12 @@ def _parse_block(block: RawBlock) -> Any:
 
     # Interval: every <interval> for <duration>:
     interval_m = re.match(
-        r"^every\s+(\d+(?:\.\d+)?(?:s|sec|min|h|hr|hour)?)\s+for\s+(\d+(?:\.\d+)?(?:s|sec|min|h|hr|hour)?)\s*:\s*$",
+        r"^every\s+(\d+(?:\.\d+)?(?:s|sec|min|h|hr|hour))\s+for\s+(\d+(?:\.\d+)?(?:s|sec|min|h|hr|hour))\s*:\s*$",
         content,
     )
     if interval_m:
-        interval_str = interval_m.group(1)
-        dur_str = interval_m.group(2)
-        if not re.search(r"[a-zA-Z]", interval_str):
-            interval_str += "min"
-        if not re.search(r"[a-zA-Z]", dur_str):
-            dur_str += "min"
-        interval = Duration.parse(interval_str)
-        dur = Duration.parse(dur_str)
+        interval = Duration.parse(interval_m.group(1))
+        dur = Duration.parse(interval_m.group(2))
         children = tuple(_parse_block(c) for c in block.children)
         return Interval(
             interval=interval,
@@ -458,14 +452,11 @@ def _parse_block(block: RawBlock) -> Any:
 
     # AMRAP: amrap <dur>:
     amrap_m = re.match(
-        r"^amrap\s+(\d+(?:\.\d+)?(?:s|sec|min|h|hr|hour)?)\s*:\s*$",
+        r"^amrap\s+(\d+(?:\.\d+)?(?:s|sec|min|h|hr|hour))\s*:\s*$",
         content,
     )
     if amrap_m:
-        dur_str = amrap_m.group(1)
-        if not re.search(r"[a-zA-Z]", dur_str):
-            dur_str += "min"
-        dur = Duration.parse(dur_str)
+        dur = Duration.parse(amrap_m.group(1))
         children = tuple(_parse_block(c) for c in block.children)
         return AMRAP(
             duration=dur,
@@ -477,16 +468,13 @@ def _parse_block(block: RawBlock) -> Any:
 
     # For-time: for-time: or for-time <dur>:
     ft_m = re.match(
-        r"^for-time\s*(?:(\d+(?:\.\d+)?(?:s|sec|min|h|hr|hour)?)\s*)?:\s*$",
+        r"^for-time\s*(?:(\d+(?:\.\d+)?(?:s|sec|min|h|hr|hour))\s*)?:\s*$",
         content,
     )
     if ft_m:
         time_cap = None
         if ft_m.group(1):
-            cap_str = ft_m.group(1)
-            if not re.search(r"[a-zA-Z]", cap_str):
-                cap_str += "min"
-            time_cap = Duration.parse(cap_str)
+            time_cap = Duration.parse(ft_m.group(1))
         children = tuple(_parse_block(c) for c in block.children)
         return ForTime(
             time_cap=time_cap,
