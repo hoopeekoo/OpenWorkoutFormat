@@ -1,5 +1,6 @@
 """Round-trip tests: parse -> serialize -> parse should produce equivalent AST."""
 
+from owf.ast.base import Program
 from owf.parser.step_parser import parse_document
 from owf.serializer import dumps
 
@@ -9,6 +10,12 @@ def _roundtrip(text: str) -> None:
     doc1 = parse_document(text)
     serialized = dumps(doc1)
     doc2 = parse_document(serialized)
+
+    if isinstance(doc1, Program):
+        assert isinstance(doc2, Program)
+        assert doc1.name == doc2.name
+        assert len(doc1.weeks) == len(doc2.weeks)
+        return
 
     # Compare structurally (ignoring spans)
     assert len(doc1.workouts) == len(doc2.workouts)
@@ -40,9 +47,9 @@ def test_roundtrip_intervals():
     )
 
 
-def test_roundtrip_emom():
+def test_roundtrip_interval():
     _roundtrip(
-        "# WoD [wod]\n\n- emom 10min:\n"
+        "# WoD [wod]\n\n- every 1min for 10min:\n"
         "  - Power Clean 3rep @70kg"
     )
 
@@ -77,17 +84,19 @@ def test_roundtrip_multiple_workouts():
     )
 
 
-def test_roundtrip_superset():
+def test_roundtrip_superset_style():
     _roundtrip(
-        "# Strength\n\n- 3x superset:\n"
+        "# Strength\n\n- 3x:\n"
+        "  @ style: superset\n"
         "  - Bench Press 3x8rep @80kg @rest 90s\n"
         "  - Bent-Over Row 3x8rep @60kg @rest 90s"
     )
 
 
-def test_roundtrip_circuit():
+def test_roundtrip_circuit_style():
     _roundtrip(
-        "# Strength\n\n- 3x circuit:\n"
+        "# Strength\n\n- 3x:\n"
+        "  @ style: circuit\n"
         "  - Kettlebell Swing 10rep @24kg\n"
         "  - Push-Up 15rep\n"
         "  - Air Squat 20rep"
@@ -108,3 +117,13 @@ def test_roundtrip_zone():
 
 def test_roundtrip_heart_rate():
     _roundtrip("# Run\n\n- Run 10min @140bpm")
+
+
+def test_roundtrip_program():
+    _roundtrip(
+        "## My Program (4 weeks)\n"
+        "@ author: Coach\n\n"
+        "--- Week 1 (template) ---\n\n"
+        "# Day 1\n\n- Bench Press 3x8rep @60kg\n\n"
+        "--- Week 2 ---\n"
+    )

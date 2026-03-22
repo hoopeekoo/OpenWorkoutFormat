@@ -1,0 +1,33 @@
+## Push Pull Legs (rotating)
+@ author: Coach Johnson
+@ cycle: true
+
+--- Cycle ---
+
+# Push [Strength Training]
+
+- Bench Press 3x8rep @80kg @rest 90s
+- Overhead Press 3x8rep @40kg @rest 90s
+- Incline Dumbbell Bench Press 3x10rep @28kg @rest 60s
+- 3x:
+  @ style: superset
+  - Lateral Raise 12rep @10kg @rest 30s
+  - Triceps Pushdown 12rep @RPE 7 @rest 30s
+
+# Pull [Strength Training]
+
+- Deadlift 3x5rep @120kg @rest 3min
+- Pull-Up 3x8rep @bodyweight + 10kg @rest 90s
+- 3x:
+  @ style: superset
+  - Dumbbell Row 10rep @32kg @rest 60s
+    @ unilateral: true
+  - Face Pull 15rep @RPE 7 @rest 30s
+- Barbell Curl 3x10rep @30kg @rest 60s
+
+# Legs [Strength Training]
+
+- Back Squat 3x8rep @100kg @rest 2min
+- Romanian Deadlift 3x10rep @80kg @rest 90s
+- Leg Press 3x12rep @150kg @rest 90s
+- Standing Calf Raise 4x15rep @RPE 8 @rest 45s

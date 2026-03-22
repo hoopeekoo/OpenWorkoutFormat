@@ -5,18 +5,22 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from owf.ast.base import Document, Workout, WorkoutDate
+from owf.ast.base import (
+    DeloadRule,
+    Document,
+    Program,
+    ProgressionRule,
+    Week,
+    Workout,
+    WorkoutDate,
+)
 from owf.ast.blocks import (
     AMRAP,
-    EMOM,
-    AlternatingEMOM,
-    Circuit,
-    CustomInterval,
     ForTime,
-    Superset,
+    Interval,
 )
 from owf.ast.steps import (
-    RepeatStep,
+    RepeatBlock,
     Step,
 )
 from owf.errors import ParseError, SourceSpan
@@ -25,35 +29,239 @@ from owf.parser.param_parser import parse_params
 from owf.parser.scanner import LineType, LogicalLine, scan
 from owf.units import Distance, Duration
 
-# Regex for sets x reps: 3x8rep, 3x8, 100rep
+# Regex for sets x reps: 3x8rep, 3x8, 100rep, 3xmax, 3xmaxrep
 SETS_REPS_PATTERN = re.compile(
     r"^(?:(?P<sets>\d+)x)?(?P<reps>\d+|max)(?:rep|reps)?$", re.IGNORECASE
 )
 
+# Progression rule: +2.5kg/week, +5%/week, +1rep/week, -5s/week
+_PROGRESSION_RE = re.compile(
+    r"^(.+?)\s+([+-])(\d+(?:\.\d+)?)(kg|lb|lbs|%|rep|reps|s|sec|min)/(\w+)$"
+)
 
-def parse_document(text: str) -> Document:
-    """Parse a full OWF document from text."""
+# Deload rule: week 4 x0.8
+_DELOAD_RE = re.compile(r"^week\s+(\d+)\s+x(\d+(?:\.\d+)?)$")
+
+
+def parse_document(text: str) -> Document | Program:
+    """Parse a full OWF document from text.
+
+    Returns a Document for workout files (.owf) or a Program for
+    program files (.owfp).
+    """
     lines = scan(text)
 
+    # Check if this is a program document (has ## heading)
+    has_program = any(ln.line_type == LineType.PROGRAM_HEADING for ln in lines)
+
+    if has_program:
+        return _parse_program(lines)
+    return _parse_workout_document(lines)
+
+
+def _parse_workout_document(lines: list[LogicalLine]) -> Document:
+    """Parse a workout document (no ## heading)."""
     # Extract document-level metadata: @ lines before any heading
     metadata: dict[str, str] = {}
     for ln in lines:
         if ln.line_type == LineType.METADATA and ln.indent == 0:
             key, _, value = ln.content.partition(": ")
             metadata[key] = value
-        elif ln.line_type in (
-            LineType.HEADING,
-            LineType.STEP,
-        ):
+        elif ln.line_type in (LineType.HEADING, LineType.STEP):
             break
 
-    # Split lines into workout sections
     workouts = _split_workouts(lines)
 
     return Document(
         workouts=tuple(workouts),
         metadata=metadata,
         span=SourceSpan(line=1, col=1),
+    )
+
+
+def _parse_program(lines: list[LogicalLine]) -> Program:
+    """Parse a program document (has ## heading)."""
+    # Find the program heading
+    program_heading: LogicalLine | None = None
+    heading_idx = 0
+    for i, ln in enumerate(lines):
+        if ln.line_type == LineType.PROGRAM_HEADING:
+            program_heading = ln
+            heading_idx = i
+            break
+
+    if program_heading is None:
+        raise ParseError("No program heading (##) found", SourceSpan(line=1, col=1))
+
+    name, duration = _parse_program_heading(program_heading.content)
+
+    # Extract program-level metadata (between ## heading and first --- or #)
+    metadata: dict[str, str] = {}
+    progression_rules: list[ProgressionRule] = []
+    deload_rule: DeloadRule | None = None
+    is_cycle = False
+
+    for ln in lines[heading_idx + 1 :]:
+        if ln.line_type == LineType.METADATA and ln.indent == 0:
+            key, _, value = ln.content.partition(": ")
+            if key == "progression":
+                rule = _parse_progression_rule(value, ln.span)
+                if rule:
+                    progression_rules.append(rule)
+            elif key == "deload":
+                deload_rule = _parse_deload_rule(value, ln.span)
+            elif key == "cycle" and value.strip().lower() == "true":
+                is_cycle = True
+            else:
+                metadata[key] = value
+        elif ln.line_type in (
+            LineType.HEADING,
+            LineType.WEEK_SEPARATOR,
+            LineType.STEP,
+        ):
+            break
+
+    # Split into weeks
+    weeks = _split_weeks(lines)
+
+    return Program(
+        name=name,
+        duration=duration,
+        progression_rules=tuple(progression_rules),
+        deload_rule=deload_rule,
+        is_cycle=is_cycle,
+        weeks=tuple(weeks),
+        metadata=metadata,
+        span=program_heading.span,
+    )
+
+
+def _parse_program_heading(content: str) -> tuple[str, str | None]:
+    """Parse program heading: 'Name (duration)' → (name, duration)."""
+    m = re.match(r"^(.+?)\s*\(([^)]+)\)\s*$", content)
+    if m:
+        return m.group(1).strip(), m.group(2).strip()
+    return content.strip(), None
+
+
+def _parse_progression_rule(
+    value: str, span: SourceSpan
+) -> ProgressionRule | None:
+    """Parse a progression rule value like 'Bench Press +2.5kg/week'."""
+    m = _PROGRESSION_RE.match(value.strip())
+    if not m:
+        return None
+
+    action = m.group(1).strip()
+    direction = m.group(2)
+    amount = float(m.group(3))
+    unit = m.group(4)
+    per = m.group(5)
+
+    # Normalize unit
+    if unit in ("reps",):
+        unit = "rep"
+    if unit in ("sec",):
+        unit = "s"
+
+    return ProgressionRule(
+        action=action,
+        amount=amount,
+        unit=unit,
+        direction=direction,
+        per=per,
+        span=span,
+    )
+
+
+def _parse_deload_rule(
+    value: str, span: SourceSpan
+) -> DeloadRule | None:
+    """Parse a deload rule value like 'week 4 x0.8'."""
+    m = _DELOAD_RE.match(value.strip())
+    if not m:
+        return None
+    return DeloadRule(
+        week=int(m.group(1)),
+        multiplier=float(m.group(2)),
+        span=span,
+    )
+
+
+def _split_weeks(lines: list[LogicalLine]) -> list[Week]:
+    """Split program lines into weeks."""
+    weeks: list[Week] = []
+    current_sep: LogicalLine | None = None
+    current_lines: list[LogicalLine] = []
+
+    # Skip lines before the first week separator
+    started = False
+    for ln in lines:
+        if ln.line_type == LineType.WEEK_SEPARATOR:
+            if started and (current_sep is not None or current_lines):
+                weeks.append(_build_week(current_sep, current_lines))
+            current_sep = ln
+            current_lines = []
+            started = True
+        elif started:
+            current_lines.append(ln)
+
+    if started and (current_sep is not None or current_lines):
+        weeks.append(_build_week(current_sep, current_lines))
+
+    return weeks
+
+
+def _build_week(
+    separator: LogicalLine | None, lines: list[LogicalLine]
+) -> Week:
+    """Build a Week node from a separator and its body lines."""
+    name = separator.content if separator else ""
+    span = separator.span if separator else None
+
+    is_template = "(template)" in name.lower() if name else False
+    is_deload = False
+
+    # Extract week-level metadata and notes
+    metadata: dict[str, str] = {}
+    workout_lines: list[LogicalLine] = []
+    notes: list[str] = []
+    past_metadata = False
+
+    for ln in lines:
+        if (
+            not past_metadata
+            and ln.line_type == LineType.METADATA
+            and ln.indent == 0
+        ):
+            key, _, value = ln.content.partition(": ")
+            if key == "deload" and value.strip().lower() == "true":
+                is_deload = True
+            else:
+                metadata[key] = value
+        elif ln.line_type == LineType.NOTE and not past_metadata:
+            notes.append(ln.content)
+        elif ln.line_type in (LineType.HEADING, LineType.STEP):
+            past_metadata = True
+            workout_lines.append(ln)
+        else:
+            if past_metadata:
+                workout_lines.append(ln)
+
+    # If "(Deload)" in name, also mark as deload
+    if name and "(deload)" in name.lower():
+        is_deload = True
+
+    workouts = _split_workouts(workout_lines)
+
+    return Week(
+        name=name,
+        is_template=is_template,
+        is_deload=is_deload,
+        workouts=tuple(workouts),
+        metadata=metadata,
+        notes=tuple(notes),
+        span=span,
     )
 
 
@@ -146,12 +354,10 @@ def _parse_heading(
     """Parse heading content like 'Name [type] (2025-02-27) @RPE 7 @RIR 2'.
 
     Returns (name, sport_type, date, rpe, rir).
-
-    Any bracket tag sets sport_type (e.g. [Running], [endurance], [Strength Training]).
     """
     text = content
 
-    # Strip trailing @RPE / @RIR (EBNF: heading ends with { SP heading_param })
+    # Strip trailing @RPE / @RIR
     rpe: int | None = None
     rir: int | None = None
 
@@ -179,7 +385,7 @@ def _parse_heading(
         )
         text = text[: dm.start()].rstrip()
 
-    # Extract [tag] — accepts any string inside brackets
+    # Extract [tag]
     tm = re.match(r"^(.+?)\s*\[([^\]]+)\]\s*$", text)
     if tm:
         name = tm.group(1).strip()
@@ -208,77 +414,32 @@ def _parse_block(block: RawBlock) -> Any:
         except ValueError:
             pass
 
-    # Repeat: Nx: or Nx superset: or Nx circuit:
-    repeat_m = re.match(
-        r"^(\d+)x\s*(?:superset|circuit\s*)?:\s*$", content
-    )
+    # Repeat: Nx:
+    repeat_m = re.match(r"^(\d+)x\s*:\s*$", content)
     if repeat_m:
         count = int(repeat_m.group(1))
         children = tuple(_parse_block(c) for c in block.children)
 
-        if "superset" in content.lower():
-            return Superset(
-                count=count,
-                steps=children,
-                metadata=block.metadata,
-                notes=tuple(block.notes),
-                span=span,
-            )
+        # Check for @ style metadata (superset, circuit)
+        style = block.metadata.pop("style", None)
 
-        if "circuit" in content.lower():
-            return Circuit(
-                count=count,
-                steps=children,
-                metadata=block.metadata,
-                notes=tuple(block.notes),
-                span=span,
-            )
-
-        return RepeatStep(
+        return RepeatBlock(
             count=count,
             steps=children,
+            style=style,
             metadata=block.metadata,
             notes=tuple(block.notes),
             span=span,
         )
 
-    # EMOM: emom <dur>: or emom <dur> alternating:
-    emom_m = re.match(
-        r"^emom\s+(\d+(?:\.\d+)?(?:s|sec|min|h|hr|hour)?)\s*(alternating\s*)?:\s*$",
-        content,
-    )
-    if emom_m:
-        dur_str = emom_m.group(1)
-        if not re.search(r"[a-zA-Z]", dur_str):
-            dur_str += "min"
-        dur = Duration.parse(dur_str)
-        children = tuple(_parse_block(c) for c in block.children)
-        alternating = emom_m.group(2) is not None
-
-        if alternating:
-            return AlternatingEMOM(
-                duration=dur,
-                steps=children,
-                metadata=block.metadata,
-                notes=tuple(block.notes),
-                span=span,
-            )
-        return EMOM(
-            duration=dur,
-            steps=children,
-            metadata=block.metadata,
-            notes=tuple(block.notes),
-            span=span,
-        )
-
-    # Custom interval: every <interval> for <duration>:
-    custom_m = re.match(
+    # Interval: every <interval> for <duration>:
+    interval_m = re.match(
         r"^every\s+(\d+(?:\.\d+)?(?:s|sec|min|h|hr|hour)?)\s+for\s+(\d+(?:\.\d+)?(?:s|sec|min|h|hr|hour)?)\s*:\s*$",
         content,
     )
-    if custom_m:
-        interval_str = custom_m.group(1)
-        dur_str = custom_m.group(2)
+    if interval_m:
+        interval_str = interval_m.group(1)
+        dur_str = interval_m.group(2)
         if not re.search(r"[a-zA-Z]", interval_str):
             interval_str += "min"
         if not re.search(r"[a-zA-Z]", dur_str):
@@ -286,7 +447,7 @@ def _parse_block(block: RawBlock) -> Any:
         interval = Duration.parse(interval_str)
         dur = Duration.parse(dur_str)
         children = tuple(_parse_block(c) for c in block.children)
-        return CustomInterval(
+        return Interval(
             interval=interval,
             duration=dur,
             steps=children,
@@ -335,20 +496,12 @@ def _parse_block(block: RawBlock) -> Any:
             span=span,
         )
 
-    # Parse as unified step (any action, any combination of fields)
+    # Parse as unified step
     return _parse_step_line(content, block, span)
 
 
 def _parse_step_line(content: str, block: RawBlock, span: SourceSpan) -> Step:
-    """Parse a step line into a unified Step node.
-
-    Tokens are pattern-matched (order-independent after the action):
-    - Sets×Reps: 3x10rep, maxrep
-    - Duration: 20min, 90s
-    - Distance: 5km, 400m
-    - Param: @Z2, @80kg, @RPE 7
-    - Rest: @rest 90s (inline rest modifier)
-    """
+    """Parse a step line into a unified Step node."""
     tokens = content.split()
     if not tokens:
         raise ParseError("Empty step", span)
@@ -419,10 +572,7 @@ def _build_step(
     block: RawBlock,
     span: SourceSpan,
 ) -> Step:
-    """Build a unified Step from parsed tokens.
-
-    All tokens populate the single Step node — any combination is valid.
-    """
+    """Build a unified Step from parsed tokens."""
     sets: int | None = None
     reps: int | str | None = None
     duration: Duration | None = None

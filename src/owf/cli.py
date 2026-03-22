@@ -8,15 +8,11 @@ import json
 import sys
 from typing import Any
 
-from owf.ast.base import Workout
+from owf.ast.base import Program, Week, Workout
 from owf.ast.blocks import (
     AMRAP,
-    EMOM,
-    AlternatingEMOM,
-    Circuit,
-    CustomInterval,
     ForTime,
-    Superset,
+    Interval,
 )
 from owf.ast.params import (
     BodyweightPlusParam,
@@ -30,7 +26,7 @@ from owf.ast.params import (
     ZoneParam,
 )
 from owf.ast.steps import (
-    RepeatStep,
+    RepeatBlock,
     Step,
 )
 from owf.loader import load
@@ -40,7 +36,7 @@ from owf.resolver import resolve
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(
         prog="owf",
-        description="Parse and display OpenWorkoutFormat (.owf) files.",
+        description="Parse and display OpenWorkoutFormat (.owf/.owfp) files.",
     )
     parser.add_argument("files", nargs="+", help="OWF files to parse")
     parser.add_argument(
@@ -68,14 +64,17 @@ def main(argv: list[str] | None = None) -> None:
             print(json.dumps(_to_dict(doc), indent=2))
             continue
 
-        if doc.metadata:
-            print("Metadata:")
-            for key, value in doc.metadata.items():
-                print(f"  {key}: {value}")
-            print()
+        if isinstance(doc, Program):
+            _print_program(doc)
+        else:
+            if doc.metadata:
+                print("Metadata:")
+                for key, value in doc.metadata.items():
+                    print(f"  {key}: {value}")
+                print()
 
-        for workout in doc.workouts:
-            _print_workout(workout)
+            for workout in doc.workouts:
+                _print_workout(workout)
 
 
 def _to_dict(obj: Any) -> Any:
@@ -97,6 +96,37 @@ def _to_dict(obj: Any) -> Any:
             result[f.name] = _to_dict(value)
         return result
     return str(obj)
+
+
+def _print_program(program: Program) -> None:
+    header = f"## {program.name}"
+    if program.duration:
+        header += f" ({program.duration})"
+    print(header)
+    print("=" * len(header))
+
+    if program.metadata:
+        for key, value in program.metadata.items():
+            print(f"  {key}: {value}")
+
+    for rule in program.progression_rules:
+        print(f"  progression: {rule.action} {rule.direction}{rule.amount}{rule.unit}/{rule.per}")
+
+    if program.deload_rule:
+        print(f"  deload: week {program.deload_rule.week} x{program.deload_rule.multiplier}")
+
+    print()
+
+    for week in program.weeks:
+        _print_week(week)
+
+
+def _print_week(week: Week) -> None:
+    print(f"--- {week.name} ---")
+    for note in week.notes:
+        print(f"  > {note}")
+    for workout in week.workouts:
+        _print_workout(workout)
 
 
 def _print_workout(workout: Any) -> None:
@@ -144,43 +174,17 @@ def _print_node(node: Any, indent: int) -> None:
     elif isinstance(node, Workout):
         _print_workout(node)
 
-    elif isinstance(node, RepeatStep):
-        print(f"{prefix}{node.count}x:")
+    elif isinstance(node, RepeatBlock):
+        style = f" ({node.style})" if node.style else ""
+        print(f"{prefix}{node.count}x{style}:")
         for child in node.steps:
             _print_node(child, indent + 1)
         for note in node.notes:
             print(f"{prefix}> {note}")
 
-    elif isinstance(node, Superset):
-        print(f"{prefix}{node.count}x superset:")
-        for child in node.steps:
-            _print_node(child, indent + 1)
-        for note in node.notes:
-            print(f"{prefix}> {note}")
-
-    elif isinstance(node, Circuit):
-        print(f"{prefix}{node.count}x circuit:")
-        for child in node.steps:
-            _print_node(child, indent + 1)
-        for note in node.notes:
-            print(f"{prefix}> {note}")
-
-    elif isinstance(node, EMOM):
-        print(f"{prefix}emom {node.duration}:")
-        for child in node.steps:
-            _print_node(child, indent + 1)
-        for note in node.notes:
-            print(f"{prefix}> {note}")
-
-    elif isinstance(node, AlternatingEMOM):
-        print(f"{prefix}emom {node.duration} alternating:")
-        for child in node.steps:
-            _print_node(child, indent + 1)
-        for note in node.notes:
-            print(f"{prefix}> {note}")
-
-    elif isinstance(node, CustomInterval):
-        print(f"{prefix}every {node.interval} for {node.duration}:")
+    elif isinstance(node, Interval):
+        alt = " (alternating)" if node.is_alternating else ""
+        print(f"{prefix}every {node.interval} for {node.duration}{alt}:")
         for child in node.steps:
             _print_node(child, indent + 1)
         for note in node.notes:

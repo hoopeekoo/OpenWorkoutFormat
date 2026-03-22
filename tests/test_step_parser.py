@@ -2,18 +2,14 @@
 
 import pytest
 
-from owf.ast.base import Document
+from owf.ast.base import Document, Program
 from owf.ast.blocks import (
     AMRAP,
-    EMOM,
-    AlternatingEMOM,
-    Circuit,
-    CustomInterval,
     ForTime,
-    Superset,
+    Interval,
 )
 from owf.ast.params import PercentOfParam, PowerParam, RIRParam
-from owf.ast.steps import RepeatStep, Step
+from owf.ast.steps import RepeatBlock, Step
 from owf.errors import ParseError
 from owf.parser.step_parser import parse_document
 
@@ -69,7 +65,7 @@ def test_repeat_block():
     )
     doc = parse_document(text)
     step = doc.workouts[0].steps[0]
-    assert isinstance(step, RepeatStep)
+    assert isinstance(step, RepeatBlock)
     assert step.count == 5
     assert len(step.steps) == 2
     assert isinstance(step.steps[0], Step)
@@ -91,53 +87,65 @@ def test_strength_step():
     assert step.rest.seconds == 90
 
 
-def test_superset():
+def test_repeat_with_superset_style():
+    """3x: with @ style: superset metadata."""
     text = (
-        "# Strength\n\n- 3x superset:\n"
+        "# Strength\n\n- 3x:\n"
+        "  @ style: superset\n"
         "  - Bench Press 3x8rep @80kg @rest 90s\n"
         "  - Bent-Over Row 3x8rep @60kg @rest 90s"
     )
     doc = parse_document(text)
     step = doc.workouts[0].steps[0]
-    assert isinstance(step, Superset)
+    assert isinstance(step, RepeatBlock)
     assert step.count == 3
+    assert step.style == "superset"
     assert len(step.steps) == 2
 
 
-def test_circuit():
+def test_repeat_with_circuit_style():
+    """3x: with @ style: circuit metadata."""
     text = (
-        "# Strength\n\n- 3x circuit:\n"
+        "# Strength\n\n- 3x:\n"
+        "  @ style: circuit\n"
         "  - Kettlebell Swing 10rep @24kg\n"
         "  - Push-Up 15rep\n"
         "  - Air Squat 20rep"
     )
     doc = parse_document(text)
     step = doc.workouts[0].steps[0]
-    assert isinstance(step, Circuit)
+    assert isinstance(step, RepeatBlock)
     assert step.count == 3
+    assert step.style == "circuit"
     assert len(step.steps) == 3
 
 
-def test_emom():
-    text = "# WoD [mixed]\n\n- emom 10min:\n  - Power Clean 3rep @70kg"
+def test_interval_emom():
+    """every 1min for 10min: parses as Interval."""
+    text = "# WoD [mixed]\n\n- every 1min for 10min:\n  - Power Clean 3rep @70kg"
     doc = parse_document(text)
     step = doc.workouts[0].steps[0]
-    assert isinstance(step, EMOM)
+    assert isinstance(step, Interval)
+    assert step.interval.seconds == 60
     assert step.duration.seconds == 600
     assert len(step.steps) == 1
+    assert not step.is_alternating
 
 
-def test_emom_alternating():
+def test_interval_alternating():
+    """Interval with multiple children is alternating."""
     text = (
-        "# WoD [mixed]\n\n- emom 12min alternating:\n"
+        "# WoD [mixed]\n\n- every 1min for 12min:\n"
         "  - Deadlift 5rep @100kg\n"
         "  - Strict Press 7rep @40kg"
     )
     doc = parse_document(text)
     step = doc.workouts[0].steps[0]
-    assert isinstance(step, AlternatingEMOM)
+    assert isinstance(step, Interval)
+    assert step.interval.seconds == 60
     assert step.duration.seconds == 720
     assert len(step.steps) == 2
+    assert step.is_alternating
 
 
 def test_custom_interval():
@@ -147,7 +155,7 @@ def test_custom_interval():
     )
     doc = parse_document(text)
     step = doc.workouts[0].steps[0]
-    assert isinstance(step, CustomInterval)
+    assert isinstance(step, Interval)
     assert step.interval.seconds == 120
     assert step.duration.seconds == 1200
     assert len(step.steps) == 1
@@ -244,11 +252,78 @@ def test_strength_with_rir():
     assert rir_params[0].value == 2
 
 
-def test_double_hash_raises_parse_error():
-    """## headings raise ParseError."""
-    text = "## Training\n\n- Run 5km"
-    with pytest.raises(ParseError, match="not allowed"):
-        parse_document(text)
+def test_program_heading():
+    """## headings produce a Program node."""
+    text = "## My Program (4 weeks)\n\n--- Week 1 ---\n\n# Day 1\n\n- Run 5km"
+    result = parse_document(text)
+    assert isinstance(result, Program)
+    assert result.name == "My Program"
+    assert result.duration == "4 weeks"
+    assert len(result.weeks) == 1
+    assert result.weeks[0].name == "Week 1"
+    assert len(result.weeks[0].workouts) == 1
+
+
+def test_program_with_progression():
+    """Program parses progression rules."""
+    text = (
+        "## Strength Block (4 weeks)\n"
+        "@ progression: Bench Press +2.5kg/week\n"
+        "@ progression: Back Squat +2.5kg/week\n\n"
+        "--- Week 1 ---\n\n# Day 1\n\n- Bench Press 3x8rep @60kg"
+    )
+    result = parse_document(text)
+    assert isinstance(result, Program)
+    assert len(result.progression_rules) == 2
+    assert result.progression_rules[0].action == "Bench Press"
+    assert result.progression_rules[0].amount == 2.5
+    assert result.progression_rules[0].unit == "kg"
+    assert result.progression_rules[0].direction == "+"
+    assert result.progression_rules[1].action == "Back Squat"
+
+
+def test_program_with_deload():
+    """Program parses deload rules."""
+    text = (
+        "## Block (4 weeks)\n"
+        "@ deload: week 4 x0.8\n\n"
+        "--- Week 1 ---\n\n# Day 1\n\n- Squat 3x5rep @100kg"
+    )
+    result = parse_document(text)
+    assert isinstance(result, Program)
+    assert result.deload_rule is not None
+    assert result.deload_rule.week == 4
+    assert result.deload_rule.multiplier == 0.8
+
+
+def test_program_with_cycle():
+    """Program parses cycle flag."""
+    text = (
+        "## PPL (rotating)\n"
+        "@ cycle: true\n\n"
+        "--- Cycle ---\n\n# Push\n\n- Bench Press 3x8rep @80kg"
+    )
+    result = parse_document(text)
+    assert isinstance(result, Program)
+    assert result.is_cycle is True
+
+
+def test_program_multiple_weeks():
+    """Program with multiple weeks."""
+    text = (
+        "## Block (3 weeks)\n\n"
+        "--- Week 1 (template) ---\n\n# Day 1\n\n- Squat 3x5rep @100kg\n\n"
+        "--- Week 2 ---\n\n"
+        "--- Week 3 (Deload) ---\n@ deload: true\n"
+    )
+    result = parse_document(text)
+    assert isinstance(result, Program)
+    assert len(result.weeks) == 3
+    assert result.weeks[0].name == "Week 1 (template)"
+    assert result.weeks[0].is_template is True
+    assert result.weeks[1].name == "Week 2"
+    assert result.weeks[2].name == "Week 3 (Deload)"
+    assert result.weeks[2].is_deload is True
 
 
 def test_sport_type_parsed():
@@ -338,9 +413,7 @@ def test_unified_step_roundtrip():
     doc1 = parse_document(text)
     serialized = dumps(doc1)
     doc2 = parse_document(serialized)
-    # Endurance action preserved
     assert doc2.workouts[0].steps[0].action == "Run"
-    # Strength action preserved
     assert doc2.workouts[0].steps[1].action == "Bench Press"
 
 

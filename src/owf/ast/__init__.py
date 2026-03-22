@@ -1,14 +1,18 @@
 """AST node types for the OpenWorkoutFormat."""
 
-from owf.ast.base import Document, Workout, WorkoutDate
+from owf.ast.base import (
+    DeloadRule,
+    Document,
+    Program,
+    ProgressionRule,
+    Week,
+    Workout,
+    WorkoutDate,
+)
 from owf.ast.blocks import (
     AMRAP,
-    EMOM,
-    AlternatingEMOM,
-    Circuit,
-    CustomInterval,
     ForTime,
-    Superset,
+    Interval,
 )
 from owf.ast.params import (
     BodyweightPlusParam,
@@ -23,31 +27,31 @@ from owf.ast.params import (
     ZoneParam,
 )
 from owf.ast.steps import (
-    RepeatStep,
+    RepeatBlock,
     Step,
     StepUnion,
 )
 
 __all__ = [
     "AMRAP",
-    "AlternatingEMOM",
     "BodyweightPlusParam",
-    "Circuit",
-    "CustomInterval",
+    "DeloadRule",
     "Document",
-    "EMOM",
     "ForTime",
     "HeartRateParam",
+    "Interval",
     "PaceParam",
     "Param",
     "PercentOfParam",
     "PowerParam",
+    "Program",
+    "ProgressionRule",
     "RIRParam",
     "RPEParam",
-    "RepeatStep",
+    "RepeatBlock",
     "Step",
     "StepUnion",
-    "Superset",
+    "Week",
     "WeightParam",
     "Workout",
     "WorkoutDate",

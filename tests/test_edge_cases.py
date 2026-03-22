@@ -2,7 +2,7 @@
 
 import pytest
 
-from owf.ast.blocks import EMOM, ForTime
+from owf.ast.blocks import ForTime, Interval
 from owf.ast.steps import Step
 from owf.errors import ParseError
 from owf.parser.step_parser import parse_document
@@ -168,13 +168,15 @@ def test_for_time_with_distance():
     assert step.distance.unit == "mile"
 
 
-def test_emom_bare_minutes():
-    """EMOM with bare number defaults to minutes."""
-    text = "# WoD\n\n- emom 10:\n  - Burpee 5rep"
+def test_interval_single_child():
+    """Interval with one child is not alternating."""
+    text = "# WoD\n\n- every 1min for 10min:\n  - Burpee 5rep"
     doc = parse_document(text)
     step = doc.workouts[0].steps[0]
-    assert isinstance(step, EMOM)
+    assert isinstance(step, Interval)
+    assert step.interval.seconds == 60
     assert step.duration.seconds == 600
+    assert not step.is_alternating
 
 
 def test_whitespace_handling():

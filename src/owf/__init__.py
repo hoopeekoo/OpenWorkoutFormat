@@ -1,24 +1,24 @@
 """OpenWorkoutFormat — a human-readable workout description language.
 
 Public API:
-    parse(text)             — parse OWF text into a Document AST
+    parse(text)             — parse OWF text into a Document or Program AST
     load(path)              — parse an OWF file
-    dumps(doc)              — serialize a Document AST back to OWF text
+    dumps(doc)              — serialize a Document/Program AST back to OWF text
     resolve(doc, variables) — evaluate expressions against caller-supplied variables
 """
 
 from __future__ import annotations
 
-from owf.ast.base import Document
+from owf.ast.base import Document, Program
 from owf.loader import load
 from owf.parser.step_parser import parse_document
 from owf.resolver import resolve
 from owf.serializer import dumps
 
 
-def parse(text: str) -> Document:
-    """Parse OWF text into a Document AST."""
+def parse(text: str) -> Document | Program:
+    """Parse OWF text into a Document or Program AST."""
     return parse_document(text)
 
 
-__all__ = ["Document", "dumps", "load", "parse", "resolve"]
+__all__ = ["Document", "Program", "dumps", "load", "parse", "resolve"]

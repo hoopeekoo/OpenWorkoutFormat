@@ -1,15 +1,13 @@
-"""Integration tests -- parse the full example from the spec."""
+"""Integration tests -- parse full examples with all container types."""
 
+from owf.ast.base import Program
 from owf.ast.blocks import (
     AMRAP,
-    EMOM,
-    AlternatingEMOM,
-    CustomInterval,
     ForTime,
-    Superset,
+    Interval,
 )
 from owf.ast.params import PowerParam
-from owf.ast.steps import RepeatStep, Step
+from owf.ast.steps import RepeatBlock, Step
 from owf.parser.step_parser import parse_document
 from owf.resolver import resolve
 from owf.serializer import dumps
@@ -27,24 +25,25 @@ FULL_EXAMPLE = """\
 
 # Upper Body [strength]
 
-- 3x superset:
+- 3x:
+  @ style: superset
   - Bench Press 3x8rep @80% of 1RM bench press @rest 90s
   - Bent-Over Row 3x8rep @60kg @rest 90s
 - Bicep Curl 3x12rep @15kg @rest 60s
 
 # Power Clean EMOM [mixed]
 
-- emom 10min:
+- every 1min for 10min:
   - Power Clean 3rep @70kg
 
 # Alternating EMOM [mixed]
 
-- emom 12min alternating:
+- every 1min for 12min:
   - Deadlift 5rep @100kg
   - Strict Press 7rep @40kg
   - Toes-To-Bar 10rep
 
-# Mixed EMOM [mixed]
+# Mixed Interval [mixed]
 
 - every 2min for 20min:
   - Wall Ball 15rep @9kg
@@ -85,6 +84,30 @@ MULTI_WORKOUT_EXAMPLE = """\
 > Great session overall.
 """
 
+PROGRAM_EXAMPLE = """\
+## Strength Block (4 weeks)
+@ author: Coach Smith
+@ progression: Bench Press +2.5kg/week
+@ deload: week 4 x0.8
+
+--- Week 1 (template) ---
+
+# Day 1 [Strength Training]
+
+- Bench Press 3x8rep @60kg @rest 90s
+- Pull-Up 3x8rep @rest 90s
+
+# Day 2 [Strength Training]
+
+- Back Squat 3x5rep @100kg @rest 2min
+
+--- Week 2 ---
+> Derived from template + progression.
+
+--- Week 4 (Deload) ---
+@ deload: true
+"""
+
 
 def test_parse_full_example():
     doc = parse_document(FULL_EXAMPLE)
@@ -113,7 +136,7 @@ def test_threshold_ride_structure():
     assert warmup.duration.seconds == 900
 
     intervals = ride.steps[1]
-    assert isinstance(intervals, RepeatStep)
+    assert isinstance(intervals, RepeatBlock)
     assert intervals.count == 5
     assert len(intervals.steps) == 2
 
@@ -129,8 +152,9 @@ def test_upper_body_structure():
     assert len(upper.steps) == 2
 
     superset = upper.steps[0]
-    assert isinstance(superset, Superset)
+    assert isinstance(superset, RepeatBlock)
     assert superset.count == 3
+    assert superset.style == "superset"
     assert len(superset.steps) == 2
 
     curl = upper.steps[1]
@@ -145,7 +169,8 @@ def test_emom_structure():
     emom = doc.workouts[2]
     assert emom.name == "Power Clean EMOM"
     step = emom.steps[0]
-    assert isinstance(step, EMOM)
+    assert isinstance(step, Interval)
+    assert step.interval.seconds == 60
     assert step.duration.seconds == 600
 
 
@@ -153,16 +178,17 @@ def test_alternating_emom_structure():
     doc = parse_document(FULL_EXAMPLE)
     alt_emom = doc.workouts[3]
     step = alt_emom.steps[0]
-    assert isinstance(step, AlternatingEMOM)
+    assert isinstance(step, Interval)
     assert step.duration.seconds == 720
     assert len(step.steps) == 3
+    assert step.is_alternating
 
 
 def test_custom_interval_structure():
     doc = parse_document(FULL_EXAMPLE)
     mixed = doc.workouts[4]
     step = mixed.steps[0]
-    assert isinstance(step, CustomInterval)
+    assert isinstance(step, Interval)
     assert step.interval.seconds == 120
     assert step.duration.seconds == 1200
     assert len(step.steps) == 2
@@ -202,12 +228,31 @@ def test_multi_workout_structure():
     assert ride.name == "Threshold Ride"
     assert ride.sport_type == "endurance"
     assert len(ride.steps) == 1
-    assert isinstance(ride.steps[0], RepeatStep)
+    assert isinstance(ride.steps[0], RepeatBlock)
 
     upper = doc.workouts[2]
     assert upper.name == "Upper Body"
     assert upper.sport_type == "strength"
     assert len(upper.steps) == 1  # bench press
+
+
+def test_program_structure():
+    """Program with ## heading, weeks, progression, deload."""
+    prog = parse_document(PROGRAM_EXAMPLE)
+    assert isinstance(prog, Program)
+    assert prog.name == "Strength Block"
+    assert prog.duration == "4 weeks"
+    assert prog.metadata.get("author") == "Coach Smith"
+    assert len(prog.progression_rules) == 1
+    assert prog.progression_rules[0].action == "Bench Press"
+    assert prog.progression_rules[0].amount == 2.5
+    assert prog.deload_rule is not None
+    assert prog.deload_rule.week == 4
+    assert prog.deload_rule.multiplier == 0.8
+    assert len(prog.weeks) == 3
+    assert prog.weeks[0].is_template is True
+    assert len(prog.weeks[0].workouts) == 2
+    assert prog.weeks[2].is_deload is True
 
 
 def test_resolve_full_example():
@@ -237,7 +282,7 @@ def test_resolve_multi_workout_example():
     # The Threshold Ride workout should have resolved FTP expressions
     ride = resolved.workouts[1]
     repeat = ride.steps[0]
-    assert isinstance(repeat, RepeatStep)
+    assert isinstance(repeat, RepeatBlock)
     bike = repeat.steps[0]
     assert isinstance(bike, Step)
     param = bike.params[0]
@@ -259,7 +304,7 @@ def test_serialize_full_example():
 
     # Should contain key structural elements
     assert "- 5x:" in serialized
-    assert "- emom 10min:" in serialized
+    assert "- every 1min for 10min:" in serialized
     assert "- amrap 12min:" in serialized
     assert "- for-time:" in serialized
 
@@ -273,6 +318,17 @@ def test_serialize_multi_workout_example():
     assert "# Upper Body [strength]" in serialized
     assert "- Warmup 10min @Z1" in serialized
     assert "> Great session overall." in serialized
+
+
+def test_serialize_program():
+    prog = parse_document(PROGRAM_EXAMPLE)
+    serialized = dumps(prog)
+
+    assert "## Strength Block (4 weeks)" in serialized
+    assert "@ author: Coach Smith" in serialized
+    assert "@ progression: Bench Press +2.5kg/week" in serialized
+    assert "@ deload: week 4 x0.8" in serialized
+    assert "--- Week 1 (template) ---" in serialized
 
 
 def test_roundtrip_full_example():
@@ -299,6 +355,17 @@ def test_roundtrip_multi_workout_example():
         assert w1.name == w2.name
         assert w1.sport_type == w2.sport_type
         assert len(w1.steps) == len(w2.steps)
+
+
+def test_roundtrip_program():
+    """parse -> dumps -> parse for program documents."""
+    prog1 = parse_document(PROGRAM_EXAMPLE)
+    serialized = dumps(prog1)
+    prog2 = parse_document(serialized)
+
+    assert isinstance(prog2, Program)
+    assert prog1.name == prog2.name
+    assert len(prog1.weeks) == len(prog2.weeks)
 
 
 def test_public_api():

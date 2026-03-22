@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from owf.ast.blocks import AMRAP, EMOM, AlternatingEMOM, ForTime
+from owf.ast.blocks import AMRAP, ForTime, Interval
 from owf.ast.params import (
     BodyweightPlusParam,
     HeartRateParam,
@@ -16,8 +16,7 @@ from owf.ast.params import (
     WeightParam,
     ZoneParam,
 )
-from owf.ast.blocks import Superset
-from owf.ast.steps import RepeatStep, Step
+from owf.ast.steps import RepeatBlock, Step
 from owf.loader import load
 from owf.resolver import resolve
 from owf.units import Pace
@@ -108,10 +107,11 @@ def test_strength_upper():
     assert s0.params[0].variable == "1RM bench press"
     assert s0.metadata.get("tempo") == "30X1"
 
-    # Superset: Dumbbell Row + Incline Dumbbell Bench Press
+    # RepeatBlock with style=superset: Dumbbell Row + Incline Dumbbell Bench Press
     s1 = w.steps[1]
-    assert isinstance(s1, Superset)
+    assert isinstance(s1, RepeatBlock)
     assert s1.count == 3
+    assert s1.style == "superset"
     assert len(s1.steps) == 2
 
     # Pull-Up 3xmaxrep @bodyweight + 10kg
@@ -203,13 +203,13 @@ def test_pyramid_intervals():
 
     # outer repeat: 3x
     outer = w.steps[1]
-    assert isinstance(outer, RepeatStep)
+    assert isinstance(outer, RepeatBlock)
     assert outer.count == 3
     assert len(outer.steps) == 4
 
     # nested repeat: 2x (first)
     inner_first = outer.steps[0]
-    assert isinstance(inner_first, RepeatStep)
+    assert isinstance(inner_first, RepeatBlock)
     assert inner_first.count == 2
     assert len(inner_first.steps) == 2
     assert inner_first.steps[0].action == "Run"
@@ -225,7 +225,7 @@ def test_pyramid_intervals():
 
     # nested repeat: 2x (second)
     inner_last = outer.steps[3]
-    assert isinstance(inner_last, RepeatStep)
+    assert isinstance(inner_last, RepeatBlock)
     assert inner_last.count == 2
 
 
@@ -270,7 +270,7 @@ def test_crossfit_benchmarks():
     assert isinstance(ft3, ForTime)
     assert ft3.time_cap.seconds == 1200  # 20min
     repeat = ft3.steps[0]
-    assert isinstance(repeat, RepeatStep)
+    assert isinstance(repeat, RepeatBlock)
     assert repeat.count == 5
     assert repeat.steps[0].action == "Deadlift"
     assert repeat.steps[0].reps == 12
@@ -292,20 +292,24 @@ def test_emom_amrap():
     doc = load(Path("examples/emom_amrap.owf"))
     assert len(doc.workouts) == 4
 
-    # EMOM Strength
+    # EMOM Strength: every 1min for 10min
     emom_w = doc.workouts[0]
     assert emom_w.name == "EMOM Strength"
     assert len(emom_w.steps) == 1
     emom = emom_w.steps[0]
-    assert isinstance(emom, EMOM)
+    assert isinstance(emom, Interval)
+    assert emom.interval.seconds == 60
     assert emom.duration.seconds == 600  # 10min
+    assert not emom.is_alternating
 
-    # Alternating EMOM
+    # Alternating EMOM: every 1min for 12min with 3 children
     alt = doc.workouts[1]
     assert alt.name == "Alternating EMOM"
     emom2 = alt.steps[0]
-    assert isinstance(emom2, AlternatingEMOM)
+    assert isinstance(emom2, Interval)
+    assert emom2.duration.seconds == 720
     assert len(emom2.steps) == 3
+    assert emom2.is_alternating
 
     # Cindy: AMRAP 20min
     cindy = doc.workouts[2]
@@ -314,6 +318,14 @@ def test_emom_amrap():
     assert isinstance(amrap, AMRAP)
     assert amrap.duration.seconds == 1200  # 20min
     assert len(amrap.steps) == 3
+
+    # Custom Interval: every 2min for 20min
+    custom = doc.workouts[3]
+    assert custom.name == "Custom Interval"
+    interval = custom.steps[0]
+    assert isinstance(interval, Interval)
+    assert interval.interval.seconds == 120
+    assert interval.duration.seconds == 1200
 
 
 # --- strength_lower.owf ---
@@ -362,3 +374,69 @@ def test_strength_lower_resolve():
     param1 = s1.params[0]
     assert isinstance(param1, WeightParam)
     assert param1.value == 108.0
+
+
+# --- full_body_circuit.owf ---
+
+
+def test_full_body_circuit():
+    doc = load(Path("examples/full_body_circuit.owf"))
+    assert len(doc.workouts) == 1
+
+    w = doc.workouts[0]
+    assert w.name == "Full Body Circuit"
+    assert w.sport_type == "HIIT"
+    assert w.rpe == 8
+
+    # 4x: with style=circuit
+    circuit = w.steps[1]  # steps[0] is Warmup
+    assert isinstance(circuit, RepeatBlock)
+    assert circuit.count == 4
+    assert circuit.style == "circuit"
+    assert len(circuit.steps) == 5
+
+
+# --- Program examples ---
+
+
+def test_strength_program():
+    from owf.ast.base import Program
+
+    prog = load(Path("examples/strength_program.owfp"))
+    assert isinstance(prog, Program)
+    assert prog.name == "Upper Lower Hypertrophy"
+    assert prog.duration == "4 weeks"
+    assert len(prog.progression_rules) == 3
+    assert prog.deload_rule is not None
+    assert prog.deload_rule.week == 4
+    assert prog.deload_rule.multiplier == 0.8
+    assert len(prog.weeks) == 4
+    assert prog.weeks[0].is_template is True
+    assert len(prog.weeks[0].workouts) == 4
+    assert prog.weeks[3].is_deload is True
+
+
+def test_push_pull_legs_program():
+    from owf.ast.base import Program
+
+    prog = load(Path("examples/push_pull_legs.owfp"))
+    assert isinstance(prog, Program)
+    assert prog.name == "Push Pull Legs"
+    assert prog.is_cycle is True
+    assert len(prog.weeks) == 1
+    assert prog.weeks[0].name == "Cycle"
+    assert len(prog.weeks[0].workouts) == 3
+
+
+def test_endurance_program():
+    from owf.ast.base import Program
+
+    prog = load(Path("examples/endurance_program.owfp"))
+    assert isinstance(prog, Program)
+    assert prog.name == "Marathon Build"
+    assert prog.duration == "12 weeks"
+    assert len(prog.progression_rules) == 1
+    assert prog.progression_rules[0].action == "Run"
+    assert prog.progression_rules[0].direction == "-"
+    assert prog.progression_rules[0].unit == "s"
+    assert len(prog.weeks) == 4

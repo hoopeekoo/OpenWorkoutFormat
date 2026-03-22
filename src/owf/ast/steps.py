@@ -35,15 +35,21 @@ class Step:
 
 
 @dataclass(frozen=True, slots=True)
-class RepeatStep:
-    """A repeat block: Nx: with sub-steps."""
+class RepeatBlock:
+    """A repeat block: Nx: with sub-steps.
+
+    The optional ``style`` field labels the block as a superset or circuit.
+    This is set from ``@ style: superset`` or ``@ style: circuit`` metadata.
+    It does not change parsing behavior — it's informational for display.
+    """
 
     count: int
     steps: tuple[Any, ...] = ()  # Step | Block
+    style: str | None = None  # "superset", "circuit", or None
     metadata: dict[str, str] = field(default_factory=dict)
     notes: tuple[str, ...] = ()
     span: SourceSpan | None = field(default=None, compare=False, repr=False)
 
 
 # Union type for all steps
-StepUnion = Step | RepeatStep
+StepUnion = Step | RepeatBlock

@@ -6,7 +6,8 @@
   @ tempo: 31X0
   > Brace hard, drive knees out. Belt on for sets 4-5.
 - Romanian Deadlift 3x10rep @60% of 1RM deadlift @rest 2min
-- 3x superset:
+- 3x:
+  @ style: superset
   - Bulgarian Split Squat 8rep @20kg @rest 60s
     @ unilateral: true
   - Nordic Hamstring Curl 6rep @rest 60s

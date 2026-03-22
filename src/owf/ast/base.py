@@ -1,4 +1,4 @@
-"""Base AST nodes: Document, Workout, WorkoutDate."""
+"""Base AST nodes: Document, Workout, WorkoutDate, Program, Week, ProgressionRule, DeloadRule."""
 
 from __future__ import annotations
 
@@ -44,8 +44,66 @@ class Workout:
 
 @dataclass(frozen=True, slots=True)
 class Document:
-    """Top-level document: optional frontmatter + workouts."""
+    """Top-level workout document: optional metadata + workouts."""
 
     workouts: tuple[Workout, ...] = ()
     metadata: dict[str, str] = field(default_factory=dict)
+    span: SourceSpan | None = field(default=None, compare=False, repr=False)
+
+
+@dataclass(frozen=True, slots=True)
+class ProgressionRule:
+    """A progression rule: @ progression: <action> <rule>.
+
+    Examples:
+        @ progression: Bench Press +2.5kg/week
+        @ progression: Pull-Up +1rep/week
+        @ progression: Bench Press -5s/week
+    """
+
+    action: str  # "Bench Press", "Back Squat", etc.
+    amount: float  # 2.5, 5, 1, etc.
+    unit: str  # "kg", "lb", "%", "rep", "s"
+    direction: str  # "+" or "-"
+    per: str  # "week" (only supported period for now)
+    span: SourceSpan | None = field(default=None, compare=False, repr=False)
+
+
+@dataclass(frozen=True, slots=True)
+class DeloadRule:
+    """A deload rule: @ deload: week N xM.
+
+    Example: @ deload: week 4 x0.8
+    """
+
+    week: int  # which week is the deload
+    multiplier: float  # 0.8 = 80% of previous week
+    span: SourceSpan | None = field(default=None, compare=False, repr=False)
+
+
+@dataclass(frozen=True, slots=True)
+class Week:
+    """A week/microcycle within a program (--- Name --- separator)."""
+
+    name: str  # "Week 1 (template)", "Week 4 (Deload)", etc.
+    is_template: bool = False
+    is_deload: bool = False
+    workouts: tuple[Workout, ...] = ()
+    metadata: dict[str, str] = field(default_factory=dict)
+    notes: tuple[str, ...] = ()
+    span: SourceSpan | None = field(default=None, compare=False, repr=False)
+
+
+@dataclass(frozen=True, slots=True)
+class Program:
+    """Top-level program document (## heading)."""
+
+    name: str
+    duration: str | None = None  # "4 weeks", "rotating", etc.
+    progression_rules: tuple[ProgressionRule, ...] = ()
+    deload_rule: DeloadRule | None = None
+    is_cycle: bool = False
+    weeks: tuple[Week, ...] = ()
+    metadata: dict[str, str] = field(default_factory=dict)
+    notes: tuple[str, ...] = ()
     span: SourceSpan | None = field(default=None, compare=False, repr=False)

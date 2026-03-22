@@ -1,8 +1,5 @@
 """Tests for the line scanner."""
 
-import pytest
-
-from owf.errors import ParseError
 from owf.parser.scanner import LineType, scan
 
 
@@ -23,10 +20,24 @@ def test_heading():
     assert lines[0].content == "Threshold Ride [bike]"
 
 
-def test_double_hash_raises():
-    """## headings raise ParseError."""
-    with pytest.raises(ParseError, match="not allowed"):
-        scan("## Saturday Training")
+def test_program_heading():
+    """## headings produce PROGRAM_HEADING."""
+    lines = scan("## Saturday Training (4 weeks)")
+    assert lines[0].line_type == LineType.PROGRAM_HEADING
+    assert lines[0].content == "Saturday Training (4 weeks)"
+
+
+def test_week_separator():
+    """--- Name --- produces WEEK_SEPARATOR."""
+    lines = scan("--- Week 1 (template) ---")
+    assert lines[0].line_type == LineType.WEEK_SEPARATOR
+    assert lines[0].content == "Week 1 (template)"
+
+
+def test_bare_frontmatter_fence():
+    """Bare --- is FRONTMATTER_FENCE, not WEEK_SEPARATOR."""
+    lines = scan("---")
+    assert lines[0].line_type == LineType.FRONTMATTER_FENCE
 
 
 def test_step_line():
@@ -74,6 +85,12 @@ def test_line_numbers():
     assert lines[3].span.line == 4
 
 
+def test_metadata_line():
+    lines = scan("@ FTP: 250W")
+    assert lines[0].line_type == LineType.METADATA
+    assert lines[0].content == "FTP: 250W"
+
+
 def test_full_document_scan():
     text = """---
 FTP: 250W
@@ -95,3 +112,21 @@ FTP: 250W
     assert types.count(LineType.NOTE) == 1
     steps = [ln for ln in lines if ln.line_type == LineType.STEP]
     assert len(steps) == 5
+
+
+def test_program_document_scan():
+    """Scan a program document with ## heading and week separators."""
+    text = """## My Program (4 weeks)
+@ author: Coach
+
+--- Week 1 (template) ---
+
+# Day 1 [Strength Training]
+
+- Bench Press 3x8rep @80kg"""
+    lines = scan(text)
+    types = [ln.line_type for ln in lines]
+    assert types.count(LineType.PROGRAM_HEADING) == 1
+    assert types.count(LineType.WEEK_SEPARATOR) == 1
+    assert types.count(LineType.HEADING) == 1
+    assert types.count(LineType.METADATA) == 1

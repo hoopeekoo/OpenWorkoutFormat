@@ -5,13 +5,15 @@ from __future__ import annotations
 import enum
 from dataclasses import dataclass
 
-from owf.errors import ParseError, SourceSpan
+from owf.errors import SourceSpan
 
 
 class LineType(enum.Enum):
     BLANK = "blank"
     FRONTMATTER_FENCE = "frontmatter_fence"
+    PROGRAM_HEADING = "program_heading"
     HEADING = "heading"
+    WEEK_SEPARATOR = "week_separator"
     STEP = "step"
     NOTE = "note"
     METADATA = "metadata"
@@ -58,11 +60,36 @@ def scan(text: str) -> list[LogicalLine]:
             )
             continue
 
-        if stripped.startswith("## "):
-            raise ParseError(
-                "'##' headings are not allowed; use '#' for workouts",
-                SourceSpan(line=lineno, col=1),
+        # Week separator: --- Name ---
+        if (
+            stripped.startswith("--- ")
+            and stripped.endswith(" ---")
+            and len(stripped) > 8
+        ):
+            name = stripped[4:-4].strip()
+            lines.append(
+                LogicalLine(
+                    line_type=LineType.WEEK_SEPARATOR,
+                    text=raw,
+                    indent=0,
+                    content=name,
+                    span=SourceSpan(line=lineno, col=1),
+                )
             )
+            continue
+
+        # Program heading: ## Name
+        if stripped.startswith("## "):
+            lines.append(
+                LogicalLine(
+                    line_type=LineType.PROGRAM_HEADING,
+                    text=raw,
+                    indent=0,
+                    content=stripped[3:],
+                    span=SourceSpan(line=lineno, col=1),
+                )
+            )
+            continue
 
         if stripped.startswith("# "):
             lines.append(
@@ -120,8 +147,6 @@ def scan(text: str) -> list[LogicalLine]:
             continue
 
         # Treat anything else as a continuation or unknown — skip for now
-        # In practice, frontmatter content lines will be handled by the
-        # frontmatter parser directly, not through the scanner.
         lines.append(
             LogicalLine(
                 line_type=LineType.BLANK,

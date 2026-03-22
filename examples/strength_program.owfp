@@ -1,0 +1,58 @@
+## Upper Lower Hypertrophy (4 weeks)
+@ author: Coach Smith
+@ phase: Hypertrophy
+@ progression: Bench Press +2.5kg/week
+@ progression: Back Squat +2.5kg/week
+@ progression: Romanian Deadlift +2.5kg/week
+@ deload: week 4 x0.8
+
+--- Week 1 (template) ---
+@ focus: Base volume
+
+# Day 1 — Upper [Strength Training]
+@ location: Gym
+
+- Bench Press 3x8rep @60kg @rest 90s
+- Dumbbell Row 3x8rep @24kg @rest 90s
+  @ unilateral: true
+- 3x:
+  @ style: superset
+  - Lateral Raise 12rep @8kg @rest 30s
+  - Face Pull 15rep @RPE 7 @rest 30s
+- Triceps Pushdown 3x12rep @RPE 8 @rest 60s
+
+# Day 2 — Lower [Strength Training]
+@ location: Gym
+
+- Back Squat 3x8rep @80kg @rest 2min
+- Romanian Deadlift 3x8rep @60kg @rest 90s
+- Leg Press 3x10rep @120kg @rest 90s
+- Standing Calf Raise 4x15rep @RPE 8 @rest 45s
+
+# Day 3 — Upper [Strength Training]
+@ location: Gym
+
+- Overhead Press 3x8rep @40kg @rest 90s
+- Pull-Up 3x8rep @bodyweight + 5kg @rest 90s
+- 3x:
+  @ style: superset
+  - Incline Dumbbell Bench Press 10rep @24kg @rest 60s
+  - Cable Row 10rep @RPE 7 @rest 60s
+
+# Day 4 — Lower [Strength Training]
+@ location: Gym
+
+- Deadlift 3x5rep @100kg @rest 3min
+- Bulgarian Split Squat 3x8rep @16kg @rest 60s
+  @ unilateral: true
+- Hip Thrust 3x12rep @80kg @rest 90s
+
+--- Week 2 ---
+> Derived from Week 1 template + progression rules.
+
+--- Week 3 ---
+> Derived from Week 1 template + progression rules.
+
+--- Week 4 (Deload) ---
+@ deload: true
+> Auto-derived: 80% of week 3 weights per program-level deload rule.

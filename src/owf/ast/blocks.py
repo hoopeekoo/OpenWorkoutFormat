@@ -1,4 +1,4 @@
-"""Block AST nodes — structured workout blocks (superset, circuit, WoD types)."""
+"""Block AST nodes — structured workout containers."""
 
 from __future__ import annotations
 
@@ -10,52 +10,15 @@ from owf.units import Duration
 
 
 @dataclass(frozen=True, slots=True)
-class Superset:
-    """A superset block: Nx superset: with sub-steps."""
+class Interval:
+    """Interval block: every <interval> for <duration>: with sub-steps.
 
-    count: int
-    steps: tuple[Any, ...] = ()
-    metadata: dict[str, str] = field(default_factory=dict)
-    notes: tuple[str, ...] = ()
-    span: SourceSpan | None = field(default=None, compare=False, repr=False)
+    Subsumes EMOM (interval=1min), alternating EMOM (inferred from
+    multiple children), and custom intervals.
 
-
-@dataclass(frozen=True, slots=True)
-class Circuit:
-    """A circuit block: Nx circuit: with sub-steps."""
-
-    count: int
-    steps: tuple[Any, ...] = ()
-    metadata: dict[str, str] = field(default_factory=dict)
-    notes: tuple[str, ...] = ()
-    span: SourceSpan | None = field(default=None, compare=False, repr=False)
-
-
-@dataclass(frozen=True, slots=True)
-class EMOM:
-    """EMOM block: emom duration: with sub-steps."""
-
-    duration: Duration
-    steps: tuple[Any, ...] = ()
-    metadata: dict[str, str] = field(default_factory=dict)
-    notes: tuple[str, ...] = ()
-    span: SourceSpan | None = field(default=None, compare=False, repr=False)
-
-
-@dataclass(frozen=True, slots=True)
-class AlternatingEMOM:
-    """Alternating EMOM: emom duration alternating: with sub-steps."""
-
-    duration: Duration
-    steps: tuple[Any, ...] = ()
-    metadata: dict[str, str] = field(default_factory=dict)
-    notes: tuple[str, ...] = ()
-    span: SourceSpan | None = field(default=None, compare=False, repr=False)
-
-
-@dataclass(frozen=True, slots=True)
-class CustomInterval:
-    """Custom interval: every interval for duration: with sub-steps."""
+    Alternation rule: 1 child = repeat each interval.
+    Multiple children = rotate through them.
+    """
 
     interval: Duration
     duration: Duration
@@ -63,6 +26,11 @@ class CustomInterval:
     metadata: dict[str, str] = field(default_factory=dict)
     notes: tuple[str, ...] = ()
     span: SourceSpan | None = field(default=None, compare=False, repr=False)
+
+    @property
+    def is_alternating(self) -> bool:
+        """Whether this interval alternates between children."""
+        return len(self.steps) > 1
 
 
 @dataclass(frozen=True, slots=True)

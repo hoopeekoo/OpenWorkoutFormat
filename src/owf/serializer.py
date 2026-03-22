@@ -4,15 +4,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from owf.ast.base import Document, Workout
+from owf.ast.base import Document, Program, Week, Workout
 from owf.ast.blocks import (
     AMRAP,
-    EMOM,
-    AlternatingEMOM,
-    Circuit,
-    CustomInterval,
     ForTime,
-    Superset,
+    Interval,
 )
 from owf.ast.params import (
     BodyweightPlusParam,
@@ -27,12 +23,19 @@ from owf.ast.params import (
     ZoneParam,
 )
 from owf.ast.steps import (
-    RepeatStep,
+    RepeatBlock,
     Step,
 )
 
 
-def dumps(doc: Document) -> str:
+def dumps(doc: Document | Program) -> str:
+    """Serialize a Document or Program AST back to .owf text."""
+    if isinstance(doc, Program):
+        return _serialize_program(doc)
+    return _serialize_document(doc)
+
+
+def _serialize_document(doc: Document) -> str:
     """Serialize a Document AST back to .owf text."""
     parts: list[str] = []
 
@@ -49,10 +52,76 @@ def dumps(doc: Document) -> str:
         parts.append(_serialize_workout(workout))
 
     result = "\n".join(parts)
-    # Ensure single trailing newline
     if not result.endswith("\n"):
         result += "\n"
     return result
+
+
+def _serialize_program(program: Program) -> str:
+    """Serialize a Program AST back to .owfp text."""
+    parts: list[str] = []
+
+    # Program heading
+    heading = f"## {program.name}"
+    if program.duration:
+        heading += f" ({program.duration})"
+    parts.append(heading)
+
+    # Program-level metadata
+    if program.metadata:
+        for key, value in program.metadata.items():
+            parts.append(f"@ {key}: {value}")
+
+    # Cycle
+    if program.is_cycle:
+        parts.append("@ cycle: true")
+
+    # Progression rules
+    for rule in program.progression_rules:
+        parts.append(
+            f"@ progression: {rule.action} "
+            f"{rule.direction}{rule.amount}{rule.unit}/{rule.per}"
+        )
+
+    # Deload rule
+    if program.deload_rule:
+        parts.append(
+            f"@ deload: week {program.deload_rule.week} "
+            f"x{program.deload_rule.multiplier}"
+        )
+
+    # Program-level notes
+    for note in program.notes:
+        parts.append(f"> {note}")
+
+    # Weeks
+    for week in program.weeks:
+        parts.append("")
+        parts.append(_serialize_week(week))
+
+    result = "\n".join(parts)
+    if not result.endswith("\n"):
+        result += "\n"
+    return result
+
+
+def _serialize_week(week: Week) -> str:
+    """Serialize a Week as --- Name --- separator + workouts."""
+    lines: list[str] = []
+    lines.append(f"--- {week.name} ---")
+
+    if week.metadata:
+        for key, value in week.metadata.items():
+            lines.append(f"@ {key}: {value}")
+
+    for note in week.notes:
+        lines.append(f"> {note}")
+
+    for workout in week.workouts:
+        lines.append("")
+        lines.append(_serialize_workout(workout))
+
+    return "\n".join(lines)
 
 
 def _heading_line(workout: Workout) -> str:
@@ -122,55 +191,25 @@ def _serialize_node(node: Any, indent: int) -> list[str]:
         lines.append(f"{prefix}- {' '.join(parts)}")
         lines.extend(meta)
         for note in node.notes:
-            lines.append(f"{prefix}> {note}")
+            lines.append(f"{child_prefix}> {note}")
 
-    elif isinstance(node, RepeatStep):
+    elif isinstance(node, RepeatBlock):
         lines.append(f"{prefix}- {node.count}x:")
+        if node.style:
+            lines.append(f"{child_prefix}@ style: {node.style}")
         lines.extend(meta)
         for child in node.steps:
             lines.extend(_serialize_node(child, indent + 1))
         for note in node.notes:
-            lines.append(f"{prefix}> {note}")
+            lines.append(f"{child_prefix}> {note}")
 
-    elif isinstance(node, Superset):
-        lines.append(f"{prefix}- {node.count}x superset:")
-        lines.extend(meta)
-        for child in node.steps:
-            lines.extend(_serialize_node(child, indent + 1))
-        for note in node.notes:
-            lines.append(f"{prefix}> {note}")
-
-    elif isinstance(node, Circuit):
-        lines.append(f"{prefix}- {node.count}x circuit:")
-        lines.extend(meta)
-        for child in node.steps:
-            lines.extend(_serialize_node(child, indent + 1))
-        for note in node.notes:
-            lines.append(f"{prefix}> {note}")
-
-    elif isinstance(node, EMOM):
-        lines.append(f"{prefix}- emom {node.duration}:")
-        lines.extend(meta)
-        for child in node.steps:
-            lines.extend(_serialize_node(child, indent + 1))
-        for note in node.notes:
-            lines.append(f"{prefix}> {note}")
-
-    elif isinstance(node, AlternatingEMOM):
-        lines.append(f"{prefix}- emom {node.duration} alternating:")
-        lines.extend(meta)
-        for child in node.steps:
-            lines.extend(_serialize_node(child, indent + 1))
-        for note in node.notes:
-            lines.append(f"{prefix}> {note}")
-
-    elif isinstance(node, CustomInterval):
+    elif isinstance(node, Interval):
         lines.append(f"{prefix}- every {node.interval} for {node.duration}:")
         lines.extend(meta)
         for child in node.steps:
             lines.extend(_serialize_node(child, indent + 1))
         for note in node.notes:
-            lines.append(f"{prefix}> {note}")
+            lines.append(f"{child_prefix}> {note}")
 
     elif isinstance(node, AMRAP):
         lines.append(f"{prefix}- amrap {node.duration}:")
@@ -178,7 +217,7 @@ def _serialize_node(node: Any, indent: int) -> list[str]:
         for child in node.steps:
             lines.extend(_serialize_node(child, indent + 1))
         for note in node.notes:
-            lines.append(f"{prefix}> {note}")
+            lines.append(f"{child_prefix}> {note}")
 
     elif isinstance(node, ForTime):
         if node.time_cap:
@@ -189,7 +228,7 @@ def _serialize_node(node: Any, indent: int) -> list[str]:
         for child in node.steps:
             lines.extend(_serialize_node(child, indent + 1))
         for note in node.notes:
-            lines.append(f"{prefix}> {note}")
+            lines.append(f"{child_prefix}> {note}")
 
     return lines
 

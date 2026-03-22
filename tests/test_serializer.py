@@ -1,5 +1,6 @@
 """Tests for the serializer."""
 
+from owf.ast.base import Program
 from owf.parser.step_parser import parse_document
 from owf.serializer import dumps
 
@@ -43,11 +44,11 @@ def test_serialize_strength():
     assert "- Bench Press 3x8rep @80kg @rest 1min30s" in result
 
 
-def test_serialize_emom():
-    text = "# WoD [mixed]\n\n- emom 10min:\n  - Power Clean 3rep @70kg\n"
+def test_serialize_interval():
+    text = "# WoD [mixed]\n\n- every 1min for 10min:\n  - Power Clean 3rep @70kg\n"
     doc = parse_document(text)
     result = dumps(doc)
-    assert "- emom 10min:" in result
+    assert "- every 1min for 10min:" in result
     assert "  - Power Clean 3rep @70kg" in result
 
 
@@ -76,15 +77,32 @@ def test_serialize_rir():
     assert "@RIR 2" in result
 
 
-def test_serialize_superset():
+def test_serialize_superset_style():
     text = (
-        "# Strength\n\n- 3x superset:\n"
+        "# Strength\n\n- 3x:\n"
+        "  @ style: superset\n"
         "  - Bench Press 3x8rep @80kg @rest 90s\n"
         "  - Bent-Over Row 3x8rep @60kg @rest 90s\n"
     )
     doc = parse_document(text)
     result = dumps(doc)
-    assert "- 3x superset:" in result
+    assert "- 3x:" in result
+    assert "@ style: superset" in result
+
+
+def test_serialize_circuit_style():
+    text = (
+        "# Strength\n\n- 3x:\n"
+        "  @ style: circuit\n"
+        "  - Kettlebell Swing 10rep @24kg\n"
+        "  - Push-Up 15rep\n"
+        "  - Air Squat 20rep\n"
+    )
+    doc = parse_document(text)
+    result = dumps(doc)
+    assert "- 3x:" in result
+    assert "@ style: circuit" in result
+    assert "  - Kettlebell Swing 10rep @24kg" in result
 
 
 def test_serialize_workout_rpe():
@@ -103,19 +121,6 @@ def test_serialize_workout_rir():
     assert "# Strength [strength] @RIR 2" in result
     doc2 = parse_document(result)
     assert doc2.workouts[0].rir == 2
-
-
-def test_serialize_circuit():
-    text = (
-        "# Strength\n\n- 3x circuit:\n"
-        "  - Kettlebell Swing 10rep @24kg\n"
-        "  - Push-Up 15rep\n"
-        "  - Air Squat 20rep\n"
-    )
-    doc = parse_document(text)
-    result = dumps(doc)
-    assert "- 3x circuit:" in result
-    assert "  - Kettlebell Swing 10rep @24kg" in result
 
 
 def test_serialize_percent_of():
@@ -144,3 +149,24 @@ def test_serialize_heart_rate():
     doc = parse_document(text)
     result = dumps(doc)
     assert "@140bpm" in result
+
+
+def test_serialize_program():
+    text = (
+        "## My Program (4 weeks)\n"
+        "@ author: Coach\n"
+        "@ progression: Bench Press +2.5kg/week\n"
+        "@ deload: week 4 x0.8\n\n"
+        "--- Week 1 (template) ---\n\n"
+        "# Day 1\n\n- Bench Press 3x8rep @60kg\n\n"
+        "--- Week 2 ---\n"
+    )
+    prog = parse_document(text)
+    assert isinstance(prog, Program)
+    result = dumps(prog)
+    assert "## My Program (4 weeks)" in result
+    assert "@ author: Coach" in result
+    assert "@ progression: Bench Press +2.5kg/week" in result
+    assert "@ deload: week 4 x0.8" in result
+    assert "--- Week 1 (template) ---" in result
+    assert "--- Week 2 ---" in result

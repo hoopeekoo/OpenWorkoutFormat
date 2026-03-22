@@ -6,15 +6,11 @@ import re
 from dataclasses import replace
 from typing import Any
 
-from owf.ast.base import Document, Workout
+from owf.ast.base import Document, Program, Week, Workout
 from owf.ast.blocks import (
     AMRAP,
-    EMOM,
-    AlternatingEMOM,
-    Circuit,
-    CustomInterval,
     ForTime,
-    Superset,
+    Interval,
 )
 from owf.ast.params import (
     BodyweightPlusParam,
@@ -25,19 +21,28 @@ from owf.ast.params import (
     WeightParam,
 )
 from owf.ast.steps import (
-    RepeatStep,
+    RepeatBlock,
     Step,
 )
 from owf.errors import ResolveError
 
 
-def resolve(doc: Document, variables: dict[str, str] | None = None) -> Document:
-    """Resolve all expressions in a document against caller-supplied variables.
+def resolve(
+    doc: Document | Program, variables: dict[str, str] | None = None
+) -> Document | Program:
+    """Resolve all expressions in a document/program against caller-supplied variables.
 
     Training reference variables (FTP, 1RM, bodyweight, max HR) are provided
     by the calling application, not stored in the document.
     """
     ctx = dict(variables) if variables else {}
+
+    if isinstance(doc, Program):
+        resolved_weeks = tuple(
+            replace(w, workouts=tuple(_resolve_workout(wo, ctx) for wo in w.workouts))
+            for w in doc.weeks
+        )
+        return replace(doc, weeks=resolved_weeks)
 
     resolved_workouts = tuple(
         _resolve_workout(w, ctx) for w in doc.workouts
@@ -55,11 +60,11 @@ def _resolve_step(step: Any, variables: dict[str, str]) -> Any:
         resolved_params = tuple(_resolve_param(p, variables) for p in step.params)
         return replace(step, params=resolved_params)
 
-    if isinstance(step, (RepeatStep, Superset, Circuit)):
+    if isinstance(step, RepeatBlock):
         resolved_children = tuple(_resolve_step(s, variables) for s in step.steps)
         return replace(step, steps=resolved_children)
 
-    if isinstance(step, (EMOM, AlternatingEMOM, AMRAP, ForTime, CustomInterval)):
+    if isinstance(step, (Interval, AMRAP, ForTime)):
         resolved_children = tuple(_resolve_step(s, variables) for s in step.steps)
         return replace(step, steps=resolved_children)
 

@@ -1,0 +1,47 @@
+## Marathon Build (12 weeks)
+@ author: Coach Rivera
+@ phase: Build
+@ progression: Run -5s/week
+
+--- Week 1 (template) ---
+@ focus: Base building
+
+# Easy Run [Running]
+@ location: Riverside Trail
+
+- Warmup 10min @Z1
+- Run 45min @Z2
+- Cooldown 5min @Z1
+
+# Intervals [Running]
+
+- Warmup 15min @Z1
+- 6x:
+  - Run 3min @Z4
+  - Recover 2min @Z1
+- Cooldown 10min @Z1
+
+# Tempo [Running]
+
+- Warmup 10min @Z1
+- Run 20min @Z3
+- Cooldown 10min @Z1
+
+> Tempo pace should feel comfortably hard.
+
+# Long Run [Running]
+
+- Warmup 10min @Z1
+- Run 1h30min @Z2
+- Cooldown 10min @Z1
+
+> Hydrate every 30min. Practice race nutrition.
+
+--- Week 2 ---
+> Derived from template + progression.
+
+--- Week 3 ---
+> Derived from template + progression.
+
+--- Week 4 ---
+> Derived from template + progression.

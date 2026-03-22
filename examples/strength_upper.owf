@@ -5,12 +5,14 @@
 - Bench Press 4x8rep @80% of 1RM bench press @rest 2min
   @ tempo: 30X1
   > Last set was RPE 9. Add 2.5kg next week.
-- 3x superset:
+- 3x:
+  @ style: superset
   - Dumbbell Row 10rep @32kg @rest 60s
     @ unilateral: true
   - Incline Dumbbell Bench Press 10rep @28kg @rest 60s
 - Pull-Up 3xmaxrep @bodyweight + 10kg @rest 90s
-- 3x superset:
+- 3x:
+  @ style: superset
   - Cable Face Pull 15rep @RPE 7 @rest 45s
   - Lateral Raise 12rep @10kg @RIR 3 @rest 45s
 - Triceps Pushdown 3x15rep @RPE 8 @rest 60s
