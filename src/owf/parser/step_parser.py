@@ -222,10 +222,9 @@ def _build_week(
     is_template = False
     is_deload = False
 
-    # Extract week-level metadata and notes
+    # Extract week-level metadata (notes at week level are no longer supported)
     metadata: dict[str, str] = {}
     workout_lines: list[LogicalLine] = []
-    notes: list[str] = []
     past_metadata = False
 
     for ln in lines:
@@ -242,7 +241,8 @@ def _build_week(
             else:
                 metadata[key] = value
         elif ln.line_type == LineType.NOTE and not past_metadata:
-            notes.append(ln.content)
+            # Week-level notes are silently ignored in v4 (for migration compat)
+            pass
         elif ln.line_type in (LineType.HEADING, LineType.STEP):
             past_metadata = True
             workout_lines.append(ln)
@@ -258,7 +258,6 @@ def _build_week(
         is_deload=is_deload,
         workouts=tuple(workouts),
         metadata=metadata,
-        notes=tuple(notes),
         span=span,
     )
 
@@ -287,7 +286,7 @@ def _split_workouts(lines: list[LogicalLine]) -> list[Workout]:
     if current_heading is not None or current_lines:
         workouts.append(_build_workout(current_heading, current_lines))
 
-    return [w for w in workouts if w.name or w.steps or w.notes]
+    return [w for w in workouts if w.name or w.steps or w.description]
 
 
 def _build_workout(
@@ -322,8 +321,13 @@ def _build_workout(
                 past_metadata = True
             remaining_lines.append(ln)
 
-    blocks, trailing_notes = build_blocks_for_workout(remaining_lines)
+    blocks, description_lines = build_blocks_for_workout(remaining_lines)
     steps = tuple(_parse_block(b) for b in blocks)
+
+    # Join description lines into a single string (or None)
+    description: str | None = None
+    if description_lines:
+        description = "\n".join(description_lines)
 
     return Workout(
         name=name,
@@ -333,7 +337,7 @@ def _build_workout(
         rir=rir,
         steps=steps,
         metadata=workout_metadata,
-        notes=tuple(trailing_notes),
+        description=description,
         span=span,
     )
 
@@ -406,7 +410,6 @@ def _parse_block(block: RawBlock) -> Any:
                 action="Rest",
                 duration=dur,
                 metadata=block.metadata,
-                notes=tuple(block.notes),
                 span=span,
             )
         except ValueError:
@@ -428,7 +431,7 @@ def _parse_block(block: RawBlock) -> Any:
             steps=children,
             style=style,
             metadata=block.metadata,
-            notes=tuple(block.notes),
+
             span=span,
         )
 
@@ -446,7 +449,7 @@ def _parse_block(block: RawBlock) -> Any:
             duration=dur,
             steps=children,
             metadata=block.metadata,
-            notes=tuple(block.notes),
+
             span=span,
         )
 
@@ -462,7 +465,7 @@ def _parse_block(block: RawBlock) -> Any:
             duration=dur,
             steps=children,
             metadata=block.metadata,
-            notes=tuple(block.notes),
+
             span=span,
         )
 
@@ -480,7 +483,7 @@ def _parse_block(block: RawBlock) -> Any:
             time_cap=time_cap,
             steps=children,
             metadata=block.metadata,
-            notes=tuple(block.notes),
+
             span=span,
         )
 
@@ -615,6 +618,5 @@ def _build_step(
         rest=rest_duration,
         params=tuple(params),
         metadata=block.metadata,
-        notes=tuple(block.notes),
         span=span,
     )

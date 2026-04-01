@@ -13,6 +13,9 @@ from owf.ast.params import (
     PowerParam,
     RIRParam,
     RPEParam,
+    SetTypeParam,
+    TempoParam,
+    TypedPercentParam,
     WeightParam,
     ZoneParam,
 )
@@ -21,8 +24,24 @@ from owf.units import Duration, Pace
 
 # Old intensity names that are no longer valid
 _REMOVED_INTENSITIES = frozenset(
-    {"easy", "moderate", "hard", "max", "threshold", "tempo"}
+    {"easy", "moderate", "hard", "max"}
 )
+
+# Valid set type tokens (OWF syntax uses hyphens; AST stores underscores)
+_SET_TYPE_TOKENS: dict[str, str] = {
+    "warmup": "warmup",
+    "drop": "drop",
+    "failure": "failure",
+    "cluster": "cluster",
+    "rest-pause": "rest_pause",
+    "myo-rep": "myo_rep",
+}
+
+# Known typed percentage targets (no-space compact form)
+_TYPED_PERCENT_TARGETS = frozenset({"FTP", "LTHR", "maxHR", "TP", "1RM"})
+
+# Zone metric qualifiers
+_ZONE_METRICS = frozenset({"power", "hr", "pace"})
 
 # Regex for bodyweight + Nkg/Nlb
 _BW_PLUS_RE = re.compile(
@@ -51,7 +70,8 @@ def parse_params(
         value = token[1:]  # strip @
 
         # 1. Rest: @rest or @rest90s — next token is duration
-        if value.lower().startswith("rest"):
+        # BUT NOT @rest-pause (set type) — check set types first
+        if value.lower().startswith("rest") and value.lower() not in _SET_TYPE_TOKENS:
             rest_val = value[4:].strip()
             if rest_val:
                 rest_duration = Duration.parse(rest_val)
@@ -64,13 +84,39 @@ def parse_params(
             i += 1
             continue
 
-        # 2. Zone: @Z1, @Z2, etc.
-        if re.match(r"^Z\d$", value):
-            params.append(ZoneParam(zone=value, span=span))
+        # 2. Zone: @Z1, @Z2, @Z2:power, @Z3:hr, @Z4:pace
+        zone_m = re.match(r"^(Z\d)(?::(\w+))?$", value)
+        if zone_m:
+            zone_str = zone_m.group(1)
+            metric = zone_m.group(2)
+            if metric and metric not in _ZONE_METRICS:
+                raise ParseError(
+                    f"Unknown zone metric '{metric}'. "
+                    f"Valid metrics: power, hr, pace",
+                    span,
+                )
+            params.append(ZoneParam(zone=zone_str, metric=metric, span=span))
             i += 1
             continue
 
-        # 2. RPE: @RPE or @RPE7 — next token might be the number
+        # 2b. Set type: @warmup, @drop, @failure, @cluster, @rest-pause, @myo-rep
+        if value.lower() in _SET_TYPE_TOKENS:
+            canonical = _SET_TYPE_TOKENS[value.lower()]
+            params.append(SetTypeParam(set_type=canonical, span=span))
+            i += 1
+            continue
+
+        # 2c. Tempo: @tempo 31X0 — next token is the tempo value
+        if value.lower() == "tempo":
+            if i + 1 < len(tokens) and not tokens[i + 1].startswith("@"):
+                params.append(
+                    TempoParam(value=tokens[i + 1], span=span)
+                )
+                i += 2
+                continue
+            raise ParseError("Expected tempo value after '@tempo'", span)
+
+        # 3. RPE: @RPE or @RPE7 — next token might be the number
         if value.upper().startswith("RPE"):
             rpe_val = value[3:].strip()
             if rpe_val:
@@ -119,7 +165,23 @@ def parse_params(
         except ValueError:
             pass
 
-        # 5. Percent of variable: @N% [of] VAR — "of" is optional
+        # 5a. Typed percent: @95%FTP, @88%LTHR, @92%maxHR, @90%TP, @85%1RM
+        _targets_re = "|".join(sorted(_TYPED_PERCENT_TARGETS, key=len, reverse=True))
+        typed_pct_m = re.match(
+            rf"^(\d+(?:\.\d+)?)%({_targets_re})$", value
+        )
+        if typed_pct_m:
+            params.append(
+                TypedPercentParam(
+                    percent=float(typed_pct_m.group(1)),
+                    target=typed_pct_m.group(2),
+                    span=span,
+                )
+            )
+            i += 1
+            continue
+
+        # 5b. Percent of variable: @N% [of] VAR — "of" is optional
         pct_m = re.match(r"^(\d+(?:\.\d+)?)%$", value)
         if pct_m:
             pct = float(pct_m.group(1))
@@ -216,8 +278,9 @@ def parse_params(
 
         raise ParseError(
             f"Unknown parameter '@{value}'. Valid forms: "
-            "@Z2, @N% of VAR, @NW, @Nbpm, @MM:SS/km, "
-            "@Nkg, @bodyweight + Nkg, @RPE N, @RIR N",
+            "@Z2, @Z2:power, @N%FTP, @N% of VAR, @NW, @Nbpm, @MM:SS/km, "
+            "@Nkg, @bodyweight + Nkg, @RPE N, @RIR N, @tempo VALUE, "
+            "@warmup, @drop, @failure, @cluster, @rest-pause, @myo-rep",
             span,
         )
 

@@ -22,6 +22,7 @@ def _roundtrip(text: str) -> None:
     for w1, w2 in zip(doc1.workouts, doc2.workouts):
         assert w1.name == w2.name
         assert w1.sport_type == w2.sport_type
+        assert w1.description == w2.description
         assert len(w1.steps) == len(w2.steps)
 
 
@@ -126,3 +127,76 @@ def test_roundtrip_program():
         "# Day 1\n\n- Bench Press 3x8rep @60kg\n\n"
         "--- Week 2 ---\n"
     )
+
+
+# ===== New feature round-trip tests =====
+
+
+def test_roundtrip_zone_metric():
+    _roundtrip("# Ride\n\n- Bike 20min @Z2:power\n- Run 10min @Z3:hr")
+
+
+def test_roundtrip_typed_percent_ftp():
+    _roundtrip("# Ride\n\n- Bike 10min @95%FTP")
+
+
+def test_roundtrip_typed_percent_lthr():
+    _roundtrip("# Run\n\n- Run 30min @88%LTHR")
+
+
+def test_roundtrip_typed_percent_maxhr():
+    _roundtrip("# Run\n\n- Run 20min @92%maxHR")
+
+
+def test_roundtrip_typed_percent_tp():
+    _roundtrip("# Swim\n\n- Swim 8x100m @90%TP")
+
+
+def test_roundtrip_typed_percent_1rm():
+    _roundtrip("# Gym\n\n- Bench Press 3x5rep @85%1RM")
+
+
+def test_roundtrip_tempo():
+    _roundtrip("# Gym\n\n- Back Squat 4x6rep @120kg @tempo 31X0 @rest 2min")
+
+
+def test_roundtrip_set_type_warmup():
+    _roundtrip("# Gym\n\n- Bench Press 3x8rep @60kg @warmup @rest 90s")
+
+
+def test_roundtrip_set_type_drop():
+    _roundtrip("# Gym\n\n- Bench Press 1x8rep @70kg @drop @rest 30s")
+
+
+def test_roundtrip_set_type_rest_pause():
+    _roundtrip("# Gym\n\n- Bench Press 1x12rep @60kg @rest-pause")
+
+
+def test_roundtrip_set_type_myo_rep():
+    _roundtrip("# Gym\n\n- Leg Press 1x20rep @myo-rep")
+
+
+def test_roundtrip_pace_500m():
+    _roundtrip("# Row\n\n- Row 4x500m @1:45/500m @rest 90s")
+
+
+def test_roundtrip_pace_100m():
+    _roundtrip("# Swim\n\n- Swim 8x100m @1:32/100m @rest 20s")
+
+
+def test_roundtrip_complex_strength():
+    """Full strength step with all new features."""
+    _roundtrip(
+        "# Gym\n\n"
+        "- Bench Press 3x8rep @80kg @tempo 31X0 @warmup @RIR 3 @rest 2min"
+    )
+
+
+def test_roundtrip_description():
+    """Workout description survives a round-trip."""
+    text = "# Run [Running]\n\n> Great workout today.\n> Felt strong.\n\n- Run 5km\n"
+    doc1 = parse_document(text)
+    assert doc1.workouts[0].description == "Great workout today.\nFelt strong."
+    serialized = dumps(doc1)
+    doc2 = parse_document(serialized)
+    assert doc2.workouts[0].description == doc1.workouts[0].description

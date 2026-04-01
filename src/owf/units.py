@@ -135,7 +135,7 @@ class Pace:
     seconds: int
     unit: str  # km, mi, mile
 
-    _PATTERN = re.compile(r"^(?P<min>\d+):(?P<sec>\d{2})/(?P<unit>km|mi|mile)$")
+    _PATTERN = re.compile(r"^(?P<min>\d+):(?P<sec>\d{2})/(?P<unit>km|mi|mile|500m|100m)$")
 
     @classmethod
     def parse(cls, text: str) -> Pace:

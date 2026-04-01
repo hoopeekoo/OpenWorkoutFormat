@@ -13,6 +13,9 @@ from owf.ast.params import (
     PowerParam,
     RIRParam,
     RPEParam,
+    SetTypeParam,
+    TempoParam,
+    TypedPercentParam,
     WeightParam,
     ZoneParam,
 )
@@ -66,11 +69,9 @@ def test_hr_zone_run():
     assert isinstance(s4.params[0], PaceParam)
     assert s4.params[0].pace == Pace(minutes=4, seconds=30, unit="km")
 
-    # workout note
-    assert any(
-        "all targeting methods" in n
-        for n in w.notes
-    )
+    # workout description
+    assert w.description is not None
+    assert "all targeting methods" in w.description
 
 
 def test_hr_zone_run_resolve():
@@ -278,11 +279,11 @@ def test_crossfit_benchmarks():
     assert repeat.steps[2].action == "Push Jerk"
 
 
-def test_crossfit_benchmarks_notes():
+def test_crossfit_benchmarks_description():
     doc = load(Path("examples/crossfit_benchmarks.owf"))
     murph = doc.workouts[1]
-    all_notes = murph.notes
-    assert any("Partition" in n for n in all_notes)
+    assert murph.description is not None
+    assert "Partition" in murph.description
 
 
 # --- emom_amrap.owf ---
@@ -440,3 +441,134 @@ def test_endurance_program():
     assert prog.progression_rules[0].direction == "-"
     assert prog.progression_rules[0].unit == "s"
     assert len(prog.weeks) == 4
+
+
+# --- isopepe_parity.owf ---
+
+
+def test_isopepe_parity():
+    """Validates isopepe_parity.owf exercises every OWF 4.0 feature."""
+    doc = load(Path("examples/isopepe_parity.owf"))
+    assert doc.metadata.get("description") is not None
+    assert len(doc.workouts) == 9
+
+    # Leg Day — set types, tempo
+    leg = doc.workouts[0]
+    assert leg.name == "Leg Day"
+    assert leg.description is not None
+    assert "quad focus" in leg.description
+
+    s0 = leg.steps[0]
+    assert s0.action == "Back Squat"
+    tempo_params = [p for p in s0.params if isinstance(p, TempoParam)]
+    assert len(tempo_params) == 1
+    assert tempo_params[0].value == "3010"
+
+    s1 = leg.steps[1]
+    set_type_params = [p for p in s1.params if isinstance(p, SetTypeParam)]
+    assert len(set_type_params) == 1
+    assert set_type_params[0].set_type == "warmup"
+
+    s2 = leg.steps[2]
+    assert any(isinstance(p, SetTypeParam) and p.set_type == "drop" for p in s2.params)
+
+    s3 = leg.steps[3]
+    assert any(isinstance(p, SetTypeParam) and p.set_type == "failure" for p in s3.params)
+
+    s4 = leg.steps[4]
+    assert any(isinstance(p, SetTypeParam) and p.set_type == "cluster" for p in s4.params)
+
+    s5 = leg.steps[5]
+    assert any(isinstance(p, SetTypeParam) and p.set_type == "rest_pause" for p in s5.params)
+
+    s6 = leg.steps[6]
+    assert any(isinstance(p, SetTypeParam) and p.set_type == "myo_rep" for p in s6.params)
+
+    # Threshold Ride — zone metrics, typed percents
+    ride = doc.workouts[1]
+    assert ride.name == "Threshold Ride"
+    warmup = ride.steps[0]
+    zone_params = [p for p in warmup.params if isinstance(p, ZoneParam)]
+    assert zone_params[0].zone == "Z1"
+    assert zone_params[0].metric == "power"
+
+    hr_step = ride.steps[1]
+    zone_hr = [p for p in hr_step.params if isinstance(p, ZoneParam)]
+    assert zone_hr[0].metric == "hr"
+
+    lthr_step = ride.steps[2]
+    tp_params = [p for p in lthr_step.params if isinstance(p, TypedPercentParam)]
+    assert tp_params[0].percent == 88
+    assert tp_params[0].target == "LTHR"
+
+    # Pool Session — /100m pace
+    pool = doc.workouts[2]
+    assert pool.name == "Pool Session"
+
+    # Rowing — /500m pace
+    rowing = doc.workouts[3]
+    assert rowing.name == "Rowing Intervals"
+
+    # Evening Run — %maxHR, %TP
+    run = doc.workouts[4]
+    maxhr_step = run.steps[1]
+    tp = [p for p in maxhr_step.params if isinstance(p, TypedPercentParam)]
+    assert tp[0].target == "maxHR"
+    assert tp[0].percent == 92
+
+    tp_step = run.steps[2]
+    tp2 = [p for p in tp_step.params if isinstance(p, TypedPercentParam)]
+    assert tp2[0].target == "TP"
+    assert tp2[0].percent == 90
+
+    # Strength Finisher — %1RM, superset, circuit
+    strength = doc.workouts[5]
+    bench = strength.steps[0]
+    rm_params = [p for p in bench.params if isinstance(p, TypedPercentParam)]
+    assert rm_params[0].percent == 85
+    assert rm_params[0].target == "1RM"
+
+    superset = strength.steps[1]
+    assert isinstance(superset, RepeatBlock)
+    assert superset.style == "superset"
+
+    circuit = strength.steps[2]
+    assert isinstance(circuit, RepeatBlock)
+    assert circuit.style == "circuit"
+
+    # CrossFit WOD — for-time
+    wod = doc.workouts[6]
+    assert wod.rpe == 9
+    ft = wod.steps[0]
+    assert isinstance(ft, ForTime)
+    assert ft.time_cap.seconds == 900
+
+    # EMOM — alternating interval
+    emom = doc.workouts[7]
+    interval = emom.steps[0]
+    assert isinstance(interval, Interval)
+    assert interval.is_alternating
+    assert interval.interval.seconds == 60
+    assert interval.duration.seconds == 720
+
+    # AMRAP
+    amrap_w = doc.workouts[8]
+    amrap = amrap_w.steps[0]
+    assert isinstance(amrap, AMRAP)
+    assert amrap.duration.seconds == 1200
+
+
+def test_isopepe_parity_roundtrip():
+    """Round-trip: parse → serialize → parse → compare."""
+    from owf.serializer import dumps
+
+    doc = load(Path("examples/isopepe_parity.owf"))
+    text = dumps(doc)
+    from owf.parser.step_parser import parse_document
+
+    doc2 = parse_document(text)
+    assert len(doc2.workouts) == len(doc.workouts)
+    for w1, w2 in zip(doc.workouts, doc2.workouts):
+        assert w1.name == w2.name
+        assert w1.sport_type == w2.sport_type
+        assert len(w1.steps) == len(w2.steps)

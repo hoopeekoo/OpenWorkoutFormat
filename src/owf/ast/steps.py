@@ -30,7 +30,6 @@ class Step:
     rest: Duration | None = None  # inter-set rest
     params: tuple[Param, ...] = ()
     metadata: dict[str, str] = field(default_factory=dict)
-    notes: tuple[str, ...] = ()
     span: SourceSpan | None = field(default=None, compare=False, repr=False)
 
 
@@ -47,9 +46,9 @@ class RepeatBlock:
     steps: tuple[Any, ...] = ()  # Step | Block
     style: str | None = None  # "superset", "circuit", or None
     metadata: dict[str, str] = field(default_factory=dict)
-    notes: tuple[str, ...] = ()
     span: SourceSpan | None = field(default=None, compare=False, repr=False)
 
 
-# Union type for all steps
-StepUnion = Step | RepeatBlock
+# Partial union — only types from this module. For the full union
+# (including Interval, AMRAP, ForTime), use ``owf.ast.StepUnion``.
+_StepUnionPartial = Step | RepeatBlock

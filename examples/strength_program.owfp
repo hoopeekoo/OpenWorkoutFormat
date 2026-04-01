@@ -47,11 +47,11 @@
 - Hip Thrust 3x12rep @80kg @rest 90s
 
 --- Week 2 ---
-> Derived from Week 1 template + progression rules.
+@ description: Derived from Week 1 template + progression rules.
 
 --- Week 3 ---
-> Derived from Week 1 template + progression rules.
+@ description: Derived from Week 1 template + progression rules.
 
 --- Week 4 ---
 @ deload: true
-> Auto-derived: 80% of week 3 weights per program-level deload rule.
+@ description: Auto-derived: 80% of week 3 weights per program-level deload rule.

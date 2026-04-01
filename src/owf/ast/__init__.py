@@ -23,14 +23,20 @@ from owf.ast.params import (
     PowerParam,
     RIRParam,
     RPEParam,
+    SetTypeParam,
+    TempoParam,
+    TypedPercentParam,
     WeightParam,
     ZoneParam,
 )
 from owf.ast.steps import (
     RepeatBlock,
     Step,
-    StepUnion,
 )
+
+# Full union including block types (steps.py can't import blocks.py due to
+# circular import constraints, so we define the complete union here).
+StepUnion = Step | RepeatBlock | Interval | AMRAP | ForTime
 
 __all__ = [
     "AMRAP",
@@ -49,8 +55,11 @@ __all__ = [
     "RIRParam",
     "RPEParam",
     "RepeatBlock",
+    "SetTypeParam",
     "Step",
     "StepUnion",
+    "TempoParam",
+    "TypedPercentParam",
     "Week",
     "WeightParam",
     "Workout",

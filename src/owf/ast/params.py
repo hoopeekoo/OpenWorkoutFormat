@@ -10,9 +10,10 @@ from owf.units import Pace
 
 @dataclass(frozen=True, slots=True)
 class ZoneParam:
-    """Heart rate / training zone, e.g. @Z2, @Z4."""
+    """Heart rate / training zone, e.g. @Z2, @Z4, @Z2:power, @Z3:hr."""
 
     zone: str  # "Z1", "Z2", etc.
+    metric: str | None = None  # "power", "hr", "pace", or None (unqualified)
     span: SourceSpan | None = field(default=None, compare=False, repr=False)
 
 
@@ -83,10 +84,40 @@ class RIRParam:
     span: SourceSpan | None = field(default=None, compare=False, repr=False)
 
 
+@dataclass(frozen=True, slots=True)
+class TypedPercentParam:
+    """Typed percentage of a known variable, e.g. @95%FTP, @88%LTHR, @85%1RM.
+
+    Unlike PercentOfParam (which uses generic variable resolution),
+    this represents a first-class typed percentage with a known target.
+    """
+
+    percent: float
+    target: str  # "FTP", "LTHR", "maxHR", "TP", "1RM"
+    span: SourceSpan | None = field(default=None, compare=False, repr=False)
+
+
+@dataclass(frozen=True, slots=True)
+class TempoParam:
+    """Lifting tempo, e.g. @tempo 31X0, @tempo 4-0-1-0."""
+
+    value: str  # "31X0", "4-0-1-0", etc.
+    span: SourceSpan | None = field(default=None, compare=False, repr=False)
+
+
+@dataclass(frozen=True, slots=True)
+class SetTypeParam:
+    """Set type classification, e.g. @warmup, @drop, @failure."""
+
+    set_type: str  # "warmup", "drop", "failure", "cluster", "rest_pause", "myo_rep"
+    span: SourceSpan | None = field(default=None, compare=False, repr=False)
+
+
 # Union type for all parameters
 Param = (
     ZoneParam
     | PercentOfParam
+    | TypedPercentParam
     | PowerParam
     | HeartRateParam
     | PaceParam
@@ -94,4 +125,6 @@ Param = (
     | BodyweightPlusParam
     | RPEParam
     | RIRParam
+    | TempoParam
+    | SetTypeParam
 )

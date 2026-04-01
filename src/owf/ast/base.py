@@ -38,7 +38,7 @@ class Workout:
     rir: int | None = None  # default RIR for strength exercises
     steps: tuple[Any, ...] = ()  # tuple of Step | Block
     metadata: dict[str, str] = field(default_factory=dict)
-    notes: tuple[str, ...] = ()
+    description: str | None = None  # workout-level description (from > lines)
     span: SourceSpan | None = field(default=None, compare=False, repr=False)
 
 
@@ -90,7 +90,6 @@ class Week:
     is_deload: bool = False
     workouts: tuple[Workout, ...] = ()
     metadata: dict[str, str] = field(default_factory=dict)
-    notes: tuple[str, ...] = ()
     span: SourceSpan | None = field(default=None, compare=False, repr=False)
 
 
@@ -105,5 +104,4 @@ class Program:
     is_cycle: bool = False
     weeks: tuple[Week, ...] = ()
     metadata: dict[str, str] = field(default_factory=dict)
-    notes: tuple[str, ...] = ()
     span: SourceSpan | None = field(default=None, compare=False, repr=False)

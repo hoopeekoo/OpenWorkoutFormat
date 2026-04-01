@@ -24,7 +24,6 @@ class Interval:
     duration: Duration
     steps: tuple[Any, ...] = ()
     metadata: dict[str, str] = field(default_factory=dict)
-    notes: tuple[str, ...] = ()
     span: SourceSpan | None = field(default=None, compare=False, repr=False)
 
     @property
@@ -40,7 +39,6 @@ class AMRAP:
     duration: Duration
     steps: tuple[Any, ...] = ()
     metadata: dict[str, str] = field(default_factory=dict)
-    notes: tuple[str, ...] = ()
     span: SourceSpan | None = field(default=None, compare=False, repr=False)
 
 
@@ -51,5 +49,4 @@ class ForTime:
     time_cap: Duration | None = None
     steps: tuple[Any, ...] = ()
     metadata: dict[str, str] = field(default_factory=dict)
-    notes: tuple[str, ...] = ()
     span: SourceSpan | None = field(default=None, compare=False, repr=False)

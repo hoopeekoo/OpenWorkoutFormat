@@ -35,22 +35,23 @@ def test_mixed_flat_and_nested():
     assert blocks[2].content == "Cooldown 10min"
 
 
-def test_trailing_notes():
+def test_trailing_notes_become_description():
     text = "- Run 5km\n\n> Great run!"
-    blocks, notes = build_blocks_for_workout(_get_workout_lines(text))
+    blocks, desc = build_blocks_for_workout(_get_workout_lines(text))
     assert len(blocks) == 1
-    # Blank line before note → workout-level trailing note, not step note
-    assert blocks[0].notes == []
-    assert notes == ["Great run!"]
+    # Blank line before note → workout-level description
+    assert desc == ["Great run!"]
 
 
-def test_step_level_notes():
+def test_step_level_notes_rejected():
+    """Step-level notes (no blank line separator) are now parse errors."""
+    from owf.errors import ParseError
+
     text = "- Run 5km\n> Great run!"
-    blocks, notes = build_blocks_for_workout(_get_workout_lines(text))
-    assert len(blocks) == 1
-    # No blank line → step-level note
-    assert blocks[0].notes == ["Great run!"]
-    assert notes == []
+    import pytest
+
+    with pytest.raises(ParseError, match="only allowed at workout level"):
+        build_blocks_for_workout(_get_workout_lines(text))
 
 
 def test_deeply_nested():

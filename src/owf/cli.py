@@ -22,6 +22,9 @@ from owf.ast.params import (
     PowerParam,
     RIRParam,
     RPEParam,
+    SetTypeParam,
+    TempoParam,
+    TypedPercentParam,
     WeightParam,
     ZoneParam,
 )
@@ -123,8 +126,6 @@ def _print_program(program: Program) -> None:
 
 def _print_week(week: Week) -> None:
     print(f"--- {week.name} ---")
-    for note in week.notes:
-        print(f"  > {note}")
     for workout in week.workouts:
         _print_workout(workout)
 
@@ -136,16 +137,13 @@ def _print_workout(workout: Any) -> None:
     print(header)
     print("-" * len(header))
 
+    # Print workout description
+    if workout.description:
+        for line in workout.description.split("\n"):
+            print(f"  > {line}")
+
     for step in workout.steps:
         _print_node(step, indent=1)
-
-    # Print workout-level notes that aren't already on the last step
-    last_step_notes = set()
-    if workout.steps:
-        last_step_notes = set(getattr(workout.steps[-1], "notes", ()))
-    for note in workout.notes:
-        if note not in last_step_notes:
-            print(f'  > {note}')
 
     print()
 
@@ -168,8 +166,6 @@ def _print_node(node: Any, indent: int) -> None:
         if node.rest:
             parts.append(f"rest:{node.rest}")
         print(f"{prefix}{' '.join(parts)}")
-        for note in node.notes:
-            print(f"{prefix}> {note}")
 
     elif isinstance(node, Workout):
         _print_workout(node)
@@ -181,37 +177,34 @@ def _print_node(node: Any, indent: int) -> None:
             print(f"{prefix}{node.count}x:")
         for child in node.steps:
             _print_node(child, indent + 1)
-        for note in node.notes:
-            print(f"{prefix}> {note}")
 
     elif isinstance(node, Interval):
         alt = " (alternating)" if node.is_alternating else ""
         print(f"{prefix}every {node.interval} for {node.duration}{alt}:")
         for child in node.steps:
             _print_node(child, indent + 1)
-        for note in node.notes:
-            print(f"{prefix}> {note}")
 
     elif isinstance(node, AMRAP):
         print(f"{prefix}amrap {node.duration}:")
         for child in node.steps:
             _print_node(child, indent + 1)
-        for note in node.notes:
-            print(f"{prefix}> {note}")
 
     elif isinstance(node, ForTime):
         cap = f" {node.time_cap}" if node.time_cap else ""
         print(f"{prefix}for-time{cap}:")
         for child in node.steps:
             _print_node(child, indent + 1)
-        for note in node.notes:
-            print(f"{prefix}> {note}")
 
 
 def _format_param(param: Any) -> str:
     """Format a parameter for CLI display."""
     if isinstance(param, ZoneParam):
-        return f"@{param.zone}"
+        metric = f":{param.metric}" if param.metric else ""
+        return f"@{param.zone}{metric}"
+    if isinstance(param, TypedPercentParam):
+        p = param.percent
+        pct = int(p) if p == int(p) else p
+        return f"@{pct}%{param.target}"
     if isinstance(param, PercentOfParam):
         p = param.percent
         pct = int(p) if p == int(p) else p
@@ -233,6 +226,11 @@ def _format_param(param: Any) -> str:
         return f"@RPE {v}"
     if isinstance(param, RIRParam):
         return f"@RIR {param.value}"
+    if isinstance(param, TempoParam):
+        return f"@tempo {param.value}"
+    if isinstance(param, SetTypeParam):
+        display = param.set_type.replace("_", "-")
+        return f"@{display}"
     return ""
 
 

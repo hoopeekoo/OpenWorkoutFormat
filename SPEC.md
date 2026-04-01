@@ -1,10 +1,10 @@
 # OpenWorkoutFormat (OWF) Specification
 
-**Version:** 3.0
+**Version:** 4.0
 
 ## 1. Overview
 
-OWF is a human-readable text format for describing workouts and training programs. It supports endurance training, strength training, and CrossFit-style WoDs in a single, unified format. Version 3.0 adds training programs with progression rules and simplifies container blocks.
+OWF is a human-readable text format for describing workouts and training programs. It supports endurance training, strength training, and CrossFit-style WoDs in a single, unified format. Version 4.0 adds typed percentage intensities, zone metric qualifiers, inline tempo, set types, rowing/swimming pace units, and simplifies the notes system to workout-level description only.
 
 ### Design Principles
 
@@ -28,15 +28,19 @@ Contains one or more workouts. No program-level structure.
 # Threshold Ride [Cycling] (2026-03-09)
 @ location: Indoor trainer
 
+> Felt strong through set 3, faded on 4 and 5.
+
+- Warmup 15min @60%FTP
 - 5x:
-  - Bike 5min @95% FTP
-  - Recover 3min @Z1
+  - Bike 5min @95%FTP
+  - Recover 3min @Z1:power
+- Cooldown 10min @Z1
 
 # Upper Body [Strength Training] (2026-03-09)
 
-- Bench Press 3x8 @80kg @rest 90s
+> Great session. Bench felt smooth.
 
-> Great session.
+- Bench Press 3x8 @80kg @tempo 30X1 @rest 90s
 ```
 
 ### Program Document (`.owfp`)
@@ -56,7 +60,7 @@ Contains a `##` program heading, week separators, and workouts organized into a 
 @ focus: Base volume
 
 # Upper [Strength Training]
-- Bench Press 3x8 @60kg @rest 90s
+- Bench Press 3x8 @60kg @tempo 30X1 @rest 90s
 - Dumbbell Row 3x8 @24kg @rest 90s
 
 # Lower [Strength Training]
@@ -75,14 +79,14 @@ Contains a `##` program heading, week separators, and workouts organized into a 
 | `# ` | Workout heading | `# Threshold Ride [Cycling]` |
 | `--- ` | Week separator | `--- Week 1 ---` |
 | `- ` | Step line | `- Run 5km @4:30/km` |
-| `> ` | Note | `> Felt strong today.` |
+| `> ` | Description | `> Felt strong today.` |
 | `@ ` | Metadata | `@ location: Downtown Gym` |
 | *(blank)* | Section separator | |
 
 ### Indentation
 
 - Steps use **2-space indentation** to denote nesting within container blocks.
-- Step lines (`- `) and metadata lines (`@ `) participate in indentation; headings, week separators, and notes are always at column 0.
+- Step lines (`- `) and metadata lines (`@ `) participate in indentation; headings, week separators, and description lines are always at column 0.
 
 ## 4. Metadata
 
@@ -106,7 +110,7 @@ Metadata lines use the `@ key: value` syntax. They can attach to documents/progr
 2. `@ key: value` after a `--- Week ---` separator → attaches to that week
 3. `@ key: value` at indent 0 after a `#` heading → attaches to that workout
 4. `@ key: value` indented under a step or container → attaches to that step/container
-5. Metadata lines appear immediately after the element they describe, before any child steps or notes
+5. Metadata lines appear immediately after the element they describe, before any child steps or description lines
 
 ### Reserved Metadata Keys
 
@@ -124,11 +128,11 @@ Metadata lines use the `@ key: value` syntax. They can attach to documents/progr
 | Week | `template` | `true` if this week is the base template |
 | Week | `focus` | Training focus for this week |
 | Week | `deload` | `true` if this is a deload week |
+| Week | `description` | Free-text description for derived weeks |
 | Workout | `location` | Where the workout takes place |
 | Workout | `source` | Data origin (device, platform) |
 | Workout | `focus` | Training focus or intent |
 | Container | `rest_between_rounds` | Rest injected between rounds |
-| Step | `tempo` | Lifting tempo (eccentric-pause-concentric-pause) |
 | Step | `unilateral` | Reps/weight apply per side |
 | Step | `equipment` | Specific gear for this movement |
 
@@ -196,17 +200,17 @@ Endurance-style:
 - Run 5km @4:30/km
 - Bike 30min @200W
 - Warmup 15min @Z1
-- Swim 200m @Z2
+- Swim 200m @Z2:pace
 - Recover 3min @Z1
 ```
 
 Strength-style:
 
 ```
-- Bench Press 3x8 @80kg @rest 90s
-- Pull-Up 3xmax @bodyweight + 20kg @rest 90s
+- Bench Press 3x8 @80kg @tempo 30X1 @rest 90s
+- Pull-Up 3xmax @bodyweight + 20kg @failure @rest 90s
 - Plank 3x60s @rest 30s
-- Back Squat 5x5 @RIR 3 @rest 120s
+- Back Squat 5x5 @85%1RM @RIR 3 @rest 120s
 ```
 
 Mixed (any combination of fields is valid):
@@ -214,6 +218,7 @@ Mixed (any combination of fields is valid):
 ```
 - Run 3x10min @Z3 @rest 2min
 - Sled Push 4x50m @100kg
+- Row 4x500m @1:45/500m @rest 90s
 ```
 
 ### Sets x Reps Formats
@@ -292,12 +297,12 @@ Performs the step every `<interval>` for `<duration>` total. Duration units are 
 
 ```
 - every 1min for 12min:
-  - Power Clean 3rep @70kg
-  - Box Jump 5rep
+  - Deadlift 5rep @100kg
+  - Strict Press 7rep @40kg
   - Burpee 8rep
 ```
 
-This rotates: minute 1 = Power Clean, minute 2 = Box Jump, minute 3 = Burpee, minute 4 = Power Clean, etc.
+This rotates: minute 1 = Deadlift, minute 2 = Strict Press, minute 3 = Burpee, minute 4 = Deadlift, etc.
 
 ### AMRAP (As Many Rounds As Possible)
 
@@ -344,9 +349,30 @@ Heart rate / effort zones:
 @Z1  @Z2  @Z3  @Z4  @Z5
 ```
 
-### Percentage of Variable
+**Zone metric qualifier**: When an athlete has different zones for different metrics, append a colon and the metric name:
 
-A percentage of a training variable. The variable is resolved at runtime. The word `of` is optional.
+```
+@Z2:power    @Z3:hr    @Z4:pace
+```
+
+Bare zones (e.g., `@Z2`) remain valid — the metric is unspecified and left to the consuming application to interpret.
+
+### Typed Percentage
+
+A percentage of a well-known training variable. These are self-describing and do not require variable resolution:
+
+```
+@95%FTP      @88%LTHR     @92%maxHR
+@90%TP       @85%1RM
+```
+
+Known targets: `FTP` (Functional Threshold Power), `LTHR` (Lactate Threshold Heart Rate), `maxHR` (Maximum Heart Rate), `TP` (Threshold Pace), `1RM` (One-Rep Max of the step's action).
+
+`@85%1RM` is shorthand for "85% of the 1RM of this step's action."
+
+### Percentage of Variable (generic)
+
+A percentage of a named training variable. The variable is resolved at runtime. The word `of` is optional. A space separates the percent from the variable name.
 
 ```
 @80% FTP
@@ -357,7 +383,7 @@ A percentage of a training variable. The variable is resolved at runtime. The wo
 
 The longer form with `of` is also accepted: `@80% of FTP`.
 
-Known variables: `FTP`, `LTHR`, `max HR`, `TP` (threshold pace), `1RM <exercise>`.
+This generic form is used for custom variables or when the variable name includes multiple words (e.g., `1RM bench press`). Known variables: `FTP`, `LTHR`, `max HR`, `TP` (threshold pace), `1RM <exercise>`.
 
 ### Power
 
@@ -378,11 +404,12 @@ Literal beats per minute:
 ### Pace
 
 ```
-@4:30/km    @7:00/mi
-@pace:5:00/km          (explicit prefix form)
+@4:30/km    @7:00/mi    @1:45/500m    @1:32/100m
 ```
 
-Format: `[pace:]MM:SS/unit` where unit is `km`, `mi`, or `mile`.
+Format: `MM:SS/unit` where unit is `km`, `mi`, `mile`, `500m`, or `100m`.
+
+The `/500m` unit is standard for rowing; `/100m` is standard for swimming.
 
 ### Weight
 
@@ -413,6 +440,36 @@ Value is an integer (1-10 scale). Can also appear at the heading level to set wo
 
 Value is an integer. Can also appear at the heading level to set a default RIR for all steps; individual steps may override.
 
+### Tempo
+
+Lifting tempo describes the speed of each phase of a rep (eccentric-pause-concentric-pause):
+
+```
+@tempo 31X0    @tempo 4010    @tempo 3-1-X-0
+```
+
+`X` denotes an explosive concentric phase. Accepted formats: continuous digits/X (`31X0`) or hyphen-separated (`3-1-X-0`).
+
+### Set Type
+
+Classifies the nature of a set:
+
+```
+@warmup       @drop        @failure
+@cluster      @rest-pause  @myo-rep
+```
+
+| Token | Meaning |
+|-------|---------|
+| `@warmup` | Warm-up set (lighter weight, not counted in working sets) |
+| `@drop` | Drop set (reduce weight immediately, continue reps) |
+| `@failure` | Set taken to muscular failure |
+| `@cluster` | Cluster set (brief intra-set rest between mini-sets) |
+| `@rest-pause` | Rest-pause set (rest briefly, then continue to failure) |
+| `@myo-rep` | Myo-rep set (activation set followed by short rest-pause clusters) |
+
+Sets without a set type are implicitly `normal`. The `normal` type is never written explicitly.
+
 ### Rest (Between Sets)
 
 ```
@@ -442,6 +499,7 @@ resolved = owf.resolve(doc, {
   - `@80% 1RM bench press` + `1RM bench press=100kg` → `WeightParam(80.0, "kg")`
 - `BodyweightPlusParam` resolves using the bodyweight variable:
   - `@bodyweight + 20kg` + `bodyweight=80kg` → `WeightParam(100.0, "kg")`
+- `TypedPercentParam` does NOT resolve — it remains as-is (the consuming application interprets it).
 - All other param types are already concrete and pass through unchanged.
 
 ## 10. Units
@@ -475,41 +533,54 @@ Duration units are always required — bare numbers are not allowed. Use `10min`
 
 Format: `MM:SS/unit`
 
-| Unit | Example |
-|------|---------|
-| `/km` | `4:30/km` |
-| `/mi` or `/mile` | `7:00/mi` |
+| Unit | Example | Use |
+|------|---------|-----|
+| `/km` | `4:30/km` | Running (metric) |
+| `/mi` or `/mile` | `7:00/mi` | Running (imperial) |
+| `/500m` | `1:45/500m` | Rowing |
+| `/100m` | `1:32/100m` | Swimming |
 
-## 11. Notes
+## 11. Workout Description
 
-Notes are lines prefixed with `> `. They can appear:
+Description lines (`> `) provide coaching context for a workout. They replace the v3 multi-level notes system.
 
-1. **After a step** — attached to that step:
+### Placement Rules
 
-```
-- Run 5km @4:30/km
-> Aim for negative splits.
-```
+1. Description lines are valid ONLY immediately after a workout heading (and its metadata), before any steps.
+2. Multiple consecutive `> ` lines form a single description (joined with newlines).
+3. Trailing `> ` lines after all steps (separated by a blank line) are also collected as description.
+4. `> ` lines at step level, container level, week level, or program level are **not allowed** (parse error).
 
-2. **After all steps in a workout** — attached to the workout:
-
-```
-# Easy Run [Running]
-
-- Warmup 10min @Z1
-- Run 5km @4:30/km
-- Cooldown 10min @Z1
-
-> Great session for building aerobic base.
-```
-
-3. **After a week separator** (in programs) — attached to the week:
+### Examples
 
 ```
---- Week 4 ---
-@ deload: true
-> Recovery week — reduce all weights by 20%.
+# Threshold Ride [Cycling] (2026-04-01)
+@ location: Indoor trainer
+
+> Aerobic threshold session. Keep cadence 85-95 RPM.
+> Back off if HR drifts above Z4 in last interval.
+
+- Warmup 15min @Z1:power
+- 3x:
+  - Bike 10min @95%FTP
+  - Recover 5min @Z1:power
+- Cooldown 10min @Z1:power
 ```
+
+The description is:
+
+```
+Aerobic threshold session. Keep cadence 85-95 RPM.
+Back off if HR drifts above Z4 in last interval.
+```
+
+### Migration from v3
+
+In v3, `> ` notes could attach to steps, containers, weeks, and programs. In v4:
+
+- **Step-level notes** → move to workout description or remove
+- **Week-level notes** → use `@ description:` metadata on the week
+- **Program-level notes** → use `@ description:` metadata on the program
 
 ## 12. Dates
 
@@ -664,8 +735,7 @@ Programs without dates on workout headings are unscheduled — the consuming app
 
 # Day 1 — Upper [Strength Training]
 
-- Bench Press 3x8 @60kg @rest 90s
-  @ tempo: 30X1
+- Bench Press 3x8 @60kg @tempo 30X1 @rest 90s
 - Dumbbell Row 3x8 @24kg @rest 90s
   @ unilateral: true
 - superset 3x:
@@ -681,14 +751,14 @@ Programs without dates on workout headings are unscheduled — the consuming app
 - Plank 3x60s @rest 30s
 
 --- Week 2 ---
-> Derived from template. Bench +2.5kg, Squat +2.5kg, RDL +2.5kg, Row +2kg.
+@ description: Derived from template. Bench +2.5kg, Squat +2.5kg, RDL +2.5kg, Row +2kg.
 
 --- Week 3 ---
-> Derived from template. Bench +5kg, Squat +5kg, RDL +5kg, Row +4kg.
+@ description: Derived from template. Bench +5kg, Squat +5kg, RDL +5kg, Row +4kg.
 
 --- Week 4 ---
 @ deload: true
-> Auto-generated: 80% of Week 3 weights.
+@ description: Auto-generated: 80% of Week 3 weights.
 ```
 
 ## 14. Multi-Workout Documents
@@ -698,25 +768,27 @@ An OWF workout document (`.owf`) can contain multiple workouts:
 ```
 # Threshold Ride [Cycling] (2026-03-09)
 
+> Sweet spot intervals on the trainer.
+
 - Warmup 10min @Z1
 - 5x:
-  - Bike 5min @95% FTP
+  - Bike 5min @95%FTP
   - Recover 3min @Z1
 - Cooldown 10min @Z1
 
 # Upper Body [Strength Training] (2026-03-09)
 
+> Focus on bench and rows today.
+
 - Bench Press 3x8 @80kg @rest 90s
 - Dumbbell Row 3x8 @32kg @rest 90s
-
-> Great training day.
 ```
 
 Rules:
 
 1. `#` headings define workouts.
 2. Steps between `#` headings belong to the preceding workout.
-3. Notes after the last step (preceded by a blank line) attach to the workout.
+3. Description lines (`> `) appear after the heading/metadata, before steps.
 4. In workout documents (`.owf`), `##` headings are not allowed.
 5. In program documents (`.owfp`), workouts exist within weeks.
 
@@ -740,7 +812,6 @@ duration_text   = { any_char - ")" - newline } ;
 
 week            = week_separator newline
                   { metadata_line } { blank }
-                  { note }
                   { workout } ;
 week_separator  = "--- " week_name " ---" ;
 week_name       = { any_char - newline } ;
@@ -748,7 +819,8 @@ week_name       = { any_char - newline } ;
 (* ===== Workout elements ===== *)
 
 workout         = heading newline { metadata_line } { blank }
-                  { step_or_note } ;
+                  { description_line } { blank }
+                  { step_block } ;
 heading         = "# " name [ SP "[" type "]" ] [ SP "(" date_spec ")" ]
                   { SP heading_param } ;
 heading_param   = "@RPE" SP integer | "@RIR" SP integer ;
@@ -759,6 +831,10 @@ date            = digit digit digit digit "-" digit digit "-" digit digit ;
 time_range      = time [ "-" time ] ;
 time            = digit digit ":" digit digit ;
 
+(* ===== Description ===== *)
+
+description_line = "> " { any_char - newline } newline ;
+
 (* ===== Metadata ===== *)
 
 metadata_line   = "@ " key ": " value newline ;
@@ -767,7 +843,7 @@ value           = { any_char - newline } ;
 
 (* ===== Steps ===== *)
 
-step_or_note    = step { step_metadata } | note | blank ;
+step_block      = step { step_metadata } | blank ;
 step            = indent "- " step_content newline ;
 step_metadata   = indent "  " metadata_line ;
 indent          = { "  " } ;
@@ -793,20 +869,36 @@ rest_param      = "@rest" SP duration ;
 (* ===== Parameters ===== *)
 
 param           = "@" param_value ;
-param_value     = zone | rpe | rir | rest_inline | pace | percent_of
-                | bodyweight_plus | power | heart_rate | weight ;
-zone            = "Z" digit ;
+param_value     = zone | rpe | rir | rest_inline | pace | typed_percent
+                | percent_of | bodyweight_plus | power | heart_rate
+                | weight | set_type | tempo ;
+
+zone            = "Z" digit [ ":" zone_metric ] ;
+zone_metric     = "power" | "hr" | "pace" ;
+
 rpe             = "RPE" [ SP ] integer ;
 rir             = "RIR" [ SP ] integer ;
 rest_inline     = "rest" SP duration ;
+
 pace            = [ "pace:" ] digit digit ":" digit digit "/" pace_unit ;
-pace_unit       = "km" | "mi" | "mile" ;
+pace_unit       = "km" | "mi" | "mile" | "500m" | "100m" ;
+
+typed_percent   = number "%" percent_target ;
+percent_target  = "FTP" | "LTHR" | "maxHR" | "TP" | "1RM" ;
+
 percent_of      = number "%" SP [ "of" SP ] variable ;
 variable        = { any_char - "@" - newline } ;
+
 bodyweight_plus = "bodyweight" SP "+" SP number ( "kg" | "lb" | "lbs" ) ;
 power           = integer "W" ;
 heart_rate      = integer "bpm" ;
 weight          = number ( "kg" | "lb" | "lbs" ) ;
+
+set_type        = "warmup" | "drop" | "failure" | "cluster"
+                | "rest-pause" | "myo-rep" ;
+
+tempo           = "tempo" SP tempo_value ;
+tempo_value     = { digit | letter | "-" } ;
 
 (* ===== Units ===== *)
 
@@ -823,7 +915,6 @@ dist_unit       = "m" | "km" | "mi" | "mile" | "miles" | "yd" | "ft" | "in" ;
 count           = digit+ ;
 number          = digit+ [ "." digit+ ] ;
 integer         = digit+ ;
-note            = "> " { any_char - newline } ;
 blank           = newline ;
 ```
 
@@ -841,7 +932,15 @@ These are conventional action names. Any word or phrase is a valid action — th
 
 ### Parameter Prefixes
 
-`@RPE`, `@RIR`, `@Z`, `@rest`
+`@RPE`, `@RIR`, `@Z`, `@rest`, `@tempo`, `@warmup`, `@drop`, `@failure`, `@cluster`, `@rest-pause`, `@myo-rep`
+
+### Typed Percent Targets
+
+`%FTP`, `%LTHR`, `%maxHR`, `%TP`, `%1RM`
+
+### Zone Metrics
+
+`power`, `hr`, `pace`
 
 ### Units
 
@@ -850,7 +949,7 @@ These are conventional action names. Any word or phrase is a valid action — th
 - **Weight:** `kg`, `lb`, `lbs`
 - **Power:** `W`
 - **Heart Rate:** `bpm`
-- **Pace:** `/km`, `/mi`, `/mile`
+- **Pace:** `/km`, `/mi`, `/mile`, `/500m`, `/100m`
 
 ## Appendix C: Sport Types
 

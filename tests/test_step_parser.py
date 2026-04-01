@@ -234,13 +234,14 @@ def test_metadata():
     assert len(doc.workouts) == 1
 
 
-def test_notes_on_workout():
+def test_description_on_workout():
     text = "# Ride [endurance]\n\n- Bike 30min @Z1\n\n> Great ride today."
     doc = parse_document(text)
     w = doc.workouts[0]
     step = w.steps[0]
     assert isinstance(step, Step)
-    assert "Great ride today." in step.notes or "Great ride today." in w.notes
+    assert w.description is not None
+    assert "Great ride today." in w.description
 
 
 def test_endurance_with_power_param():

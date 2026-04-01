@@ -19,6 +19,9 @@ from owf.ast.params import (
     PowerParam,
     RIRParam,
     RPEParam,
+    SetTypeParam,
+    TempoParam,
+    TypedPercentParam,
     WeightParam,
     ZoneParam,
 )
@@ -90,9 +93,7 @@ def _serialize_program(program: Program) -> str:
             f"x{program.deload_rule.multiplier}"
         )
 
-    # Program-level notes
-    for note in program.notes:
-        parts.append(f"> {note}")
+    # Program-level notes removed in v4
 
     # Weeks
     for week in program.weeks:
@@ -119,8 +120,7 @@ def _serialize_week(week: Week) -> str:
         for key, value in week.metadata.items():
             lines.append(f"@ {key}: {value}")
 
-    for note in week.notes:
-        lines.append(f"> {note}")
+    # Week-level notes removed in v4
 
     for workout in week.workouts:
         lines.append("")
@@ -157,16 +157,16 @@ def _serialize_workout(workout: Workout) -> str:
     lines.append(_heading_line(workout))
     if workout.metadata:
         lines.extend(_metadata_lines(workout.metadata))
+
+    # Workout-level description (> lines after heading/metadata, before steps)
+    if workout.description:
+        for desc_line in workout.description.split("\n"):
+            lines.append(f"> {desc_line}")
+
     lines.append("")
 
     for step in workout.steps:
         lines.extend(_serialize_node(step, indent=0))
-
-    # Workout-level notes (preceded by blank line)
-    if workout.notes:
-        lines.append("")
-        for note in workout.notes:
-            lines.append(f"> {note}")
 
     return "\n".join(lines)
 
@@ -195,8 +195,6 @@ def _serialize_node(node: Any, indent: int) -> list[str]:
             parts.append(f"@rest {node.rest}")
         lines.append(f"{prefix}- {' '.join(parts)}")
         lines.extend(meta)
-        for note in node.notes:
-            lines.append(f"{child_prefix}> {note}")
 
     elif isinstance(node, RepeatBlock):
         if node.style:
@@ -206,24 +204,18 @@ def _serialize_node(node: Any, indent: int) -> list[str]:
         lines.extend(meta)
         for child in node.steps:
             lines.extend(_serialize_node(child, indent + 1))
-        for note in node.notes:
-            lines.append(f"{child_prefix}> {note}")
 
     elif isinstance(node, Interval):
         lines.append(f"{prefix}- every {node.interval} for {node.duration}:")
         lines.extend(meta)
         for child in node.steps:
             lines.extend(_serialize_node(child, indent + 1))
-        for note in node.notes:
-            lines.append(f"{child_prefix}> {note}")
 
     elif isinstance(node, AMRAP):
         lines.append(f"{prefix}- amrap {node.duration}:")
         lines.extend(meta)
         for child in node.steps:
             lines.extend(_serialize_node(child, indent + 1))
-        for note in node.notes:
-            lines.append(f"{child_prefix}> {note}")
 
     elif isinstance(node, ForTime):
         if node.time_cap:
@@ -233,16 +225,41 @@ def _serialize_node(node: Any, indent: int) -> list[str]:
         lines.extend(meta)
         for child in node.steps:
             lines.extend(_serialize_node(child, indent + 1))
-        for note in node.notes:
-            lines.append(f"{child_prefix}> {note}")
 
     return lines
+
+
+_SET_TYPE_SERIALIZE: dict[str, str] = {
+    "warmup": "warmup",
+    "drop": "drop",
+    "failure": "failure",
+    "cluster": "cluster",
+    "rest_pause": "rest-pause",
+    "myo_rep": "myo-rep",
+}
 
 
 def _serialize_param(param: Param) -> str:
     """Serialize a parameter to its @-prefixed string."""
     if isinstance(param, ZoneParam):
+        if param.metric:
+            return f"@{param.zone}:{param.metric}"
         return f"@{param.zone}"
+
+    if isinstance(param, TypedPercentParam):
+        pct = (
+            int(param.percent)
+            if param.percent == int(param.percent)
+            else param.percent
+        )
+        return f"@{pct}%{param.target}"
+
+    if isinstance(param, TempoParam):
+        return f"@tempo {param.value}"
+
+    if isinstance(param, SetTypeParam):
+        token = _SET_TYPE_SERIALIZE.get(param.set_type, param.set_type)
+        return f"@{token}"
 
     if isinstance(param, PercentOfParam):
         pct = (

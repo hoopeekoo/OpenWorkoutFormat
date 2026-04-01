@@ -102,7 +102,7 @@ PROGRAM_EXAMPLE = """\
 - Back Squat 3x5rep @100kg @rest 2min
 
 --- Week 2 ---
-> Derived from template + progression.
+@ description: Derived from template + progression.
 
 --- Week 4 ---
 @ deload: true

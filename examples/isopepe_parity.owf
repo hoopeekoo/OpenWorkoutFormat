@@ -1,0 +1,104 @@
+@ description: Comprehensive example covering every OWF 4.0 feature for Isopepe parity
+@ author: Test Suite
+
+# Leg Day [Strength Training] (2026-04-01)
+@ location: Downtown Gym
+
+> High-volume quad focus. Ensure full recovery from last squat session.
+> If gym is busy, substitute Hack Squat for Leg Press.
+
+- Back Squat 3x8rep @100kg @tempo 3010 @rest 2min
+- Back Squat 1x5rep @60kg @warmup @rest 90s
+- Leg Extension 3x12rep @40kg @drop @rest 30s
+- Pull-Up 3xmaxrep @failure @rest 2min
+- Hack Squat 4x6rep @80kg @cluster @rest 20s
+- Bench Press 1x12rep @60kg @rest-pause @rest 15s
+- Leg Press 1x20rep @150kg @myo-rep @rest 20s
+- Plank 3x60s @rest 30s
+
+# Threshold Ride [Cycling] (2026-04-01)
+
+> Stay in Z1-Z2 for warmup and cooldown. Push hard on intervals.
+
+- Warmup 10min @Z1:power
+- Bike 40min @Z2:hr
+- Bike 3x5min @88%LTHR @rest 2min
+- 3x:
+  - Bike 10min @95%FTP
+  - Recover 5min @Z1:power
+- Cooldown 10min @Z1:power
+
+# Pool Session [Swimming] (2026-04-01)
+
+> Focus on consistent splits. Use paddles for the 200m sets.
+
+- Swim 400m @Z1
+- 4x:
+  - Swim 100m @1:32/100m @Z3:pace
+  - Recover 50m @Z1
+- 2x:
+  - Swim 200m @Z3:pace
+  - Recover 100m @Z1
+- Swim 200m @Z1
+
+# Rowing Intervals [Rowing] (2026-04-01)
+
+> Damper setting 5. Focus on drive sequence: legs-back-arms.
+
+- Warmup 5min @Z1
+- Row 4x500m @1:45/500m @rest 90s
+- Cooldown 5min @Z1
+
+# Evening Run [Running] (2026-04-01)
+
+> Easy pace with a tempo block in the middle.
+
+- Warmup 10min @Z1
+- Run 20min @92%maxHR
+- Run 3km @90%TP
+- Run 5km @4:30/km
+- Cooldown 10min @Z1
+
+# Strength Finisher [Strength Training] (2026-04-01)
+
+> Quick superset and circuit to close out the day.
+
+- Bench Press 3x5rep @85%1RM @tempo 31X0 @rest 2min
+- superset 3x:
+  - Dumbbell Row 10rep @32kg @rest 60s
+  - Incline Dumbbell Bench Press 10rep @28kg @rest 60s
+- circuit 4x:
+  @ rest_between_rounds: 90s
+  - Kettlebell Swing 15rep @24kg
+  - Push-Up 15rep
+  - Goblet Squat 12rep @24kg
+  - Pull-Up 8rep
+  - Burpee 10rep
+
+# CrossFit WOD [HIIT] (2026-04-01) @RPE 9
+
+> Scale as needed. Time cap is firm.
+
+- for-time 15min:
+  - 5x:
+    - Deadlift 12rep @70kg
+    - Hang Clean 9rep @70kg
+    - Push Jerk 6rep @70kg
+
+# EMOM Session [HIIT] (2026-04-01)
+
+> Pacing: each movement should take 30-40s max.
+
+- every 1min for 12min:
+  - Deadlift 5rep @100kg
+  - Strict Press 7rep @40kg
+  - Toes-To-Bar 10rep
+
+# AMRAP Finisher [HIIT] (2026-04-01)
+
+> Target: 20+ rounds.
+
+- amrap 20min:
+  - Pull-Up 5rep
+  - Push-Up 10rep
+  - Air Squat 15rep

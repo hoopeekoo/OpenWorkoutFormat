@@ -168,3 +168,84 @@ def test_serialize_program():
     assert "--- Week 1 ---" in result
     assert "@ template: true" in result
     assert "--- Week 2 ---" in result
+
+
+# ===== New feature serialization tests =====
+
+
+def test_serialize_zone_with_metric():
+    text = "# Ride\n\n- Bike 20min @Z2:power\n"
+    doc = parse_document(text)
+    result = dumps(doc)
+    assert "@Z2:power" in result
+
+
+def test_serialize_zone_unqualified():
+    text = "# Run\n\n- Run 10min @Z2\n"
+    doc = parse_document(text)
+    result = dumps(doc)
+    assert "@Z2" in result
+    assert "@Z2:" not in result  # no trailing colon
+
+
+def test_serialize_typed_percent_ftp():
+    text = "# Ride\n\n- Bike 10min @95%FTP\n"
+    doc = parse_document(text)
+    result = dumps(doc)
+    assert "@95%FTP" in result
+
+
+def test_serialize_typed_percent_lthr():
+    text = "# Run\n\n- Run 30min @88%LTHR\n"
+    doc = parse_document(text)
+    result = dumps(doc)
+    assert "@88%LTHR" in result
+
+
+def test_serialize_typed_percent_1rm():
+    text = "# Gym\n\n- Bench Press 3x5rep @85%1RM\n"
+    doc = parse_document(text)
+    result = dumps(doc)
+    assert "@85%1RM" in result
+
+
+def test_serialize_tempo():
+    text = "# Gym\n\n- Back Squat 4x6rep @120kg @tempo 31X0 @rest 2min\n"
+    doc = parse_document(text)
+    result = dumps(doc)
+    assert "@tempo 31X0" in result
+
+
+def test_serialize_set_type_warmup():
+    text = "# Gym\n\n- Bench Press 3x8rep @60kg @warmup @rest 90s\n"
+    doc = parse_document(text)
+    result = dumps(doc)
+    assert "@warmup" in result
+
+
+def test_serialize_set_type_rest_pause():
+    text = "# Gym\n\n- Bench Press 1x12rep @60kg @rest-pause\n"
+    doc = parse_document(text)
+    result = dumps(doc)
+    assert "@rest-pause" in result
+
+
+def test_serialize_set_type_myo_rep():
+    text = "# Gym\n\n- Leg Press 1x20rep @myo-rep\n"
+    doc = parse_document(text)
+    result = dumps(doc)
+    assert "@myo-rep" in result
+
+
+def test_serialize_pace_500m():
+    text = "# Row\n\n- Row 4x500m @1:45/500m @rest 90s\n"
+    doc = parse_document(text)
+    result = dumps(doc)
+    assert "@1:45/500m" in result
+
+
+def test_serialize_pace_100m():
+    text = "# Swim\n\n- Swim 8x100m @1:32/100m @rest 20s\n"
+    doc = parse_document(text)
+    result = dumps(doc)
+    assert "@1:32/100m" in result

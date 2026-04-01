@@ -139,13 +139,12 @@ def test_heading_without_type():
     assert doc.workouts[0].sport_type is None
 
 
-def test_multiple_notes():
+def test_multiple_description_lines():
     text = "# Ride [bike]\n\n- Bike 30min @Z1\n\n> Note 1.\n> Note 2."
     doc = parse_document(text)
     w = doc.workouts[0]
-    # Blank line before notes -> workout-level, not step-level
-    assert w.notes == ("Note 1.", "Note 2.")
-    assert w.steps[0].notes == ()
+    # Blank line before > lines → workout-level description
+    assert w.description == "Note 1.\nNote 2."
 
 
 def test_strength_reps_only():
