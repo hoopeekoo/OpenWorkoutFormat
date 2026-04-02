@@ -1,4 +1,4 @@
-"""Base AST nodes: Document, Workout, WorkoutDate, Program, Week, ProgressionRule, DeloadRule."""
+"""Base AST nodes: Document, Workout, WorkoutDate, Program, Week."""
 
 from __future__ import annotations
 

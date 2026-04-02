@@ -6,7 +6,7 @@ import re
 from dataclasses import replace
 from typing import Any
 
-from owf.ast.base import Document, Program, Week, Workout
+from owf.ast.base import Document, Program, Workout
 from owf.ast.blocks import (
     AMRAP,
     ForTime,

@@ -113,10 +113,12 @@ def _print_program(program: Program) -> None:
             print(f"  {key}: {value}")
 
     for rule in program.progression_rules:
-        print(f"  progression: {rule.action} {rule.direction}{rule.amount}{rule.unit}/{rule.per}")
+        prog = f"{rule.direction}{rule.amount}{rule.unit}/{rule.per}"
+        print(f"  progression: {rule.action} {prog}")
 
     if program.deload_rule:
-        print(f"  deload: week {program.deload_rule.week} x{program.deload_rule.multiplier}")
+        dr = program.deload_rule
+        print(f"  deload: week {dr.week} x{dr.multiplier}")
 
     print()
 
