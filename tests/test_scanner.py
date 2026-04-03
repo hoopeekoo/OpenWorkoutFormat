@@ -8,10 +8,11 @@ def test_blank_lines():
     assert all(ln.line_type == LineType.BLANK for ln in lines)
 
 
-def test_frontmatter_fences():
+def test_bare_triple_dash():
+    """Bare --- is classified as BLANK (unrecognised line)."""
     lines = scan("---\nFTP: 250W\n---")
-    fences = [ln for ln in lines if ln.line_type == LineType.FRONTMATTER_FENCE]
-    assert len(fences) == 2
+    blanks = [ln for ln in lines if ln.line_type == LineType.BLANK]
+    assert len(blanks) == 3  # ---, FTP: 250W (no prefix), ---
 
 
 def test_heading():
@@ -34,10 +35,10 @@ def test_week_separator():
     assert lines[0].content == "Week 1 (template)"
 
 
-def test_bare_frontmatter_fence():
-    """Bare --- is FRONTMATTER_FENCE, not WEEK_SEPARATOR."""
+def test_bare_triple_dash_single():
+    """Bare --- is classified as BLANK (not WEEK_SEPARATOR)."""
     lines = scan("---")
-    assert lines[0].line_type == LineType.FRONTMATTER_FENCE
+    assert lines[0].line_type == LineType.BLANK
 
 
 def test_step_line():
@@ -107,7 +108,6 @@ FTP: 250W
 > Nice ride."""
     lines = scan(text)
     types = [ln.line_type for ln in lines]
-    assert types.count(LineType.FRONTMATTER_FENCE) == 2
     assert types.count(LineType.HEADING) == 1
     assert types.count(LineType.NOTE) == 1
     steps = [ln for ln in lines if ln.line_type == LineType.STEP]

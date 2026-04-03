@@ -40,6 +40,13 @@ _SET_TYPE_TOKENS: dict[str, str] = {
 # Known typed percentage targets (no-space compact form)
 _TYPED_PERCENT_TARGETS = frozenset({"FTP", "LTHR", "maxHR", "TP", "1RM"})
 
+# Pre-compiled regex for typed percent params
+_TYPED_PCT_RE = re.compile(
+    r"^(\d+(?:\.\d+)?)%("
+    + "|".join(sorted(_TYPED_PERCENT_TARGETS, key=len, reverse=True))
+    + r")$"
+)
+
 # Zone metric qualifiers
 _ZONE_METRICS = frozenset({"power", "hr", "pace"})
 
@@ -166,10 +173,7 @@ def parse_params(
             pass
 
         # 5a. Typed percent: @95%FTP, @88%LTHR, @92%maxHR, @90%TP, @85%1RM
-        _targets_re = "|".join(sorted(_TYPED_PERCENT_TARGETS, key=len, reverse=True))
-        typed_pct_m = re.match(
-            rf"^(\d+(?:\.\d+)?)%({_targets_re})$", value
-        )
+        typed_pct_m = _TYPED_PCT_RE.match(value)
         if typed_pct_m:
             params.append(
                 TypedPercentParam(
@@ -295,11 +299,3 @@ def _is_number(s: str) -> bool:
         return False
 
 
-def tokenize_step_tail(tail: str) -> list[str]:
-    """Split the tail portion of a step line into tokens.
-
-    Respects @-prefixed params and groups
-    'X% of VarName' expressions together.
-    """
-    raw_tokens = tail.split()
-    return raw_tokens

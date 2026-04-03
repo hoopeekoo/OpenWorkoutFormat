@@ -6,7 +6,7 @@ Human-readable workout format (`.owf`) with a Python parser. Zero runtime depend
 
 ```bash
 source .venv/bin/activate
-pytest tests/ -v          # 227 tests
+pytest tests/ -v          # 319 tests
 mypy src/                 # strict mode
 ruff check src/           # linting
 ```
@@ -69,12 +69,13 @@ class Step:
     distance: Distance | None = None
     rest: Duration | None = None         # @rest between sets
     params: tuple[Param, ...] = ()
-    metadata: dict[str, str] = ()
+    metadata: dict[str, str] = field(default_factory=dict)
     notes: tuple[str, ...] = ()
     span: SourceSpan | None = None
 ```
 
-Container blocks (`RepeatStep`, `Superset`, `Circuit`, `EMOM`, etc.) are separate types.
+Container blocks (`RepeatBlock`, `Interval`, `AMRAP`, `ForTime`) are separate types.
+`RepeatBlock` has a `style` field (`None`, `"superset"`, `"circuit"`) for display hints.
 
 ## Parameter Types
 
@@ -92,24 +93,53 @@ Nine flat param types (no expression trees):
 | `RPEParam` | `@RPE N` | `@RPE 7`, `@RPE 8` |
 | `RIRParam` | `@RIR N` | `@RIR 2` |
 
-Removed syntax (parser rejects with error): `@easy`, `@hard`, `@moderate`, `@threshold`, `@tempo`, `@max`, standalone `@FTP`, `@FTP - 50W`.
+Removed syntax (parser rejects with error): `@easy`, `@hard`, `@moderate`, `@threshold`, `@max`, standalone `@FTP`, `@FTP - 50W`.
 
 ## Gotchas
 
 - Empty workouts (no name, no steps, no notes) are **silently filtered** during parsing
 - `owf.load()` does NOT resolve includes — it's just read + parse
-- Notes boundary: no blank line before = step-level; blank line before = workout-level
-- `#` = workout; `##` raises `ParseError`
+- `> ` description lines: only valid after workout heading (before steps); NOT at step/container/week/program level
+- `#` = workout; `##` = program heading (one per `.owfp` document)
 - Heading-level `@RIR` = default for exercises (per-step overrides); `@RPE` = workout-wide
 - Resolver only touches `PercentOfParam` and `BodyweightPlusParam`; all other params pass through
+- `TypedPercentParam` (`@95%FTP`) does NOT resolve — passes through as-is
+- Serializer normalizes: `90s` → `1min30s`, `3x8` → `3x8rep` (semantically equivalent)
 
-## Cross-Project Impact (Isopepe)
+## Known Limitations
 
-Isopepe depends on OWF. Changes to these areas affect Isopepe — run **cross-project-checker** agent:
-- **AST class names**: stored as `node_type` strings in Isopepe DB (`Step`, `Workout`, etc.)
-- **AST field names**: used in Isopepe templates via `asdict()` (e.g. `data.action`, `data.sets`, `data.reps`)
-- **`sport_type` values**: Isopepe derives `workout_type` (broad category) from `sport_type` via `sport_types.py`; drives CSS badge classes (`badge-endurance`, `badge-strength`, etc.)
-- **Serializer output**: reconstructed in Isopepe detail pages via `owf.dumps()`
+These are known spec violations / gaps tracked for future work:
+- Program-level and week-level `>` notes silently ignored instead of raising `ParseError`
+- Document-level metadata before `##` heading is lost in program documents
+
+## Testing Patterns
+
+Test files map 1:1 to source modules. Add tests to the appropriate existing file:
+
+| File | Scope |
+|------|-------|
+| `test_scanner.py` | `scan()` → LineType, content, indent, span |
+| `test_block_builder.py` | Block tree from scanned lines, note attachment |
+| `test_param_parser.py` | `parse_params()` → all 12 Param types |
+| `test_step_parser.py` | `parse_document()` → steps, containers, headings, programs |
+| `test_serializer.py` | `dumps()` → output string assertions |
+| `test_resolver.py` | `resolve()` → param resolution, errors |
+| `test_date.py` | Date parsing, `WorkoutDate` fields |
+| `test_edge_cases.py` | Duration/Distance/Pace parsing, error cases |
+| `test_roundtrip.py` | `parse → dumps → parse` cycle preservation |
+| `test_integration.py` | Full documents, multi-workout, program structure |
+| `test_examples.py` | Assertions on `examples/*.owf` files |
+
+**Conventions**: No test classes (module-level functions only), plain `assert`, `isinstance` before field access, inline OWF strings (not fixture files), `pytest.raises(ParseError, match=...)` for error cases.
+
+## Cross-Project Impact (Grit)
+
+Grit depends on OWF. Changes to these areas affect Grit — run **cross-project-checker** agent:
+- **AST class names**: stored as `node_type` strings in Grit DB (`Step`, `RepeatBlock`, `AMRAP`, etc.)
+- **AST field names**: used in Grit templates via `asdict()` (e.g. `data.action`, `data.sets`, `data.reps`)
+- **`sport_type` values**: Grit derives `workout_type` (broad category) from `sport_type` via `sport_types.py`; drives CSS badge classes
+- **Serializer output**: reconstructed in Grit detail pages via `owf.dumps()`
+- **Public API**: Grit calls `owf.parse()` and `owf.dumps()` — signature/return type changes break Grit
 
 ## Formal Specification
 

@@ -34,6 +34,9 @@ SETS_REPS_PATTERN = re.compile(
     r"^(?:(?P<sets>\d+)x)?(?P<reps>\d+|max)(?:rep|reps)?$", re.IGNORECASE
 )
 
+# Regex for NxDuration or NxDistance: 3x60s, 4x500m, 3x10min
+_NX_DUR_DIST = re.compile(r"^(\d+)x(.+)$")
+
 # Progression rule: +2.5kg/week, +5%/week, +1rep/week, -5s/week
 _PROGRESSION_RE = re.compile(
     r"^(.+?)\s+([+-])(\d+(?:\.\d+)?)(kg|lb|lbs|%|rep|reps|s|sec|min)/(\w+)$"
@@ -41,6 +44,13 @@ _PROGRESSION_RE = re.compile(
 
 # Deload rule: week 4 x0.8
 _DELOAD_RE = re.compile(r"^week\s+(\d+)\s+x(\d+(?:\.\d+)?)$")
+
+# Duration token pattern for container headers — matches simple and compound
+_DUR_TOKEN = (
+    r"(?:\d+(?:\.\d+)?(?:s|sec|min|h|hr|hour)"
+    r"|\d+h\d+min(?:\d+s)?|\d+min\d+s"
+    r"|\d+:\d{2}(?::\d{2})?)"
+)
 
 
 def parse_document(text: str) -> Document | Program:
@@ -276,8 +286,6 @@ def _split_workouts(lines: list[LogicalLine]) -> list[Workout]:
                 )
             current_heading = ln
             current_lines = []
-        elif ln.line_type == LineType.FRONTMATTER_FENCE:
-            continue
         elif ln.line_type == LineType.METADATA and ln.indent == 0:
             current_lines.append(ln)
         else:
@@ -437,7 +445,7 @@ def _parse_block(block: RawBlock) -> Any:
 
     # Interval: every <interval> for <duration>:
     interval_m = re.match(
-        r"^every\s+(\d+(?:\.\d+)?(?:s|sec|min|h|hr|hour))\s+for\s+(\d+(?:\.\d+)?(?:s|sec|min|h|hr|hour))\s*:\s*$",
+        rf"^every\s+({_DUR_TOKEN})\s+for\s+({_DUR_TOKEN})\s*:\s*$",
         content,
     )
     if interval_m:
@@ -455,7 +463,7 @@ def _parse_block(block: RawBlock) -> Any:
 
     # AMRAP: amrap <dur>:
     amrap_m = re.match(
-        r"^amrap\s+(\d+(?:\.\d+)?(?:s|sec|min|h|hr|hour))\s*:\s*$",
+        rf"^amrap\s+({_DUR_TOKEN})\s*:\s*$",
         content,
     )
     if amrap_m:
@@ -471,7 +479,7 @@ def _parse_block(block: RawBlock) -> Any:
 
     # For-time: for-time: or for-time <dur>:
     ft_m = re.match(
-        r"^for-time\s*(?:(\d+(?:\.\d+)?(?:s|sec|min|h|hr|hour))\s*)?:\s*$",
+        rf"^for-time\s*(?:({_DUR_TOKEN})\s*)?:\s*$",
         content,
     )
     if ft_m:
@@ -540,6 +548,27 @@ def _parse_step_line(content: str, block: RawBlock, span: SourceSpan) -> Step:
             i += 1
             continue
 
+        # NxDuration (3x60s, 3x10min) or NxDistance (4x500m)
+        nx_m = _NX_DUR_DIST.match(tok)
+        if nx_m:
+            suffix = nx_m.group(2)
+            try:
+                Duration.parse(suffix)
+                found_boundary = True
+                rest_tokens.append(tok)
+                i += 1
+                continue
+            except ValueError:
+                pass
+            try:
+                Distance.parse(suffix)
+                found_boundary = True
+                rest_tokens.append(tok)
+                i += 1
+                continue
+            except ValueError:
+                pass
+
         action_tokens.append(tok)
         i += 1
 
@@ -588,6 +617,23 @@ def _build_step(
             reps_str = sr_m.group("reps")
             reps = reps_str if reps_str == "max" else int(reps_str)
             continue
+
+        # Try NxDuration (3x60s) or NxDistance (4x500m)
+        nx_m = _NX_DUR_DIST.match(tok)
+        if nx_m and sets is None:
+            suffix = nx_m.group(2)
+            try:
+                duration = Duration.parse(suffix)
+                sets = int(nx_m.group(1))
+                continue
+            except ValueError:
+                pass
+            try:
+                distance = Distance.parse(suffix)
+                sets = int(nx_m.group(1))
+                continue
+            except ValueError:
+                pass
 
         # Try duration
         if duration is None:

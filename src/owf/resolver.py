@@ -91,7 +91,7 @@ def _resolve_param(param: Param, variables: dict[str, str]) -> Param:
         if unit == "W":
             return PowerParam(value=int(round(computed)), span=param.span)
         if unit == "bpm":
-            return HeartRateParam(value=int(computed), span=param.span)
+            return HeartRateParam(value=int(round(computed)), span=param.span)
         if unit in ("kg", "lb", "lbs"):
             return WeightParam(value=computed, unit=unit, span=param.span)
         # Default: return PowerParam for unitless values

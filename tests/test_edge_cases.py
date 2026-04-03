@@ -212,3 +212,37 @@ def test_rejected_intensity_in_step():
     text = "# Run\n\n- Run 10min @easy"
     with pytest.raises(ParseError, match="no longer supported"):
         parse_document(text)
+
+
+# --- Distance edge cases: ft and in ---
+
+
+def test_distance_feet():
+    d = Distance.parse("20ft")
+    assert d.value == 20
+    assert d.unit == "ft"
+    assert str(d) == "20ft"
+
+
+def test_distance_inches():
+    d = Distance.parse("24in")
+    assert d.value == 24
+    assert d.unit == "in"
+    assert str(d) == "24in"
+
+
+# --- Rejected intensity: @max and @moderate ---
+
+
+def test_rejected_intensity_max():
+    """Old @max syntax raises ParseError."""
+    text = "# Gym\n\n- Bench Press 3x5rep @max"
+    with pytest.raises(ParseError, match="no longer supported"):
+        parse_document(text)
+
+
+def test_rejected_intensity_moderate():
+    """Old @moderate syntax raises ParseError."""
+    text = "# Run\n\n- Run 30min @moderate"
+    with pytest.raises(ParseError, match="no longer supported"):
+        parse_document(text)

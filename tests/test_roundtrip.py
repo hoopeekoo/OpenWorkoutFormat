@@ -200,3 +200,111 @@ def test_roundtrip_description():
     serialized = dumps(doc1)
     doc2 = parse_document(serialized)
     assert doc2.workouts[0].description == doc1.workouts[0].description
+
+
+# ===== Container metadata round-trip =====
+
+
+def test_roundtrip_container_metadata():
+    """@ rest_between_rounds on a RepeatBlock survives round-trip."""
+    from owf.ast.steps import RepeatBlock
+
+    text = (
+        "# Strength\n\n- circuit 4x:\n"
+        "  @ rest_between_rounds: 90s\n"
+        "  - Kettlebell Swing 15rep @24kg\n"
+        "  - Push-Up 15rep\n"
+    )
+    doc1 = parse_document(text)
+    block1 = doc1.workouts[0].steps[0]
+    assert isinstance(block1, RepeatBlock)
+    assert block1.metadata["rest_between_rounds"] == "90s"
+
+    serialized = dumps(doc1)
+    doc2 = parse_document(serialized)
+    block2 = doc2.workouts[0].steps[0]
+    assert isinstance(block2, RepeatBlock)
+    assert block2.metadata["rest_between_rounds"] == "90s"
+
+
+# ===== Step-level metadata round-trip =====
+
+
+def test_roundtrip_step_metadata():
+    """@ unilateral: true on a Step survives round-trip."""
+    from owf.ast.steps import Step
+
+    text = (
+        "# Strength\n\n"
+        "- Dumbbell Row 3x8rep @24kg @rest 90s\n"
+        "  @ unilateral: true\n"
+    )
+    doc1 = parse_document(text)
+    step1 = doc1.workouts[0].steps[0]
+    assert isinstance(step1, Step)
+    assert step1.metadata["unilateral"] == "true"
+
+    serialized = dumps(doc1)
+    doc2 = parse_document(serialized)
+    step2 = doc2.workouts[0].steps[0]
+    assert isinstance(step2, Step)
+    assert step2.metadata["unilateral"] == "true"
+
+
+# ===== Deep program round-trip =====
+
+
+def test_roundtrip_program_deep():
+    """Program round-trip preserves week contents, progression, and deload."""
+    from owf.ast.steps import Step
+
+    text = (
+        "## Strength Block (4 weeks)\n"
+        "@ author: Coach\n"
+        "@ progression: Bench Press +2.5kg/week\n"
+        "@ deload: week 4 x0.8\n\n"
+        "--- Week 1 ---\n"
+        "@ template: true\n\n"
+        "# Day 1 [Strength Training]\n\n"
+        "- Bench Press 3x8rep @60kg @rest 90s\n"
+        "- Pull-Up 3x8rep\n\n"
+        "--- Week 2 ---\n"
+    )
+    doc1 = parse_document(text)
+    assert isinstance(doc1, Program)
+    serialized = dumps(doc1)
+    doc2 = parse_document(serialized)
+    assert isinstance(doc2, Program)
+
+    # Name and duration
+    assert doc2.name == doc1.name
+    assert doc2.duration == doc1.duration
+
+    # Week count and names
+    assert len(doc2.weeks) == len(doc1.weeks)
+    assert doc2.weeks[0].name == "Week 1"
+    assert doc2.weeks[0].is_template is True
+    assert doc2.weeks[1].name == "Week 2"
+
+    # Workout content in week 1
+    assert len(doc2.weeks[0].workouts) == 1
+    w = doc2.weeks[0].workouts[0]
+    assert w.name == "Day 1"
+    assert w.sport_type == "Strength Training"
+    assert len(w.steps) == 2
+    step = w.steps[0]
+    assert isinstance(step, Step)
+    assert step.action == "Bench Press"
+    assert step.sets == 3
+    assert step.reps == 8
+
+    # Progression rules
+    assert len(doc2.progression_rules) == 1
+    assert doc2.progression_rules[0].action == "Bench Press"
+    assert doc2.progression_rules[0].amount == 2.5
+    assert doc2.progression_rules[0].unit == "kg"
+
+    # Deload rule
+    assert doc2.deload_rule is not None
+    assert doc2.deload_rule.week == 4
+    assert doc2.deload_rule.multiplier == 0.8

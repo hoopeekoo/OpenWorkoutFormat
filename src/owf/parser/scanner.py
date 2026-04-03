@@ -10,7 +10,6 @@ from owf.errors import SourceSpan
 
 class LineType(enum.Enum):
     BLANK = "blank"
-    FRONTMATTER_FENCE = "frontmatter_fence"
     PROGRAM_HEADING = "program_heading"
     HEADING = "heading"
     WEEK_SEPARATOR = "week_separator"
@@ -43,18 +42,6 @@ def scan(text: str) -> list[LogicalLine]:
                     text=raw,
                     indent=0,
                     content="",
-                    span=SourceSpan(line=lineno, col=1),
-                )
-            )
-            continue
-
-        if stripped == "---":
-            lines.append(
-                LogicalLine(
-                    line_type=LineType.FRONTMATTER_FENCE,
-                    text=raw,
-                    indent=0,
-                    content="---",
                     span=SourceSpan(line=lineno, col=1),
                 )
             )
@@ -146,7 +133,9 @@ def scan(text: str) -> list[LogicalLine]:
             )
             continue
 
-        # Treat anything else as a continuation or unknown — skip for now
+        # Unrecognised lines (e.g. missing "- " prefix) are treated as blank.
+        # This is a deliberate design choice: the scanner is lenient and the
+        # step parser / block builder will reject structurally invalid input.
         lines.append(
             LogicalLine(
                 line_type=LineType.BLANK,

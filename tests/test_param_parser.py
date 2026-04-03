@@ -436,3 +436,15 @@ def test_full_endurance_step_params():
     assert params[0].metric == "power"
     assert isinstance(params[1], TypedPercentParam)
     assert params[1].target == "LTHR"
+
+
+# ===== @lbs weight unit =====
+
+
+def test_weight_lbs_three_letter():
+    """@175lbs (three-letter variant) parses as WeightParam."""
+    params, rest = parse_params(["@175lbs"])
+    assert len(params) == 1
+    assert isinstance(params[0], WeightParam)
+    assert params[0].value == 175
+    assert params[0].unit == "lbs"

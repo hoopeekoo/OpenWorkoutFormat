@@ -591,3 +591,95 @@ def test_lowercase_action_rejected():
     """Lowercase actions raise ParseError — Title Case required."""
     with pytest.raises(ParseError, match="Title Case"):
         parse_document("# Test\n\n- run 5km")
+
+
+# ===== Compound durations in containers =====
+
+
+def test_amrap_compound_duration():
+    """amrap 1h30min: parses with compound duration."""
+    text = "# WoD\n\n- amrap 1h30min:\n  - Burpee 10rep\n  - Pull-Up 5rep"
+    doc = parse_document(text)
+    step = doc.workouts[0].steps[0]
+    assert isinstance(step, AMRAP)
+    assert step.duration.seconds == 5400
+
+
+def test_interval_compound_duration():
+    """every 2min for 1h30min: parses as Interval with compound duration."""
+    text = "# WoD\n\n- every 2min for 1h30min:\n  - Burpee 10rep"
+    doc = parse_document(text)
+    step = doc.workouts[0].steps[0]
+    assert isinstance(step, Interval)
+    assert step.interval.seconds == 120
+    assert step.duration.seconds == 5400
+
+
+def test_for_time_compound_duration():
+    """for-time 1h30min: parses as ForTime with compound time cap."""
+    text = "# WoD\n\n- for-time 1h30min:\n  - Run 10km"
+    doc = parse_document(text)
+    step = doc.workouts[0].steps[0]
+    assert isinstance(step, ForTime)
+    assert step.time_cap is not None
+    assert step.time_cap.seconds == 5400
+
+
+# ===== NxDuration and NxDistance parsing =====
+
+
+def test_nx_duration_plank():
+    """- Plank 3x60s parses as sets=3, duration=60s."""
+    text = "# Gym\n\n- Plank 3x60s @rest 30s"
+    doc = parse_document(text)
+    step = doc.workouts[0].steps[0]
+    assert isinstance(step, Step)
+    assert step.action == "Plank"
+    assert step.sets == 3
+    assert step.duration is not None
+    assert step.duration.seconds == 60
+    assert step.reps is None
+    assert step.rest is not None
+    assert step.rest.seconds == 30
+
+
+def test_nx_duration_run():
+    """- Run 3x10min parses as sets=3, duration=600s."""
+    text = "# Run\n\n- Run 3x10min @Z3"
+    doc = parse_document(text)
+    step = doc.workouts[0].steps[0]
+    assert isinstance(step, Step)
+    assert step.action == "Run"
+    assert step.sets == 3
+    assert step.duration is not None
+    assert step.duration.seconds == 600
+    assert step.reps is None
+
+
+def test_nx_distance_sled():
+    """- Sled Push 4x50m parses as sets=4, distance=50m."""
+    text = "# Gym\n\n- Sled Push 4x50m @100kg"
+    doc = parse_document(text)
+    step = doc.workouts[0].steps[0]
+    assert isinstance(step, Step)
+    assert step.action == "Sled Push"
+    assert step.sets == 4
+    assert step.distance is not None
+    assert step.distance.value == 50
+    assert step.distance.unit == "m"
+    assert step.reps is None
+
+
+def test_nx_distance_row():
+    """- Row 4x500m parses as sets=4, distance=500m."""
+    text = "# Row\n\n- Row 4x500m @1:45/500m @rest 90s"
+    doc = parse_document(text)
+    step = doc.workouts[0].steps[0]
+    assert isinstance(step, Step)
+    assert step.action == "Row"
+    assert step.sets == 4
+    assert step.distance is not None
+    assert step.distance.value == 500
+    assert step.distance.unit == "m"
+    assert step.rest is not None
+    assert step.rest.seconds == 90

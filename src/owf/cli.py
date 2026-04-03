@@ -132,7 +132,7 @@ def _print_week(week: Week) -> None:
         _print_workout(workout)
 
 
-def _print_workout(workout: Any) -> None:
+def _print_workout(workout: Workout) -> None:
     header = workout.name
     if workout.sport_type:
         header += f" [{workout.sport_type}]"

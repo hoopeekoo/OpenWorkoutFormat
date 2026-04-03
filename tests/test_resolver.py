@@ -43,7 +43,7 @@ def test_resolve_percentage_of_max_hr():
     step = resolved.workouts[0].steps[0]
     param = step.params[0]
     assert isinstance(param, HeartRateParam)
-    assert param.value == 129  # int(70% 185)
+    assert param.value == 130  # round(70% * 185) = round(129.5)
 
 
 def test_resolve_bodyweight_plus():
@@ -94,3 +94,52 @@ def test_resolve_zone_unchanged():
     param = step.params[0]
     assert isinstance(param, ZoneParam)
     assert param.zone == "Z2"
+
+
+# ===== Program path =====
+
+
+def test_resolve_program_percent_of():
+    """resolve() traverses Program → weeks → workouts → steps."""
+    from owf.ast.base import Program
+
+    text = (
+        "## Block (4 weeks)\n\n"
+        "--- Week 1 ---\n\n"
+        "# Ride [Cycling]\n\n- Bike 10min @80% FTP\n"
+    )
+    doc = parse_document(text)
+    assert isinstance(doc, Program)
+    resolved = resolve(doc, {"FTP": "250W"})
+    assert isinstance(resolved, Program)
+    step = resolved.weeks[0].workouts[0].steps[0]
+    assert isinstance(step, Step)
+    param = step.params[0]
+    assert isinstance(param, PowerParam)
+    assert param.value == 200.0
+
+
+# ===== Bad variable value =====
+
+
+def test_resolve_bad_variable_value():
+    """Unparseable variable value raises ResolveError."""
+    text = "# Ride\n\n- Bike 5min @80% FTP"
+    doc = parse_document(text)
+    with pytest.raises(ResolveError, match="Cannot parse variable value"):
+        resolve(doc, {"FTP": "invalid"})
+
+
+# ===== BodyweightPlusParam with lb unit =====
+
+
+def test_resolve_bodyweight_plus_lb():
+    """@bodyweight + 45lb resolves with lb unit."""
+    text = "# Gym\n\n- Dip 3x8rep @bodyweight + 45lb"
+    doc = parse_document(text)
+    resolved = resolve(doc, {"bodyweight": "180lb"})
+    step = resolved.workouts[0].steps[0]
+    param = step.params[0]
+    assert isinstance(param, WeightParam)
+    assert param.value == 225.0
+    assert param.unit == "lb"

@@ -47,8 +47,3 @@ class RepeatBlock:
     style: str | None = None  # "superset", "circuit", or None
     metadata: dict[str, str] = field(default_factory=dict)
     span: SourceSpan | None = field(default=None, compare=False, repr=False)
-
-
-# Partial union — only types from this module. For the full union
-# (including Interval, AMRAP, ForTime), use ``owf.ast.StepUnion``.
-_StepUnionPartial = Step | RepeatBlock
