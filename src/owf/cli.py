@@ -34,6 +34,7 @@ from owf.ast.steps import (
 )
 from owf.loader import load
 from owf.resolver import resolve
+from owf.serializer import step_count_and_measure
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -154,15 +155,7 @@ def _print_node(node: Any, indent: int) -> None:
     prefix = "  " * indent
 
     if isinstance(node, Step):
-        parts = [node.action]
-        if node.sets is not None and node.reps is not None:
-            parts.append(f"{node.sets}x{node.reps}rep")
-        elif node.reps is not None:
-            parts.append(f"{node.reps}rep")
-        if node.duration:
-            parts.append(str(node.duration))
-        if node.distance:
-            parts.append(str(node.distance))
+        parts = [node.action, *step_count_and_measure(node)]
         for p in node.params:
             parts.append(_format_param(p))
         if node.rest:

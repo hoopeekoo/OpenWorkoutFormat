@@ -249,3 +249,17 @@ def test_serialize_pace_100m():
     doc = parse_document(text)
     result = dumps(doc)
     assert "@1:32/100m" in result
+
+
+def test_serialize_sets_with_duration():
+    text = "# Session [cycling]\n\n- Sweet Spot 4x13min @90% of FTP @rest 5min\n"
+    doc = parse_document(text)
+    result = dumps(doc)
+    assert "- Sweet Spot 4x13min @90% FTP @rest 5min" in result
+
+
+def test_serialize_sets_with_distance():
+    text = "# Row [rowing]\n\n- Row 4x500m @rest 90s\n"
+    doc = parse_document(text)
+    result = dumps(doc)
+    assert "- Row 4x500m @rest 1min30s" in result

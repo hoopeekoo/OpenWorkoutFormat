@@ -171,6 +171,37 @@ def _serialize_workout(workout: Workout) -> str:
     return "\n".join(lines)
 
 
+def step_count_and_measure(node: Step) -> list[str]:
+    """Tokens for a step's count and its duration/distance measure.
+
+    A step carries either sets with reps ("3x8rep"), or — the interval form —
+    sets with a duration/distance and no reps ("4x13min", "4x500m"), where the
+    count binds to the measure and is emitted as a single token. Duration binds
+    first, matching the grammar's ``[sets x reps] [duration] [distance]`` order.
+
+    Sets with no reps, duration or distance is not representable: the grammar
+    has no form for it and the parser cannot produce it, so the count is
+    dropped rather than written as a bare "4x" — that would re-parse into the
+    action ("Squat 4x") and corrupt it.
+
+    Shared with the CLI display path so the two cannot drift apart.
+    """
+    parts: list[str] = []
+    prefix = ""
+    if node.sets is not None and node.reps is not None:
+        parts.append(f"{node.sets}x{node.reps}rep")
+    elif node.reps is not None:
+        parts.append(f"{node.reps}rep")
+    elif node.sets is not None:
+        prefix = f"{node.sets}x"
+    if node.duration:
+        parts.append(f"{prefix}{node.duration}")
+        prefix = ""
+    if node.distance:
+        parts.append(f"{prefix}{node.distance}")
+    return parts
+
+
 def _serialize_node(node: Any, indent: int) -> list[str]:
     """Serialize an AST node to lines at the given indentation."""
     prefix = "  " * indent
@@ -180,15 +211,7 @@ def _serialize_node(node: Any, indent: int) -> list[str]:
     meta = _metadata_lines(node.metadata, child_prefix) if node.metadata else []
 
     if isinstance(node, Step):
-        parts = [node.action]
-        if node.sets is not None and node.reps is not None:
-            parts.append(f"{node.sets}x{node.reps}rep")
-        elif node.reps is not None:
-            parts.append(f"{node.reps}rep")
-        if node.duration:
-            parts.append(str(node.duration))
-        if node.distance:
-            parts.append(str(node.distance))
+        parts = [node.action, *step_count_and_measure(node)]
         for p in node.params:
             parts.append(_serialize_param(p))
         if node.rest:
