@@ -1,6 +1,9 @@
 """Round-trip tests: parse -> serialize -> parse should produce equivalent AST."""
 
+import pytest
+
 from owf.ast.base import Program
+from owf.ast.steps import Step
 from owf.parser.step_parser import parse_document
 from owf.serializer import dumps
 
@@ -23,7 +26,10 @@ def _roundtrip(text: str) -> None:
         assert w1.name == w2.name
         assert w1.sport_type == w2.sport_type
         assert w1.description == w2.description
-        assert len(w1.steps) == len(w2.steps)
+        # Full structural equality: `span` is declared compare=False on every
+        # node, so this is span-insensitive and recurses into container
+        # children — where interval steps most often live.
+        assert w1.steps == w2.steps
 
 
 def test_roundtrip_endurance():
@@ -308,3 +314,38 @@ def test_roundtrip_program_deep():
     assert doc2.deload_rule is not None
     assert doc2.deload_rule.week == 4
     assert doc2.deload_rule.multiplier == 0.8
+
+
+@pytest.mark.parametrize(
+    "line",
+    [
+        "- Sweet Spot 4x13min @90% of FTP @rest 5min",
+        "- Run 3x10min @Z3 @rest 2min",
+        "- Row 4x500m @rest 90s",
+    ],
+)
+def test_roundtrip_sets_without_reps(line):
+    """Interval steps carry sets with a duration/distance and no reps; the set
+    count must survive serialization (a 4x13min session is not a 13min one)."""
+    text = f"# Session [cycling]\n\n{line}\n"
+    _roundtrip(text)
+
+    doc1 = parse_document(text)
+    doc2 = parse_document(dumps(doc1))
+
+    s1, s2 = doc1.workouts[0].steps[0], doc2.workouts[0].steps[0]
+    assert isinstance(s1, Step)
+    assert isinstance(s2, Step)
+    assert s2.sets == s1.sets
+    assert s2.duration == s1.duration
+    assert s2.distance == s1.distance
+
+
+def test_roundtrip_sets_without_reps_in_repeat_block():
+    """The interval form nested in a container — where it usually lives."""
+    _roundtrip("# S [cycling]\n\n- 3x:\n  - Bike 4x30s @Z5\n  - Recover 2min @Z1\n")
+
+
+def test_roundtrip_sets_with_duration_and_distance():
+    """Count binds to duration when a step carries both measures."""
+    _roundtrip("# S [rowing]\n\n- Row 4x13min 500m\n")
