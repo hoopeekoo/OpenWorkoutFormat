@@ -132,9 +132,18 @@ Test files map 1:1 to source modules. Add tests to the appropriate existing file
 
 **Conventions**: No test classes (module-level functions only), plain `assert`, `isinstance` before field access, inline OWF strings (not fixture files), `pytest.raises(ParseError, match=...)` for error cases.
 
-## Cross-Project Impact (Grit)
+## Cross-Project Impact (dependents)
 
-Grit depends on OWF. Changes to these areas affect Grit — run **cross-project-checker** agent:
+Two live dependents (verified 2026-08-04). "Grit" is named in older notes but no such
+repo exists on this machine — treat that name as stale.
+
+- **Bouser** (`../bouser`, Python) — editable path dep; calls `parse`/`resolve`/`dumps`.
+- **Isopepe** (`../Isopepe`, TypeScript) — does NOT use this package; it reimplements the
+  parser/serializer in TS and shares only the `.owf` **text** contract (see
+  `examples/isopepe_parity.owf`). Grammar changes here need a matching TS change.
+- `../Isopepe-legacy` (Python) is pre-v4 and already fails to import removed AST classes.
+
+Changes to these areas affect dependents — run **cross-project-checker** agent:
 - **AST class names**: stored as `node_type` strings in Grit DB (`Step`, `RepeatBlock`, `AMRAP`, etc.)
 - **AST field names**: used in Grit templates via `asdict()` (e.g. `data.action`, `data.sets`, `data.reps`)
 - **`sport_type` values**: Grit derives `workout_type` (broad category) from `sport_type` via `sport_types.py`; drives CSS badge classes
