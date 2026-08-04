@@ -144,11 +144,11 @@ repo exists on this machine — treat that name as stale.
 - `../Isopepe-legacy` (Python) is pre-v4 and already fails to import removed AST classes.
 
 Changes to these areas affect dependents — run **cross-project-checker** agent:
-- **AST class names**: stored as `node_type` strings in Grit DB (`Step`, `RepeatBlock`, `AMRAP`, etc.)
-- **AST field names**: used in Grit templates via `asdict()` (e.g. `data.action`, `data.sets`, `data.reps`)
-- **`sport_type` values**: Grit derives `workout_type` (broad category) from `sport_type` via `sport_types.py`; drives CSS badge classes
-- **Serializer output**: reconstructed in Grit detail pages via `owf.dumps()`
-- **Public API**: Grit calls `owf.parse()` and `owf.dumps()` — signature/return type changes break Grit
+- **AST class names**: stored as `node_type` strings by consumers (`Step`, `RepeatBlock`, `AMRAP`, etc.)
+- **AST field names**: used by consumers via `asdict()` (e.g. `data.action`, `data.sets`, `data.reps`)
+- **`sport_type` values**: consumers derive `workout_type` (broad category) from `sport_type` via `sport_types.py`; drives CSS badge classes
+- **Serializer output**: reconstructed by consumers via `owf.dumps()`
+- **Public API**: dependents call `owf.parse()` / `owf.dumps()` — signature or return-type changes break them
 
 ## Formal Specification
 

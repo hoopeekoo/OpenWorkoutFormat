@@ -187,8 +187,12 @@ Every step line begins with `- ` followed by the step content. All steps use the
 ### Syntax
 
 ```
-- Action [sets×reps] [duration] [distance] [params...] [@rest duration]
+- Action [quantity] [params...] [@rest duration]
 ```
+
+`quantity` is `NxM[rep]`, `N[rep]` or `Nxmax[rep]`, or the **interval form**
+`Nx<duration|distance>`, optionally followed by a duration and/or a distance in
+either order. See the `quantity` production in the grammar.
 
 Action names use Title Case (`Run`, `Bike`, `Bench Press`, `Pull-Up`). There is no hardcoded list of actions — any Title Case word or phrase is a valid action.
 
@@ -231,12 +235,12 @@ Mixed (any combination of fields is valid):
 | `100` | 100 reps (shorthand) | `- Pull-Up 100` |
 | `3xmax` | 3 sets to failure | `- Face Pull 3xmax @15kg` |
 | `3xmaxrep` | 3 sets to failure (explicit) | `- Face Pull 3xmaxrep @15kg` |
-| `4x13min` | 4 intervals of 13 min | `- Sweet Spot 4x13min @90% FTP` |
-| `4x500m` | 4 intervals of 500 m | `- Row 4x500m @1:45/500m` |
+| `4x13min` | 4 sets of 13 min | `- Sweet Spot 4x13min @90% FTP` |
+| `4x500m` | 4 sets of 500 m | `- Row 4x500m @1:45/500m` |
 
 The `rep` suffix is optional — `3x8` and `3x8rep` are equivalent. Both parse to the same AST.
 
-The last two rows are the **interval form**: the count binds directly to a duration
+The `NxDURATION` / `NxDISTANCE` rows are the **interval form**: the count binds directly to a duration
 or distance instead of to a rep count. `sets` is set and `reps` is `None`.
 
 ### Rest Step
@@ -869,7 +873,10 @@ word            = letter { letter | digit } ;
 
 (* The count may bind to reps ("3x8rep") or directly to a duration/distance
    measure ("4x13min", "4x500m") — the interval form. duration and distance
-   are order-independent; serialization emits duration first. *)
+   are order-independent; serialization emits duration first, and when both are
+   present the count is always re-attached to the duration. Parsers MAY accept
+   these tokens in any order; the form written here is the canonical one that
+   dumps() emits. *)
 quantity        = sets_reps [ SP measure ]   (* 3x8rep, 3x8rep 10min *)
                 | count "x" measure          (* 4x13min, 4x500m, 4x13min 500m *)
                 | measure ;                  (* 15min, 5km, 10min 5km *)
@@ -916,7 +923,8 @@ tempo_value     = { digit | letter | "-" } ;
 (* ===== Units ===== *)
 
 duration        = compound_dur | number time_unit | mm_ss | hh_mm_ss ;
-compound_dur    = [ number "h" ] [ number "min" ] [ number "s" ] ;
+compound_dur    = number "h" [ number "min" ] [ number "s" ]
+                | number "min" [ number "s" ] ;
 time_unit       = "s" | "sec" | "min" | "h" | "hr" | "hour" ;
 mm_ss           = digit+ ":" digit digit ;
 hh_mm_ss        = digit+ ":" digit digit ":" digit digit ;

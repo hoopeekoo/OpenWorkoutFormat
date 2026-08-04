@@ -176,13 +176,13 @@ def step_count_and_measure(node: Step) -> list[str]:
 
     A step carries either sets with reps ("3x8rep"), or — the interval form —
     sets with a duration/distance and no reps ("4x13min", "4x500m"), where the
-    count binds to the measure and is emitted as a single token. Duration binds
-    first, matching the grammar's ``[sets x reps] [duration] [distance]`` order.
+    count binds to the measure and is emitted as a single token. With both
+    measures present the count binds to the duration, which is the canonical
+    order of the ``quantity`` production in SPEC.md.
 
-    Sets with no reps, duration or distance is not representable: the grammar
-    has no form for it and the parser cannot produce it, so the count is
-    dropped rather than written as a bare "4x" — that would re-parse into the
-    action ("Squat 4x") and corrupt it.
+    Sets with no reps, duration or distance is dropped: the parser cannot
+    produce such a node, and a bare "4x" would re-parse into the action
+    ("Squat 4x"), corrupting a field rather than losing one.
 
     Shared with the CLI display path so the two cannot drift apart.
     """
