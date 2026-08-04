@@ -231,8 +231,13 @@ Mixed (any combination of fields is valid):
 | `100` | 100 reps (shorthand) | `- Pull-Up 100` |
 | `3xmax` | 3 sets to failure | `- Face Pull 3xmax @15kg` |
 | `3xmaxrep` | 3 sets to failure (explicit) | `- Face Pull 3xmaxrep @15kg` |
+| `4x13min` | 4 intervals of 13 min | `- Sweet Spot 4x13min @90% FTP` |
+| `4x500m` | 4 intervals of 500 m | `- Row 4x500m @1:45/500m` |
 
 The `rep` suffix is optional — `3x8` and `3x8rep` are equivalent. Both parse to the same AST.
+
+The last two rows are the **interval form**: the count binds directly to a duration
+or distance instead of to a rep count. `sets` is set and `reps` is `None`.
 
 ### Rest Step
 
@@ -857,11 +862,19 @@ interval        = "every" SP duration SP "for" SP duration ":" ;
 amrap           = "amrap" SP duration ":" ;
 for_time        = "for-time" [ SP duration ] ":" ;
 
-action_step     = action [ SP sets_reps ] [ SP duration ] [ SP distance ]
-                  { SP param } [ SP rest_param ] ;
+action_step     = action [ SP quantity ] { SP param } [ SP rest_param ] ;
 
 action          = word { ( "-" | SP ) word } ;
 word            = letter { letter | digit } ;
+
+(* The count may bind to reps ("3x8rep") or directly to a duration/distance
+   measure ("4x13min", "4x500m") — the interval form. duration and distance
+   are order-independent; serialization emits duration first. *)
+quantity        = sets_reps [ SP measure ]   (* 3x8rep, 3x8rep 10min *)
+                | count "x" measure          (* 4x13min, 4x500m, 4x13min 500m *)
+                | measure ;                  (* 15min, 5km, 10min 5km *)
+
+measure         = duration [ SP distance ] | distance [ SP duration ] ;
 
 sets_reps       = [ count "x" ] ( count | "max" ) [ "rep" | "reps" ] ;
 rest_param      = "@rest" SP duration ;
